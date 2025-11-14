@@ -1,77 +1,104 @@
 <!DOCTYPE html>
+<html lang="es">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>Chat para Conectar</title>
 
-    <!-- CSS: asegúrate que el archivo se llame styles.css en /public -->
+    <!-- CSS dark estilo Instagram -->
     <link rel="stylesheet" href="/styles.css" />
 
     <!-- favicon opcional -->
     <link rel="icon" href="/favicon.ico" />
+    </head>
+    <body>
 
-</head>
-<input type="password" id="passwordInput" placeholder="Ingrese DNI" />
-</div>
-<button id="loginBtn">Ingresar</button>
-<p id="loginError" class="error"></p>
-</section>
+    <div class="app-container">
 
+        <header class="app-header">
+        <div class="brand">Chat para Conectar</div>
+        </header>
 
-<!-- Pantalla principal -->
-<section class="screen" id="mainScreen">
-<div class="state-selector">
-<label>Seleccione su estado emocional: </label>
-<select id="userStateSelect" class="status-select">
-<option value="">Estado...</option>
-<option value="Calmo 😌">Calmo 😌</option>
-<option value="Tenso 😬">Tenso 😬</option>
-<option value="Triste 😢">Triste 😢</option>
-<option value="Enojado 😡">Enojado 😡</option>
-</select>
-</div>
-<div class="chat-list" id="chatList">
-<button class="add-chat">+</button>
-</div>
-</section>
+        <!-- LOGIN -->
+        <section class="login-screen" id="loginScreen" aria-label="Login">
+        <h2>Ingresar</h2>
 
+        <div class="field">
+            <label for="userSelect">Usuario</label>
+            <select id="userSelect" aria-label="Usuario">
+            <option value="">Seleccione...</option>
+            <option value="Leo">Leo</option>
+            <option value="Estefi">Estefi</option>
+            </select>
+        </div>
 
-<!-- Chat individual -->
-<section class="screen" id="chatScreen">
-<div class="chat-window">
-<header class="chat-header">
-<h3 id="chatPartner">Pareja</h3>
-<span id="partnerStatus" class="chat-status">Ausente</span>
-<button id="backBtn" class="back-btn">Volver</button>
-</header>
+        <div class="field">
+            <label for="passwordInput">Contraseña (DNI)</label>
+            <input type="password" id="passwordInput" placeholder="Ingrese DNI" aria-label="Contraseña" />
+        </div>
 
+        <button id="loginBtn" class="btn primary">Ingresar</button>
+        <p id="loginError" class="error" role="alert" aria-live="polite"></p>
+        </section>
 
-<div class="messages" id="messages"></div>
+        <!-- MAIN SCREEN -->
+        <main class="screen" id="mainScreen" aria-label="Pantalla principal">
+        <div class="top-controls">
+            <label for="userStateSelect" class="state-label">Tu estado emocional</label>
+            <select id="userStateSelect" class="status-select" aria-label="Estado emocional">
+            <option value="">Estado...</option>
+            <option value="Calmo 😌">Calmo 😌</option>
+            <option value="Tenso 😬">Tenso 😬</option>
+            <option value="Triste 😢">Triste 😢</option>
+            <option value="Enojado 😡">Enojado 😡</option>
+            </select>
+        </div>
 
+        <section class="chat-list" id="chatList" aria-label="Lista de chats">
+            <button class="add-chat">+</button>
+        </section>
+        </main>
 
-<div class="chat-input" id="chatInput">
-<textarea id="messageInput" placeholder="Escribe tu mensaje..."></textarea>
-<button id="sendBtn">Enviar</button>
-<button id="pauseBtn" class="pause-btn">Pausar 10 min</button>
-</div>
-</div>
-</section>
+        <!-- CHAT SCREEN -->
+        <section class="screen chat-screen" id="chatScreen" aria-label="Chat individual">
+        <div class="chat-window">
+            <header class="chat-header">
+            <div class="chat-title" id="chatPartner">Pareja</div>
+            <div class="chat-meta">
+                <span id="partnerStatus" class="chat-status">Ausente</span>
+                <button id="backBtn" class="btn small">Volver</button>
+            </div>
+            </header>
 
+            <div class="messages" id="messages" aria-live="polite" aria-label="Mensajes"></div>
 
-<!-- Modal -->
-<div class="modal" id="confirmModal">
-<div class="modal-content">
-<p id="modalText"></p>
-<button id="modalYes">Sí, enviar</button>
-<button id="modalNo">Editar</button>
-</div>
-</div>
+            <div class="chat-input" id="chatInput">
+            <textarea id="messageInput" placeholder="Escribe tu mensaje..." rows="2" aria-label="Escribir mensaje"></textarea>
+            <div class="input-actions">
+                <button id="sendBtn" class="btn primary">Enviar</button>
+                <button id="pauseBtn" class="btn">Pausar 10 min</button>
+            </div>
+            </div>
+        </div>
+        </section>
 
-<!-- Socket.IO client (servido automáticamente por tu server) -->
-<script src="/socket.io/socket.io.js"></script>
+        <!-- CONFIRM MODAL -->
+        <div class="modal" id="confirmModal" role="dialog" aria-modal="true" aria-hidden="true">
+        <div class="modal-content">
+            <p id="modalText"></p>
+            <div class="modal-actions">
+            <button id="modalYes" class="btn primary">Sí, enviar</button>
+            <button id="modalNo" class="btn">Editar</button>
+            </div>
+        </div>
+        </div>
 
-<!-- Tu JS -->
-<script src="/app.js"></script>
+    </div>
 
+    <!-- Socket.IO client (servido por el servidor) -->
+    <script src="/socket.io/socket.io.js"></script>
+
+    <!-- App JS -->
+    <script src="/app.js"></script>
 </body>
 </html>
