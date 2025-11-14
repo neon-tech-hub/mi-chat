@@ -1,407 +1,61 @@
 <!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chat para Conectar</title>
-    <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: 'Segoe UI', sans-serif; background: #fbeffb; color: #333; }
-
-        header { background: #ffd6e8; padding: 15px; text-align: center; font-size: 1.5em; font-weight: bold; }
-
-        .screen { display: none; flex-direction: column; height: calc(100vh - 60px); }
-        .screen.active { display: flex; }
-
-        .chat-list {
-            background: #ffe6f0;
-            padding: 10px;
-            overflow-y: auto;
-            flex: 1;
-        }
-
-        .chat-list button { 
-            width: 100%;
-            margin: 5px 0;
-            padding: 10px;
-            background: #fff;
-            border: 1px solid #ffb6c1;
-            border-radius: 8px;
-            cursor: pointer;
-            text-align: left;
-        }
-
-        .chat-list button:hover { background: #ffd6e8; }
-
-        .chat-list .add-chat { font-size: 2em; text-align: center; color: #ff69b4; }
-
-        .chat-window { 
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            padding: 10px;
-            background: #fff0f5;
-            border-top: 2px solid #ffc0cb;
-            border-radius: 8px 8px 0 0;
-        }
-
-        .chat-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding: 0 5px; }
-
-        .chat-header .chat-title { font-weight: bold; font-size: 1.2em; }
-
-        .chat-status { font-size: 0.9em; color: #fff; padding: 4px 8px; border-radius: 5px; background: #ff69b4; }
-
-        .messages { flex: 1; overflow-y: auto; padding: 5px; display: flex; flex-direction: column; gap: 5px; }
-
-        .message { padding: 10px 14px; border-radius: 20px; max-width: 70%; word-wrap: break-word; }
-        .sent { background: #ffb6c1; align-self: flex-end; }
-        .received { background: #ffe6f0; align-self: flex-start; }
-
-        .chat-input { display: flex; gap: 5px; margin-top: 5px; }
-        .chat-input textarea { flex: 1; padding: 8px; border-radius: 8px; border: 1px solid #ffb6c1; resize: none; }
-        .chat-input button { padding: 8px 12px; border: none; border-radius: 8px; cursor: pointer; background: #ff69b4; color: #fff; }
-        .pause-btn { background: #ffa6c9; }
-
-        .modal { position: fixed; top:0; left:0; right:0; bottom:0; background: rgba(0,0,0,0.5); display:none; justify-content:center; align-items:center; z-index:100; }
-
-        .modal-content { background:#fff; padding:20px; border-radius:8px; max-width:300px; text-align:center; }
-
-        .modal-content button { margin:5px; }
-
-        .login-screen {
-            position: fixed;
-            top:0; left:0; right:0; bottom:0;
-            background:#ffe6f0;
-            display:flex;
-            justify-content:center;
-            align-items:center;
-            flex-direction:column;
-            z-index:200;
-        }
-
-        .login-screen button {
-            padding: 10px 20px;
-            margin: 5px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            background:#ff69b4;
-            color:white;
-            font-size:1em;
-        }
-
-        .status-select { margin-left: 10px; padding: 4px; border-radius: 5px; }
-
-        @media (max-width: 480px) {
-            .chat-list { max-height: 25%; }
-            .chat-header .chat-title { font-size: 1em; }
-            .message { font-size: 0.9em; padding: 8px 12px; }
-            .chat-input textarea { font-size: 0.9em; }
-        }
-    </style>
-</head>
-<body>
-
-<header>Chat para Conectar 💖</header>
-
-<div class="login-screen" id="loginScreen">
-    <h2>Login</h2>
-    <div style="margin:10px 0;">
-        <label>Usuario:</label>
-        <select id="userSelect">
-            <option value="">Seleccione...</option>
-            <option value="Leo">Leo</option>
-            <option value="Estefi">Estefi</option>
-        </select>
-    </div>
-    <div style="margin:10px 0;">
-        <label>Contraseña (DNI):</label>
-        <input type="password" id="passwordInput" placeholder="Ingrese DNI">
-    </div>
-    <button id="loginBtn">Ingresar</button>
-    <p id="loginError" style="color:red;margin-top:5px;"></p>
+<input type="password" id="passwordInput" placeholder="Ingrese DNI" />
 </div>
+<button id="loginBtn">Ingresar</button>
+<p id="loginError" class="error"></p>
+</section>
+
 
 <!-- Pantalla principal -->
-<div class="screen active" id="mainScreen">
-    <div style="padding:10px;">
-        <label>Seleccione su estado emocional: </label>
-        <select id="userStateSelect" class="status-select">
-            <option value="">Estado...</option>
-            <option value="Calmo 😌">Calmo 😌</option>
-            <option value="Tenso 😬">Tenso 😬</option>
-            <option value="Triste 😢">Triste 😢</option>
-            <option value="Enojado 😡">Enojado 😡</option>
-        </select>
-    </div>
-    <div class="chat-list" id="chatList">
-        <button class="add-chat">+</button>
-    </div>
+<section class="screen" id="mainScreen">
+<div class="state-selector">
+<label>Seleccione su estado emocional: </label>
+<select id="userStateSelect" class="status-select">
+<option value="">Estado...</option>
+<option value="Calmo 😌">Calmo 😌</option>
+<option value="Tenso 😬">Tenso 😬</option>
+<option value="Triste 😢">Triste 😢</option>
+<option value="Enojado 😡">Enojado 😡</option>
+</select>
 </div>
-
-<!-- Pantalla de chat individual -->
-<div class="screen" id="chatScreen">
-    <div class="chat-window">
-        <div class="chat-header">
-            <div class="chat-title" id="chatPartner">Pareja</div>
-            <span class="chat-status" id="partnerStatus">Ausente</span>
-            <button id="backBtn" style="padding:2px 6px;border-radius:5px;border:none;background:#ffb6c1;color:#fff;">Volver</button>
-        </div>
-        <div class="messages" id="messages"></div>
-        <div class="chat-input" id="chatInput">
-            <textarea rows="2" placeholder="Escribe tu mensaje..."></textarea>
-            <button class="send-btn">Enviar</button>
-            <button class="pause-btn">Pausar 10 min</button>
-        </div>
-    </div>
+<div class="chat-list" id="chatList">
+<button class="add-chat">+</button>
 </div>
+</section>
 
+
+<!-- Chat individual -->
+<section class="screen" id="chatScreen">
+<div class="chat-window">
+<header class="chat-header">
+<h3 id="chatPartner">Pareja</h3>
+<span id="partnerStatus" class="chat-status">Ausente</span>
+<button id="backBtn" class="back-btn">Volver</button>
+</header>
+
+
+<div class="messages" id="messages"></div>
+
+
+<div class="chat-input" id="chatInput">
+<textarea id="messageInput" placeholder="Escribe tu mensaje..."></textarea>
+<button id="sendBtn">Enviar</button>
+<button id="pauseBtn" class="pause-btn">Pausar 10 min</button>
+</div>
+</div>
+</section>
+
+
+<!-- Modal -->
 <div class="modal" id="confirmModal">
-    <div class="modal-content">
-        <p id="modalText"></p>
-        <button id="modalYes">Sí, enviar</button>
-        <button id="modalNo">Editar</button>
-    </div>
+<div class="modal-content">
+<p id="modalText"></p>
+<button id="modalYes">Sí, enviar</button>
+<button id="modalNo">Editar</button>
+</div>
 </div>
 
-<script>
-    let currentUser = null;
-    let currentChat = null;
-    let pauseActive = false;
-    let lastPause = 0;
-    const badWords = ["tonto","idiota","estupido","feo"];
 
-    // Definimos usuarios y sus contraseñas
-    const userPasswords = {
-        "Leo": "12345678",
-        "Estefi": "87654321"
-    };
-
-    // Estado de los usuarios
-    let userStates = { "Leo": "", "Estefi": "" };
-    let onlineStatus = { "Leo": false, "Estefi": false };
-    let chats = {};
-
-    // Elementos
-    const loginScreen = document.getElementById('loginScreen');
-    const userSelect = document.getElementById('userSelect');
-    const passwordInput = document.getElementById('passwordInput');
-    const loginBtn = document.getElementById('loginBtn');
-    const loginError = document.getElementById('loginError');
-    const mainScreen = document.getElementById('mainScreen');
-    const chatScreen = document.getElementById('chatScreen');
-    const chatListDiv = document.getElementById('chatList');
-    const chatPartner = document.getElementById('chatPartner');
-    const partnerStatus = document.getElementById('partnerStatus');
-    const messagesContainer = document.getElementById('messages');
-    const chatInputDiv = document.getElementById('chatInput');
-    const textarea = chatInputDiv.querySelector('textarea');
-    const sendBtn = chatInputDiv.querySelector('.send-btn');
-    const pauseBtn = chatInputDiv.querySelector('.pause-btn');
-    const userStateSelect = document.getElementById('userStateSelect');
-    const modal = document.getElementById('confirmModal');
-    const modalText = document.getElementById('modalText');
-    const modalYes = document.getElementById('modalYes');
-    const modalNo = document.getElementById('modalNo');
-    const backBtn = document.getElementById('backBtn');
-
-    // ---------- LocalStorage ----------
-    function openChat(day){
-        // Verificamos que el usuario tenga un estado seleccionado
-        if(!currentUser || !userStates[currentUser] || userStates[currentUser] === ""){
-            alert("Debe seleccionar su estado emocional antes de abrir un chat.");
-            return; // SALIMOS si no hay estado
-        }
-
-        currentChat = day;
-        mainScreen.classList.remove('active');
-        chatScreen.classList.add('active');
-
-        const pareja = (currentUser==='Leo')?'Estefi':'Leo';
-        chatPartner.textContent = pareja;
-
-        updatePartnerStatus();
-        renderMessages();
-
-        onlineStatus[currentUser] = true; // Usuario en chat = online
-        saveData();
-    }
-
-
-    function saveData() {
-        const data = { chats, userStates, onlineStatus };
-        localStorage.setItem('chatData', JSON.stringify(data));
-    }
-
-    function loadData() {
-        const saved = localStorage.getItem('chatData');
-        if(saved){
-            const data = JSON.parse(saved);
-            chats = data.chats || {};
-            userStates = data.userStates || { "Leo": "", "Estefi": "" };
-            onlineStatus = data.onlineStatus || { "Leo": false, "Estefi": false };
-        }
-    }
-    loadData();
-
-    // ---------- LOGIN ----------
-    loginBtn.onclick = ()=>{
-        const user = userSelect.value;
-        const pass = passwordInput.value.trim();
-        if(!user || !pass){
-            loginError.textContent = "Seleccione usuario y escriba la contraseña.";
-            return;
-        }
-        if(userPasswords[user] === pass){
-            currentUser = user;
-            loginScreen.style.display='none';
-            mainScreen.classList.add('active');
-            onlineStatus[currentUser] = true;
-            renderChatList();
-            saveData();
-        } else {
-            loginError.textContent = "Usuario o contraseña incorrecta.";
-        }
-    };
-
-    // Cambio de estado propio
-    userStateSelect.onchange = ()=>{
-        userStates[currentUser] = userStateSelect.value;
-        renderChatList();
-        saveData();
-    };
-
-    // ---------- CHAT LIST ----------
-    function renderChatList(){
-        chatListDiv.innerHTML = '<button class="add-chat">+</button>';
-        const days = Object.keys(chats).sort((a,b)=>new Date(b.split('-').reverse().join('-')) - new Date(a.split('-').reverse().join('-')));
-        days.forEach(day=>{
-            const btn = document.createElement('button');
-            const pareja = (currentUser==='Leo')?'Estefi':'Leo';
-            const statusText = onlineStatus[pareja] ? `En línea ${userStates[pareja]}` : `Ausente ${userStates[pareja]}`;
-            btn.textContent = `Chat día ${day} (${statusText})`;
-            btn.onclick = ()=>openChat(day);
-            chatListDiv.appendChild(btn);
-        });
-    }
-
-    chatListDiv.addEventListener('click', e=>{
-        if(e.target.classList.contains('add-chat')){
-            const today = new Date();
-            const day = String(today.getDate()).padStart(2,'0');
-            const month = String(today.getMonth()+1).padStart(2,'0');
-            const dateKey = `${day}-${month}`;
-            if(!chats[dateKey]) chats[dateKey] = [];
-            renderChatList();
-            openChat(dateKey);
-            saveData();
-        }
-    });
-
-    // ---------- OPEN CHAT ----------
-    function openChat(day){
-        // Verificamos que el usuario tenga un estado seleccionado
-        if(!userStates[currentUser] || userStates[currentUser] === ""){
-            alert("Debe seleccionar su estado emocional antes de abrir un chat.");
-            return;
-        }
-
-        currentChat = day;
-        mainScreen.classList.remove('active');
-        chatScreen.classList.add('active');
-
-        const pareja = (currentUser==='Leo')?'Estefi':'Leo';
-        chatPartner.textContent = pareja;
-
-        updatePartnerStatus();
-        renderMessages();
-
-        onlineStatus[currentUser] = true; // Usuario en chat = online
-        saveData();
-    }
-
-    function updatePartnerStatus(){
-        const pareja = (currentUser==='Leo')?'Estefi':'Leo';
-        partnerStatus.textContent = onlineStatus[pareja] ? `En línea ${userStates[pareja]}` : `Ausente ${userStates[pareja]}`;
-    }
-
-    function renderMessages(){
-        messagesContainer.innerHTML = '';
-        if(!currentChat) return;
-        chats[currentChat].forEach(msg=>{
-            const div = document.createElement('div');
-            div.classList.add('message', msg.sender===currentUser?'sent':'received');
-            div.textContent = msg.text;
-            messagesContainer.appendChild(div);
-        });
-        messagesContainer.scrollTop = messagesContainer.scrollHeight;
-    }
-
-    function containsBadWord(text){
-        return badWords.some(w=>text.toLowerCase().includes(w));
-    }
-
-    // ---------- SEND MESSAGE ----------
-    sendBtn.onclick = ()=>{
-        if(!currentChat) return alert("Seleccione un chat primero.");
-        if(pauseActive) return alert("Chat pausado. Espere a que termine la pausa.");
-        let text = textarea.value.trim();
-        if(!text) return;
-        if(containsBadWord(text)){
-            alert("Detectamos palabras fuertes. Por favor edítalo antes de enviar.");
-            return;
-        }
-        modalText.textContent="Esta página no fue diseñada para romper, sino para unir y entenderse sin dañar a nadie.\n¿Está bien redactado?";
-        modal.style.display='flex';
-    }
-
-    modalYes.onclick = ()=>{
-        chats[currentChat].push({sender: currentUser, text: textarea.value.trim(), time:new Date()});
-        textarea.value='';
-        modal.style.display='none';
-        renderMessages();
-        saveData();
-    }
-    modalNo.onclick = ()=>{ modal.style.display='none'; }
-
-    // ---------- PAUSE ----------
-    pauseBtn.onclick = ()=>{
-        const now = Date.now();
-        if(now - lastPause < 60*60*1000) return alert("Solo se puede pausar 1 vez por hora.");
-        pauseActive=true;
-        lastPause=now;
-        let remaining = 10*60;
-        pauseBtn.textContent=`Pausado 10:00`;
-        const interval = setInterval(()=>{
-            remaining--;
-            const m = Math.floor(remaining/60).toString().padStart(2,'0');
-            const s = (remaining%60).toString().padStart(2,'0');
-            pauseBtn.textContent=`Pausado ${m}:${s}`;
-            if(remaining<=0){
-                clearInterval(interval);
-                pauseActive=false;
-                pauseBtn.textContent="Pausar 10 min";
-            }
-        },1000);
-    }
-
-    // ---------- BACK ----------
-    backBtn.onclick = ()=>{
-        chatScreen.classList.remove('active');
-        mainScreen.classList.add('active');
-        onlineStatus[currentUser] = false;
-        renderChatList();
-        saveData();
-    }
-
-    // ---------- ESTADO AL CERRAR PÁGINA ----------
-    window.addEventListener('beforeunload', ()=>{
-        onlineStatus[currentUser] = false;
-        saveData();
-    });
-
-</script>
-
+<script src="app.js"></script>
 </body>
 </html>
