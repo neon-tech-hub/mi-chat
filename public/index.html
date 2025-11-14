@@ -22,6 +22,15 @@
         <h2>Ingresar</h2>
 
         <div class="field">
+            <label for="userSelect">Usuario</label>
+            <select id="userSelect">
+                <option value="">Seleccione...</option>
+                <option value="Leo">Leo</option>
+                <option value="Estefi">Estefi</option>
+            </select>
+        </div>
+
+        <div class="field">
             <label for="passwordInput">Contraseña (DNI)</label>
             <input type="password" id="passwordInput" placeholder="Ingrese DNI" />
         </div>
@@ -35,10 +44,7 @@
                 <option value="Triste 😢">Triste 😢</option>
                 <option value="Enojado 😡">Enojado 😡</option>
             </select>
-</div>
-
-
-        
+        </div>
 
         <button id="loginBtn" class="btn primary">Ingresar</button>
         <p id="loginError" class="error"></p>
@@ -47,17 +53,14 @@
     <!-- MAIN SCREEN -->
     <main class="screen" id="mainScreen">
 
-        <!-- círculo emoji -->
         <div class="emoji-container">
             <div id="emojiCircle" class="emoji-circle">?</div>
         </div>
 
-        <!-- mensajito suave -->
         <p class="emotional-warning">
             Recordá que él/ella te ama. Redactá tu mensaje con responsabilidad emocional ❤️
         </p>
 
-        <!-- lista de chats -->
         <section class="chat-list" id="chatList"></section>
     </main>
 
@@ -84,22 +87,6 @@
         </div>
     </section>
 
-    <!-- MODAL: elegir estado emocional -->
-    <div class="modal" id="stateModal">
-        <div class="modal-content">
-            <h3>Elegí tu estado emocional</h3>
-
-            <div class="state-options">
-                <button class="state-btn" data-state="Calmo 😌">Calmo 😌</button>
-                <button class="state-btn" data-state="Tenso 😬">Tenso 😬</button>
-                <button class="state-btn" data-state="Triste 😢">Triste 😢</button>
-                <button class="state-btn" data-state="Enojado 😡">Enojado 😡</button>
-            </div>
-
-            <button id="closeStateModal" class="btn">Cerrar</button>
-        </div>
-    </div>
-
     <!-- MODAL DE CONFIRMACIÓN -->
     <div class="modal" id="confirmModal">
         <div class="modal-content">
@@ -113,8 +100,7 @@
 
 </div>
 
-<script src="socket.io/socket.io.js"></script>
+<script src="/socket.io/socket.io.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
-

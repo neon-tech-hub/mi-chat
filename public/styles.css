@@ -1,321 +1,105 @@
-/* ============================
-   ESTILO GENERAL
-============================ */
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    font-family: "Inter", sans-serif;
-}
-
 body {
-    background: #0f0f0f;
-    color: #ffffff;
-    height: 100vh;
+    font-family: Arial, sans-serif;
+    margin: 0;
+    background-color: #f5f5f5;
 }
 
-/* ============================
-   CONTENEDOR APP
-============================ */
 .app-container {
-    width: 100%;
-    max-width: 480px;
+    max-width: 600px;
     margin: 0 auto;
-    height: 100vh;
-    display: flex;
-    flex-direction: column;
-    position: relative;
+    padding: 10px;
 }
 
-/* ============================
-   HEADER
-============================ */
 .app-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 15px 18px;
-    border-bottom: 1px solid #1f1f1f;
-    background: #0f0f0f;
-    position: sticky;
-    top: 0;
-    z-index: 50;
-}
-
-.brand {
-    font-size: 20px;
-    font-weight: 600;
-}
-
-.state-add-btn {
-    background: #262626;
-    padding: 6px 12px;
-    border-radius: 10px;
-    font-size: 22px;
-    color: #fff;
-    border: none;
-    cursor: pointer;
-    transition: 0.2s;
-}
-
-.state-add-btn:hover {
-    background: #3a3a3a;
-}
-
-/* ============================
-   LOGIN SCREEN
-============================ */
-.login-screen {
-    padding: 40px 25px;
-    display: flex;
-    flex-direction: column;
-    gap: 18px;
-}
-
-.login-screen h2 {
-    text-align: center;
-    font-size: 24px;
-    margin-bottom: 15px;
-}
-
-.field {
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-}
-
-.field label {
-    font-size: 14px;
-    opacity: 0.8;
-}
-
-.field input,
-.field select {
-    background: #1a1a1a;
-    border: 1px solid #333;
+    background: #4a90e2;
+    color: white;
     padding: 10px;
-    border-radius: 10px;
-    color: #fff;
-    font-size: 16px;
+    border-radius: 5px;
+}
+
+.screen {
+    display: none;
+    margin-top: 10px;
+}
+
+.screen.active {
+    display: block;
+}
+
+.login-screen .field {
+    margin-bottom: 10px;
 }
 
 .btn {
-    background: #262626;
-    padding: 10px 15px;
-    border: none;
-    color: white;
-    border-radius: 10px;
-    font-size: 16px;
+    padding: 8px 12px;
     cursor: pointer;
 }
 
 .btn.primary {
-    background: #6a5af9;
+    background-color: #4a90e2;
+    color: white;
+    border: none;
+    border-radius: 4px;
 }
 
 .error {
-    color: #ff6b6b;
-    font-size: 14px;
+    color: red;
 }
 
-/* ============================
-   MAIN SCREEN
-============================ */
-#mainScreen {
-    padding: 25px 20px;
-    display: none;
-    flex-direction: column;
-    gap: 20px;
+.chat-list button {
+    display: block;
+    margin-bottom: 5px;
+    width: 100%;
 }
 
-/* ----------------------------
-   Círculo Estilo Historia
----------------------------- */
-.emoji-container {
-    display: flex;
-    justify-content: center;
-    margin-top: 10px;
+.chat-window {
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    padding: 10px;
+    background: white;
 }
 
-.emoji-circle {
-    width: 110px;
-    height: 110px;
-    border-radius: 50%;
-    background: radial-gradient(circle at 30% 30%, #ff6ec7, #6a5af9);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 45px;
-    border: 4px solid rgba(255, 255, 255, 0.12);
-    animation: popIn 0.3s ease;
-}
-
-@keyframes popIn {
-    from { transform: scale(0.85); opacity: 0; }
-    to { transform: scale(1); opacity: 1; }
-}
-
-/* ----------------------------
-   Mensaje emocional suave
----------------------------- */
-.emotional-warning {
-    text-align: center;
-    font-size: 12px;
-    opacity: 0.4;
+.messages {
+    height: 300px;
+    overflow-y: auto;
+    border: 1px solid #ddd;
+    padding: 5px;
     margin-bottom: 10px;
 }
 
-/* ----------------------------
-   Lista de chats
----------------------------- */
-.chat-list {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-}
-
-.chat-item {
-    padding: 12px 14px;
-    background: #1a1a1a;
-    border-radius: 12px;
-    cursor: pointer;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    transition: 0.2s;
-}
-
-.chat-item:hover {
-    background: #242424;
-}
-
-.chat-item span {
-    font-size: 16px;
-}
-
-/* ============================
-   CHAT SCREEN
-============================ */
-.chat-screen {
-    display: none;
-    height: 100%;
-    flex-direction: column;
-}
-
-.chat-header {
-    padding: 12px 18px;
-    border-bottom: 1px solid #1f1f1f;
-    background: #0f0f0f;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.chat-title {
-    font-size: 18px;
-    font-weight: 600;
-}
-
-.chat-status {
-    font-size: 13px;
-    opacity: 0.6;
-}
-
-/* mensajes */
-.messages {
-    flex: 1;
-    padding: 15px;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    overflow-y: auto;
-}
-
-.message {
-    max-width: 75%;
-    padding: 10px 14px;
-    border-radius: 14px;
-    background: #1b1b1b;
-    line-height: 1.3;
-    font-size: 15px;
-}
-
-.message.me {
-    background: #6a5af9;
-    align-self: flex-end;
-}
-
-.message.other {
-    background: #1f1f1f;
-    align-self: flex-start;
-}
-
-/* input */
-.chat-input {
-    display: flex;
-    flex-direction: column;
-    padding: 12px;
-    background: #0f0f0f;
-    border-top: 1px solid #1f1f1f;
-}
-
-.chat-input textarea {
-    background: #1a1a1a;
-    border: none;
-    resize: none;
-    outline: none;
-    padding: 12px;
-    height: 70px;
-    border-radius: 12px;
+.message.sent {
+    text-align: right;
     color: white;
+    background-color: #4a90e2;
+    padding: 5px;
+    margin: 2px;
+    border-radius: 4px;
 }
 
-.input-actions {
-    display: flex;
-    justify-content: space-between;
-    margin-top: 8px;
+.message.received {
+    text-align: left;
+    color: black;
+    background-color: #e1e1e1;
+    padding: 5px;
+    margin: 2px;
+    border-radius: 4px;
 }
 
-/* ============================
-   MODALES
-============================ */
 .modal {
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.65);
     display: none;
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0,0,0,0.5);
     justify-content: center;
     align-items: center;
-    padding: 25px;
-    z-index: 1000;
 }
 
 .modal-content {
-    background: #1a1a1a;
-    padding: 25px;
-    border-radius: 14px;
-    width: 90%;
-    max-width: 350px;
-    text-align: center;
-}
-
-.state-options {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    margin: 20px 0;
-}
-
-.state-btn {
-    background: #262626;
-    padding: 12px;
-    border-radius: 10px;
-    border: none;
-    color: white;
-    font-size: 16px;
-    cursor: pointer;
-}
-
-.state-btn:hover {
-    background: #333;
+    background: white;
+    padding: 20px;
+    border-radius: 5px;
 }
