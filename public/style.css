@@ -53,3 +53,4 @@ header{background:#ffd6e8;padding:15px;text-align:center;font-size:1.5em;font-we
 @media(max-width:480px){
 .chat-list{max-height:25%}
 .message{font-size:.9em;padding:8px 12px}
+}
