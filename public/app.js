@@ -8,7 +8,7 @@ if (!currentUser) {
 
     const socket = io?.() ?? { on: () => {}, emit: () => {} };
 
-    let currentUser = null;
+    currentUser = sessionStorage.getItem("currentUser");
     let currentChat = null;
     let pauseActive = false;
     let lastPause = 0;
