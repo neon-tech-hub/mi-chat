@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Para Conectar - Login</title>
+    <link rel="stylesheet" href="login.css">
+</head>
+<body>
+
+<div id="login-container">
+    <h1 class="title">Chat Para Conectar</h1>
+
+    <div class="input-group">
+        <input type="text" id="userSelect" placeholder="Usuario">
+    </div>
+
+    <div class="input-group">
+        <input type="password" id="passwordInput" placeholder="Contraseña">
+    </div>
+
+    <button id="loginBtn">Ingresar</button>
+
+    <p id="loginError"></p>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script src="login.js"></script>
+
+</body>
+</html>
