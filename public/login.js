@@ -1,20 +1,22 @@
-const socket = io();
-
-const PASSWORDS = { Leo: "12345678", Estefi: "87654321" };
+// Usuarios y contraseñas de ejemplo
+const PASSWORDS = {
+    Leo: "12345678",
+    Estefi: "87654321"
+};
 
 const loginBtn = document.getElementById("loginBtn");
+const loginUser = document.getElementById("loginUser");
+const loginPassword = document.getElementById("loginPassword");
 const loginError = document.getElementById("loginError");
-const userInput = document.getElementById("userSelect");
-const passInput = document.getElementById("passwordInput");
 
 loginBtn.addEventListener("click", () => {
-    const user = userInput.value.trim();
-    const pass = passInput.value.trim();
+    const user = loginUser.value.trim();
+    const pass = loginPassword.value.trim();
 
     loginError.textContent = "";
 
     if (!user || !pass) {
-        loginError.textContent = "Complete ambos campos.";
+        loginError.textContent = "Ingrese usuario y contraseña.";
         return;
     }
 
@@ -23,12 +25,7 @@ loginBtn.addEventListener("click", () => {
         return;
     }
 
-    // Guardamos usuario en localStorage para usarlo luego en app principal
+    // ✅ Guardamos usuario en localStorage y redirigimos a la app
     localStorage.setItem("currentUser", user);
-
-    // Avisamos estado online al servidor
-    socket.emit("updateStatus", { user, online: true });
-
-    // Redirigir al chat real (main)
     window.location.href = "/index.html";
 });
