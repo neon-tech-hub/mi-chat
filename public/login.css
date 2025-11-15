@@ -1,33 +1,95 @@
-body {
+/* RESET & BASE */
+* {
     margin: 0;
     padding: 0;
+    box-sizing: border-box;
     font-family: 'Inter', sans-serif;
+}
+
+body {
     height: 100vh;
     display: flex;
     justify-content: center;
     align-items: center;
+    background: #111; /* oscuro */
     position: relative;
-    background: url('https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=1400&q=80') no-repeat center center fixed;
-    background-size: cover;
 }
 
-.login-background {
-    position: absolute;
-    inset: 0;
-    background: rgba(0,0,0,0.6); /* capa opaca tipo Instagram */
-    z-index: 1;
-}
-
+/* Container del login */
 .login-container {
-    position: relative;
-    z-index: 2;
-    background: rgba(255,255,255,0.95); /* card ligeramente translúcida */
+    background: #1c1c1c; /* card oscuro */
     padding: 40px 30px;
-    border-radius: 12px;
-    box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+    border-radius: 16px;
     width: 100%;
     max-width: 350px;
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 25px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.5);
+}
+
+/* Título */
+.title {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #fff;
+    text-align: center;
+    background: linear-gradient(45deg, #feda75, #fa7e1e, #d62976, #962fbf, #4f5bd5);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+/* Campos */
+.field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.field label {
+    font-size: 0.9rem;
+    color: #aaa;
+}
+
+.field input {
+    padding: 12px 15px;
+    border-radius: 12px;
+    border: 1px solid #333;
+    background: #222;
+    color: #fff;
+    font-size: 1rem;
+    transition: 0.2s;
+}
+
+.field input:focus {
+    outline: none;
+    border: 1px solid #feda75; /* color de Instagram al enfocar */
+}
+
+/* Botón */
+.btn {
+    padding: 12px 0;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 1rem;
+    transition: 0.2s;
+}
+
+.btn.primary {
+    background: linear-gradient(45deg, #feda75, #fa7e1e, #d62976, #962fbf, #4f5bd5);
+    color: #fff;
+}
+
+.btn.primary:hover {
+    filter: brightness(1.1);
+}
+
+/* Mensaje de error */
+.error {
+    font-size: 0.9rem;
+    color: #ed4956;
+    text-align: center;
+    min-height: 18px;
 }
