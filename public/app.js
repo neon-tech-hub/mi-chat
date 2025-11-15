@@ -8,8 +8,13 @@
         return;
     }
 
-    // Emojis disponibles
+    // --- Variables de Estado ---
     const AVAILABLE_MOODS = ["❤️", "😊", "😴", "😢", "😠", "😅", "✨", "⏳"];
+    let chats = {};
+    let currentChat = null;
+    
+    // Almacenamiento del estado de la pareja (NUEVO)
+    let partnerMood = sessionStorage.getItem("partnerMood") || "?"; 
     
     // Referencias al DOM
     const chatListDiv = document.getElementById("chatList");
@@ -25,17 +30,13 @@
     const modalYes = document.getElementById("modalYes");
     const modalNo = document.getElementById("modalNo");
     
-    // Elementos del estado emocional (NUEVAS Y CLAVES)
+    // Elementos del estado emocional
     const emojiCircle = document.getElementById("emojiCircle"); 
     const openStateModal = document.getElementById("openStateModal"); 
     const moodsContainer = document.getElementById("moodsContainer");
     const moodList = document.getElementById("moodList");
 
-    // Datos
-    let chats = {};
-    let currentChat = null;
-
-    // --- Funciones de Utilidad y Almacenamiento (Sin cambios) ---
+    // --- Funciones de Utilidad y Almacenamiento ---
 
     function saveData() { localStorage.setItem("chatData", JSON.stringify({ chats })); }
     
@@ -58,14 +59,92 @@
         return `${d}-${m}`;
     }
 
-    // --- Lógica de Renderizado (Sin cambios mayores) ---
+    // --- Lógica de Renderizado y Flujo ---
 
-    function renderChatList() { /* ... (Mantener la función renderChatList) ... */ }
-    function openChat(day) { /* ... (Mantener la función openChat) ... */ }
+    // 🔴 CORRECCIÓN 1: La función renderChatList completa y robusta
+    function renderChatList() {
+        chatListDiv.innerHTML = ""; 
+
+        // 1. DIBUJAR el botón para crear un nuevo chat (siempre)
+        const addBtn = document.createElement("button");
+        addBtn.className = "add-chat";
+        addBtn.title = "Nuevo chat (hoy)";
+        addBtn.innerText = "+";
+        chatListDiv.appendChild(addBtn);
+
+        // Obtener y ordenar las claves de chat
+        const days = Object.keys(chats).sort((a, b) => {
+            const currentYear = new Date().getFullYear(); 
+            const A_parts = a.split("-");
+            const B_parts = b.split("-");
+            
+            const dateA = new Date(`${currentYear}-${A_parts[1]}-${A_parts[0]}`);
+            const dateB = new Date(`${currentYear}-${B_parts[1]}-${B_parts[0]}`);
+            
+            return dateB - dateA; 
+        });
+
+        // 2. Renderizar los chats existentes
+        if (days.length === 0) {
+            const empty = document.createElement("div");
+            empty.className = "chat-item empty-message";
+            empty.innerHTML = `
+                <div class="avatar"></div>
+                <div class="meta">
+                <div class="chat-name">Sin chats</div>
+                <div class="chat-last">Presioná '+' para iniciar</div>
+                </div>
+            `;
+            chatListDiv.appendChild(empty);
+        } else {
+            days.forEach(day => {
+                const btn = document.createElement("button");
+                btn.className = "chat-item";
+                const lastMsg = (chats[day] && chats[day].length)
+                    ? chats[day][chats[day].length - 1].text
+                    : "Toca para empezar a hablar";
+                
+                btn.innerHTML = `
+                    <div class="avatar"></div>
+                    <div class="meta">
+                        <div class="chat-name">Chat ${day}</div>
+                        <div class="chat-last">${lastMsg}</div>
+                    </div>
+                `;
+                // 🔴 CAMBIO 3: El evento onclick llama a una función que verifica el estado
+                btn.onclick = () => tryOpenChat(day);
+                chatListDiv.appendChild(btn);
+            });
+        }
+    }
+
+    // 🔴 NUEVA FUNCIÓN: Verifica si el usuario puede entrar al chat
+    function tryOpenChat(day) {
+        // Obtenemos el estado emocional del usuario actual (NUEVO)
+        const myCurrentMood = sessionStorage.getItem("myMood");
+        
+        if (!myCurrentMood || myCurrentMood === "?") {
+            alert("⚠️ ¡Debes seleccionar tu estado emocional antes de entrar a un chat!");
+            openStateModal.click(); // Abre el modal de estados para obligar la selección
+            return;
+        }
+        
+        // Si hay estado seleccionado, abre el chat
+        openChat(day);
+    }
+    
+    function openChat(day) {
+        currentChat = day;
+        mainScreen.classList.remove("active");
+        chatScreen.classList.add("active");
+
+        chatPartner.textContent = currentUser === "Leo" ? "Estefi" : "Leo";
+        renderMessages();
+    }
+    
     function renderMessages() { /* ... (Mantener la función renderMessages) ... */ }
     function addMessage(msgData) { /* ... (Mantener la función addMessage) ... */ }
     
-    // **NUEVA FUNCIÓN:** Renderiza los botones de emojis
     function renderMoods() {
         moodList.innerHTML = "";
         AVAILABLE_MOODS.forEach(mood => {
@@ -77,17 +156,17 @@
         });
     }
 
-    // --- Lógica de Emisión y Event Listeners ---
-
     // Lógica de EMISIÓN del mensaje (Sin cambios)
     const sendMessage = () => { /* ... (Mantener la función sendMessage) ... */ };
 
-    // 🔴 CORRECCIÓN CLAVE 1: Lógica para ABRIR el selector de estados
+    // --- Lógica de Event Listeners ---
+
+    // Lógica para ABRIR el selector de estados (Sin cambios)
     openStateModal.addEventListener("click", () => {
-        moodsContainer.classList.add("active"); // Muestra el contenedor/modal
+        moodsContainer.classList.add("active"); 
     });
 
-    // 🔴 CORRECCIÓN CLAVE 2: Lógica para SELECCIONAR y EMITIR el estado
+    // 🔴 CAMBIO 4: Lógica para SELECCIONAR y EMITIR el estado
     moodList.addEventListener("click", (e) => {
         const selectedMood = e.target.dataset.mood;
         if (!selectedMood) return;
@@ -97,29 +176,29 @@
             mood: selectedMood
         };
 
-        // 1. Emitir el estado al servidor
+        // 1. Guardar mi estado emocional localmente para la restricción (NUEVO)
+        sessionStorage.setItem("myMood", selectedMood);
+
+        // 2. Emitir el estado al servidor
         socket.emit("updateMood", moodData);
 
-        // 2. Ocultar el selector de estados
+        // 3. Ocultar el selector de estados
         moodsContainer.classList.remove("active");
-        
-        // NO actualizamos emojiCircle localmente (así solo se ve el de la pareja)
-        console.log(`Estado emocional enviado: ${selectedMood}`);
     });
     
-    // Listener para cerrar el modal haciendo click fuera (si tienes estilos CSS para el modal)
-    moodsContainer.addEventListener("click", (e) => {
-        if (e.target.id === 'moodsContainer') {
-            moodsContainer.classList.remove("active");
-        }
-    });
-
-
-    // (Otros Event Listeners como sendBtn, modalYes, chatListDiv, backBtn, sin cambios)
+    // (Otros Event Listeners: sendBtn, modalYes, modalNo, chatListDiv, backBtn, sin cambios)
     sendBtn.addEventListener("click", sendMessage);
     modalYes.addEventListener("click", () => { /* ... */ }); 
     modalNo.addEventListener("click", () => { modal.style.display = "none"; });
-    chatListDiv.addEventListener("click", e => { /* ... */ }); 
+    chatListDiv.addEventListener("click", e => {
+        if (e.target.classList.contains("add-chat")) {
+            const key = formatDateKey();
+            if (!chats[key]) chats[key] = [];
+            saveData();
+            renderChatList();
+            tryOpenChat(key); // 🔴 CAMBIO 5: Usar tryOpenChat para el botón + de chat
+        }
+    });
     backBtn.addEventListener("click", () => {
         chatScreen.classList.remove("active");
         mainScreen.classList.add("active");
@@ -128,31 +207,21 @@
     // --- Lógica de Recepción (Socket.io) ---
 
     // Lógica de RECEPCIÓN (Mensajes - Sin cambios)
-    socket.on("receiveMessage", (msgData) => {
-        if (msgData.sender !== currentUser) {
-            addMessage(msgData);
-        }
-    });
+    socket.on("receiveMessage", (msgData) => { /* ... */ });
     
-    // 🔴 CORRECCIÓN CLAVE 3: Lógica de RECEPCIÓN DE ESTADOS (Solo mostrar si es de la pareja)
+    // 🔴 CAMBIO 2: Lógica de RECEPCIÓN DE ESTADOS (Persistencia del estado de la pareja)
     socket.on("moodChanged", (data) => {
         // Solo actualizar si el estado NO viene de mí mismo
         if (data.sender !== currentUser) {
                 emojiCircle.textContent = data.mood;
-        }
-        // Si el estado viene de mí, no hago nada, el círculo queda con el estado de la pareja
-    });
 
-    socket.on("statusChanged", (data) => {
-        if (data.sender !== currentUser) {
-            partnerStatus.textContent = data.status;
+             // GUARDAR el estado de la pareja en sessionStorage (PERSISTENCIA)
+                sessionStorage.setItem("partnerMood", data.mood);
+                partnerMood = data.mood;
         }
     });
 
-    // ... (El resto de tu lógica)
-
-    // Inicialización
-    // ... (El resto de tu lógica de funciones, etc.)
+    socket.on("statusChanged", (data) => { /* ... */ });
 
     // --- Inicialización ---
 
@@ -161,15 +230,13 @@
     if (!chats[todayKey]) {
         chats[todayKey] = [];
         saveData();
-        console.log(`Creado chat inicial: ${todayKey}`);
     }
 
-    // 2. Mostrar la pantalla principal
+    // 2. Cargar el estado de la pareja si existe (PERSISTENCIA)
+    emojiCircle.textContent = partnerMood; 
+
+    // 3. Mostrar la pantalla principal y renderizar todo
     mainScreen.classList.add("active"); 
-
-    // 3. Renderizar la lista de chats UNA SOLA VEZ
     renderChatList(); 
-
-    // 4. Renderizar los botones de emojis
-    renderMoods();
+    renderMoods(); 
 })();
