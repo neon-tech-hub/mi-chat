@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>Chat para Conectar</title>
 
+    <!-- Tipografía (Inter) -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+
     <link rel="stylesheet" href="styles.css" />
     <link rel="icon" href="/favicon.ico" />
 </head>
@@ -13,17 +16,20 @@
 <div class="app-container">
 
     <header class="app-header">
-        <div class="brand">Chat para Conectar</div>
-        <button id="openStateModal" class="state-add-btn">+</button>
+        <div class="brand">
+            <div class="ig-logo-gradient"></div>
+            <div class="brand-text">Chat para Conectar</div>
+        </div>
+        <button id="openStateModal" class="state-add-btn" aria-label="Agregar estado">+</button>
     </header>
 
     <!-- LOGIN -->
-    <section class="login-screen" id="loginScreen" aria-label="Login">
+    <section class="login-screen screen" id="loginScreen" aria-label="Login">
         <h2>Ingresar</h2>
 
         <div class="field">
             <label for="userSelect">Usuario</label>
-            <select id="userSelect">
+            <select id="userSelect" aria-label="Seleccionar usuario">
                 <option value="">Seleccione...</option>
                 <option value="Leo">Leo</option>
                 <option value="Estefi">Estefi</option>
@@ -47,11 +53,11 @@
         </div>
 
         <button id="loginBtn" class="btn primary">Ingresar</button>
-        <p id="loginError" class="error"></p>
+        <p id="loginError" class="error" role="alert"></p>
     </section>
 
     <!-- MAIN SCREEN -->
-    <main class="screen" id="mainScreen">
+    <main class="screen" id="mainScreen" aria-label="Pantalla principal">
 
         <!-- círculo emoji -->
         <div class="emoji-container">
@@ -64,36 +70,45 @@
         </p>
 
         <!-- lista de chats -->
-        <section class="chat-list" id="chatList"></section>
+        <section class="chat-list" id="chatList" aria-label="Lista de chats"></section>
     </main>
 
     <!-- CHAT SCREEN -->
-    <section class="screen chat-screen" id="chatScreen">
+    <section class="screen chat-screen" id="chatScreen" aria-label="Chat">
         <div class="chat-window">
             <header class="chat-header">
-                <div id="chatPartner" class="chat-title">Pareja</div>
-                <div class="chat-meta">
-                    <span id="partnerStatus" class="chat-status">Ausente</span>
+                <div class="chat-left">
+                    <div id="chatAvatar" class="chat-avatar"></div>
+                    <div>
+                        <div id="chatPartner" class="chat-title">Pareja</div>
+                        <div id="partnerStatus" class="chat-status">Ausente</div>
+                    </div>
+                </div>
+                <div class="chat-actions">
                     <button id="backBtn" class="btn small">Volver</button>
                 </div>
             </header>
 
-            <div class="messages" id="messages"></div>
+            <div class="messages" id="messages" aria-live="polite"></div>
 
             <div class="chat-input" id="chatInput">
-                <textarea id="messageInput" placeholder="Escribe tu mensaje..." rows="2"></textarea>
+                <textarea id="messageInput" placeholder="Escribe tu mensaje..." rows="2" aria-label="Escribe tu mensaje"></textarea>
                 <div class="input-actions">
-                    <button id="sendBtn" class="btn primary">Enviar</button>
-                    <button id="pauseBtn" class="btn">Pausar 10 min</button>
+                    <div class="left-actions">
+                        <button id="pauseBtn" class="btn">Pausar 10 min</button>
+                    </div>
+                    <div class="right-actions">
+                        <button id="sendBtn" class="btn primary">Enviar</button>
+                    </div>
                 </div>
             </div>
         </div>
     </section>
 
     <!-- MODAL DE CONFIRMACIÓN -->
-    <div class="modal" id="confirmModal">
+    <div class="modal" id="confirmModal" role="dialog" aria-modal="true" aria-hidden="true">
         <div class="modal-content">
-            <p id="modalText"></p>
+            <p id="modalText">¿Está bien redactado tu mensaje?</p>
             <div class="modal-actions">
                 <button id="modalYes" class="btn primary">Sí, enviar</button>
                 <button id="modalNo" class="btn">Editar</button>
