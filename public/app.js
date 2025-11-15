@@ -11,13 +11,12 @@
         return;
     }
 
-    // ... (El resto de tus referencias al DOM y datos, sin cambios)
-    
     // Referencias al DOM
     const chatListDiv = document.getElementById("chatList");
     const mainScreen = document.getElementById("mainScreen");
     const chatScreen = document.getElementById("chatScreen");
-    // ... (otras referencias DOM)
+    const chatPartner = document.getElementById("chatPartner"); // Se agrega por si se necesita
+    const partnerStatus = document.getElementById("partnerStatus"); // Se agrega por si se necesita
     const messagesContainer = document.getElementById("messages");
     const messageInput = document.getElementById("messageInput");
     const sendBtn = document.getElementById("sendBtn");
@@ -26,7 +25,7 @@
     const modalYes = document.getElementById("modalYes");
     const modalNo = document.getElementById("modalNo");
     const emojiCircle = document.getElementById("emojiCircle");
-    const openStateModal = document.getElementById("openStateModal");
+    const openStateModal = document.getElementById("openStateModal"); // ¡ESTE ES EL BOTÓN +!
 
 
     // Datos (La lógica de guardado local se deja para historial, pero el envío es por socket)
@@ -38,7 +37,6 @@
         localStorage.setItem("chatData", JSON.stringify({ chats }));
     }
     
-    // ... (loadData, formatDateKey, renderChatList, openChat, renderMessages, sin cambios)
     function loadData() {
         try {
             const saved = localStorage.getItem("chatData");
@@ -147,7 +145,7 @@
         renderChatList();
     }
 
-    // 2. ✅ CORRECCIÓN 2: Lógica de EMISIÓN (Reemplaza el guardado local por el envío al servidor)
+    // Lógica de EMISIÓN del mensaje
     const sendMessage = () => {
         if (!currentChat) {
             alert("Seleccioná un chat primero.");
@@ -163,14 +161,31 @@
             time: new Date().toISOString()
         };
 
-        // Emitir el mensaje al servidor, que lo reenviará a todos
         socket.emit("sendMessage", msgData); 
-
-        // Añadir el mensaje localmente (ya que socket.io no reenvía al emisor por defecto)
-        addMessage(msgData);
+        addMessage(msgData); // Añadir localmente
 
         messageInput.value = "";
     };
+
+    // 🔴 NUEVA LÍNEA CLAVE: Event Listener para el botón de estado emocional (+)
+    openStateModal.addEventListener("click", () => {
+        const newMood = prompt("Escribe tu nuevo estado emocional (ej: 😊, 😢, ❤️, Ausente):");
+        
+        if (newMood && newMood.trim() !== "") {
+            const moodData = {
+                sender: currentUser,
+                mood: newMood.trim()
+            };
+
+            // 1. Emitir el estado al servidor
+            socket.emit("updateMood", moodData);
+            
+            // 2. Actualizar el estado localmente para el emisor
+            emojiCircle.textContent = newMood.trim();
+
+            console.log(`Estado emocional enviado: ${newMood}`);
+        }
+    });
 
     // Enviar mensaje (modificado para usar la función sendMessage)
     sendBtn.addEventListener("click", sendMessage);
@@ -189,10 +204,7 @@
             time: new Date().toISOString()
         };
 
-        // Emitir el mensaje al servidor
         socket.emit("sendMessage", msgData);
-
-        // Añadir el mensaje localmente
         addMessage(msgData);
 
         messageInput.value = "";
@@ -220,28 +232,30 @@
         mainScreen.classList.add("active");
     });
     
-    // ✅ CORRECCIÓN 3: Lógica de RECEPCIÓN
-    // Escuchar el evento 'receiveMessage' que viene del servidor
+    // Lógica de RECEPCIÓN (Mensajes)
     socket.on("receiveMessage", (msgData) => {
-        // Ignorar el mensaje si lo envié yo mismo, ya lo agregué con addMessage()
         if (msgData.sender !== currentUser) {
-                addMessage(msgData);
+            addMessage(msgData);
         }
     });
     
-    // ✅ CORRECCIÓN 4: RECEPCIÓN DE ESTADOS (Mood y Status)
+    // Lógica de RECEPCIÓN DE ESTADOS
     socket.on("moodChanged", (data) => {
-        // Asegúrate de que tienes un elemento para el emoji: emojiCircle
-        emojiCircle.textContent = data.mood;
+        // Si el estado viene de la otra persona, actualiza el círculo del emoji
+        if (data.sender !== currentUser) {
+                emojiCircle.textContent = data.mood;
+        }
     });
 
     socket.on("statusChanged", (data) => {
-        // Asegúrate de que tienes un elemento para el estado: partnerStatus
-        partnerStatus.textContent = data.status;
+        // Esta lógica maneja el estado de conexión (Ausente, Pausado, etc.)
+        // Se asume que el elemento partnerStatus está disponible
+        if (data.sender !== currentUser) {
+            partnerStatus.textContent = data.status;
+        }
     });
 
     // Inicialización
-    // Asegúrate de que la pantalla principal sea visible al inicio
     mainScreen.classList.add("active"); 
     renderChatList();
 })();
