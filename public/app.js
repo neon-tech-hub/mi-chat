@@ -7,14 +7,29 @@
         window.location.href = "login.html";
         return;
     }
+    // 🔴 AÑADIR ESTA LÍNEA para que el servidor sepa quién eres:
+    socket.emit('registerUser', currentUser);
 
     // --- Variables de Estado ---
     const AVAILABLE_MOODS = ["❤️", "😊", "😴", "😢", "😠", "😅", "✨", "⏳"];
-    // 🔴 NUEVA VARIABLE: Lista de palabras a prohibir (Insultos)
+    
+    // 🔴 NUEVA VARIABLE: Mapeo de Emojis a Nombres en español
+    const MOOD_NAMES = {
+        "❤️": "enamorado",
+        "😊": "feliz",
+        "😴": "cansado",
+        "😢": "triste",
+        "😠": "enojado",
+        "😅": "ansioso",
+        "✨": "inspirado",
+        "⏳": "ocupado",
+        "?": "indefinido" // Para el estado por defecto
+    };
+
     const PROHIBITED_WORDS = [
         "tonto", "estúpido", "idiota", "imbécil", "boludo", "pelotudo", 
         "tarado", "mierda", "puto", "gil", "cabrón", "zorra", "pendejo",
-        "carajo", "caca", "vaca", "bruto", "imbecil" // Puedes expandir esta lista
+        "carajo", "caca", "vaca", "bruto", "imbecil" 
     ];
     let chats = {};
     let currentChat = null;
@@ -65,11 +80,10 @@
         return `${d}-${m}`;
     }
 
-    // 🔴 NUEVA FUNCIÓN: Verifica si el texto contiene palabras prohibidas
+    // Verifica si el texto contiene palabras prohibidas
     function containsInsult(text) {
         const lowerCaseText = text.toLowerCase();
         
-        // Comprueba si alguna palabra prohibida está incluida en el texto
         const foundInsult = PROHIBITED_WORDS.some(word => lowerCaseText.includes(word));
         
         return foundInsult;
@@ -309,19 +323,39 @@
         }
     });
     
-    // Lógica de RECEPCIÓN DE ESTADOS (Persistencia del estado de la pareja)
+    // 🔴 MODIFICADO: Lógica de RECEPCIÓN DE ESTADOS (Muestra el nombre del estado)
     socket.on("moodChanged", (data) => {
         if (data.sender !== currentUser) {
-            emojiCircle.textContent = data.mood;
-            sessionStorage.setItem("partnerMood", data.mood);
-            partnerMood = data.mood;
+            const moodEmoji = data.mood;
+            const moodName = MOOD_NAMES[moodEmoji] || "desconocido";
+
+            // 1. Mostrar el nombre del estado seleccionado
+            emojiCircle.textContent = moodName;
+
+            // 2. GUARDAR el estado para persistencia
+            sessionStorage.setItem("partnerMood", moodEmoji); 
+            partnerMood = moodEmoji;
         }
     });
 
-    // Lógica de RECEPCIÓN DE ESTADOS (Status, por si existe el elemento)
+    // 🔴 MODIFICADO: Lógica de RECEPCIÓN DE ESTADO DE CONEXIÓN
     socket.on("statusChanged", (data) => { 
         if (data.sender !== currentUser && partnerStatus) {
-            partnerStatus.textContent = data.status;
+            // Asumimos que data.status viene como 'online' o 'offline' del servidor
+            const isOnline = data.status === 'online'; 
+            
+            // 1. Mostrar el estado de conexión: 'Activo' o 'Ausente'
+            partnerStatus.textContent = isOnline ? 'Activo' : 'Ausente';
+            
+            // 2. Lógica del Emoji por Defecto (SOLO si no hay un mood seleccionado)
+            const currentPartnerMood = sessionStorage.getItem("partnerMood") || "?";
+            
+            // Si el estado guardado es '?' (no ha seleccionado un mood)
+            if (currentPartnerMood === "?") {
+                const defaultEmoji = isOnline ? '❓' : '😴'; // ? para activo, 😴 para ausente
+                emojiCircle.textContent = defaultEmoji;
+            } 
+            // Si ya seleccionó un mood, 'moodChanged' ya se encargó de mostrar el texto.
         }
     });
 
@@ -335,7 +369,14 @@
     }
 
     // 2. Cargar el estado de la pareja si existe (PERSISTENCIA)
-    emojiCircle.textContent = partnerMood; 
+    const initialPartnerMood = sessionStorage.getItem("partnerMood");
+    if (initialPartnerMood && MOOD_NAMES[initialPartnerMood] && initialPartnerMood !== '?') {
+        // Si hay un estado guardado que NO es '?', mostramos el nombre
+        emojiCircle.textContent = MOOD_NAMES[initialPartnerMood];
+    } else {
+        // Si no hay estado o es '?', mostramos el '?' (servirá como default inicial)
+        emojiCircle.textContent = '?'; 
+    }
 
     // 3. Mostrar la pantalla principal y renderizar todo
     mainScreen.classList.add("active"); 
