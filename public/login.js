@@ -25,7 +25,9 @@ loginBtn.addEventListener("click", () => {
         return;
     }
 
-    // ✅ Guardamos usuario en localStorage y redirigimos a la app
-    localStorage.setItem("currentUser", user);
+    // Guardamos usuario solo temporalmente en sessionStorage si lo deseamos
+    sessionStorage.setItem("currentUser", user);
+
+    // Redirigir al index.html
     window.location.href = "/index.html";
 });
