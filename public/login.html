@@ -6,27 +6,123 @@
     <title>Chat Para Conectar - Login</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="login.css">
+    <style>
+        /* Estilo base */
+        * { margin:0; padding:0; box-sizing:border-box; font-family:"Inter", sans-serif; }
+        body {
+            height:100vh;
+            display:flex;
+            justify-content:center;
+            align-items:center;
+            background:#0f0f0f;
+            color:#fff;
+        }
+
+        .login-container {
+            background:#111;
+            padding:40px 30px;
+            border-radius:12px;
+            width:90%;
+            max-width:350px;
+            display:flex;
+            flex-direction:column;
+            gap:20px;
+            box-shadow:0 0 20px rgba(0,0,0,0.7);
+        }
+
+        .title {
+            font-size:2rem;
+            font-weight:700;
+            text-align:center;
+            background: linear-gradient(45deg, #feda75, #fa7e1e, #d62976, #962fbf, #4f5bd5);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom:20px;
+        }
+
+        input {
+            padding:12px 15px;
+            border-radius:8px;
+            border:1px solid #333;
+            background:#1a1a1a;
+            color:#fff;
+            font-size:1rem;
+        }
+
+        input::placeholder { color:#777; }
+
+        button {
+            padding:12px;
+            border:none;
+            border-radius:8px;
+            cursor:pointer;
+            font-weight:600;
+            font-size:1rem;
+            background: linear-gradient(45deg, #feda75, #fa7e1e, #d62976, #962fbf, #4f5bd5);
+            color:#fff;
+            transition:0.2s;
+        }
+
+        button:hover {
+            opacity:0.85;
+        }
+
+        .error {
+            color:#ff7070;
+            font-size:0.9rem;
+            text-align:center;
+        }
+    </style>
 </head>
 <body>
-    <div class="login-container">
-        <h1 class="title">Chat Para Conectar</h1>
 
-        <div class="field">
-            <label for="loginUser">Usuario</label>
-            <input type="text" id="loginUser" placeholder="Ingrese su usuario">
-        </div>
+<div class="login-container">
+    <h1 class="title">Chat Para Conectar</h1>
+    <input id="loginUser" type="text" placeholder="Usuario">
+    <input id="loginPassword" type="password" placeholder="Contraseña">
+    <button id="loginBtn">Ingresar</button>
+    <p id="loginError" class="error"></p>
+</div>
 
-        <div class="field">
-            <label for="loginPassword">Contraseña</label>
-            <input type="password" id="loginPassword" placeholder="Ingrese su contraseña">
-        </div>
+<script>
+    const PASSWORDS = { Leo:"12345678", Estefi:"87654321" };
 
-        <button id="loginBtn" class="btn primary">Ingresar</button>
+    const loginBtn = document.getElementById("loginBtn");
+    const loginUser = document.getElementById("loginUser");
+    const loginPassword = document.getElementById("loginPassword");
+    const loginError = document.getElementById("loginError");
 
-        <p id="loginError" class="error"></p>
-    </div>
+    loginBtn.addEventListener("click", () => {
+        const user = loginUser.value.trim();
+        const pass = loginPassword.value.trim();
 
-    <script src="login.js"></script>
+        loginError.textContent = "";
+
+        if(!user || !pass){
+            loginError.textContent = "Ingrese usuario y contraseña.";
+            return;
+        }
+
+        if(!PASSWORDS[user] || PASSWORDS[user] !== pass){
+            loginError.textContent = "Usuario o contraseña incorrecta.";
+            return;
+        }
+
+        // Guardamos solo temporalmente en sessionStorage
+        sessionStorage.setItem("currentUser", user);
+
+        // Redirige al index principal
+        window.location.href = "index.html";
+    });
+
+    // Permite presionar Enter para enviar
+    [loginUser, loginPassword].forEach(input => {
+        input.addEventListener("keypress", e => {
+            if(e.key === "Enter") loginBtn.click();
+        });
+    });
+</script>
+
 </body>
 </html>
 
