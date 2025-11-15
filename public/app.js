@@ -120,11 +120,11 @@ if (!currentUser) {
             // resumen último mensaje si existe
             const lastMsg = (chats[day] && chats[day].length) ? chats[day][chats[day].length - 1].text : "Sin mensajes";
             btn.innerHTML = `<div class="avatar" aria-hidden="true"></div>
-                             <div class="meta">
-                                <div class="chat-name">Chat ${day}</div>
-                                <div class="chat-last">${lastMsg}</div>
-                             </div>
-                             <div style="font-size:.82rem; color: #bdbdbd; margin-left:8px;">${statusText}</div>`;
+                                <div class="meta">
+                                    <div class="chat-name">Chat ${day}</div>
+                                    <div class="chat-last">${lastMsg}</div>
+                                </div>
+                                <div style="font-size:.82rem; color: #bdbdbd; margin-left:8px;">${statusText}</div>`;
 
             btn.onclick = () => openChat(day);
             chatListDiv.appendChild(btn);
