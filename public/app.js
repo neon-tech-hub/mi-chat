@@ -111,25 +111,23 @@
                         <div class="chat-last">${lastMsg}</div>
                     </div>
                 `;
-                // 🔴 CAMBIO 3: El evento onclick llama a una función que verifica el estado
+                // El evento onclick llama a una función que verifica el estado
                 btn.onclick = () => tryOpenChat(day);
                 chatListDiv.appendChild(btn);
             });
         }
     }
 
-    // 🔴 NUEVA FUNCIÓN: Verifica si el usuario puede entrar al chat
+    // Función: Verifica si el usuario puede entrar al chat
     function tryOpenChat(day) {
-        // Obtenemos el estado emocional del usuario actual (NUEVO)
         const myCurrentMood = sessionStorage.getItem("myMood");
         
         if (!myCurrentMood || myCurrentMood === "?") {
             alert("⚠️ ¡Debes seleccionar tu estado emocional antes de entrar a un chat!");
-            openStateModal.click(); // Abre el modal de estados para obligar la selección
+            openStateModal.click(); 
             return;
         }
         
-        // Si hay estado seleccionado, abre el chat
         openChat(day);
     }
     
@@ -142,8 +140,40 @@
         renderMessages();
     }
     
-    function renderMessages() { /* ... (Mantener la función renderMessages) ... */ }
-    function addMessage(msgData) { /* ... (Mantener la función addMessage) ... */ }
+    // (CÓDIGO RESTAURADO) Renderiza todos los mensajes
+    function renderMessages() { 
+        messagesContainer.innerHTML = "";
+        if (!currentChat || !chats[currentChat]) return;
+
+        chats[currentChat].forEach(msg => {
+            const div = document.createElement("div");
+            div.className = msg.sender === currentUser ? "message sent" : "message received";
+            div.textContent = msg.text;
+
+            const ts = document.createElement("span");
+            ts.className = "ts";
+            const d = new Date(msg.time);
+            ts.textContent = `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+            div.appendChild(ts);
+
+            messagesContainer.appendChild(div);
+        });
+
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+
+    // (CÓDIGO RESTAURADO) Añade un mensaje al historial y lo renderiza
+    function addMessage(msgData) { 
+        const dayKey = formatDateKey(new Date(msgData.time));
+        if (!chats[dayKey]) chats[dayKey] = [];
+        chats[dayKey].push(msgData);
+        saveData();
+
+        if (dayKey === currentChat) {
+            renderMessages();
+        }
+        renderChatList();
+    }
     
     function renderMoods() {
         moodList.innerHTML = "";
@@ -156,8 +186,30 @@
         });
     }
 
-    // Lógica de EMISIÓN del mensaje (Sin cambios)
-    const sendMessage = () => { /* ... (Mantener la función sendMessage) ... */ };
+    // (CÓDIGO RESTAURADO) Lógica de EMISIÓN del mensaje
+    const sendMessage = () => { 
+        if (!currentChat) {
+            alert("Seleccioná un chat primero.");
+            return;
+        }
+
+        const text = messageInput.value.trim();
+        if (!text) return;
+
+        const msgData = {
+            sender: currentUser,
+            text,
+            time: new Date().toISOString()
+        };
+
+        // Emitir el mensaje al servidor
+        socket.emit("sendMessage", msgData); 
+
+        // Añadir el mensaje localmente
+        addMessage(msgData);
+
+        messageInput.value = "";
+    };
 
     // --- Lógica de Event Listeners ---
 
@@ -166,7 +218,7 @@
         moodsContainer.classList.add("active"); 
     });
 
-    // 🔴 CAMBIO 4: Lógica para SELECCIONAR y EMITIR el estado
+    // Lógica para SELECCIONAR y EMITIR el estado
     moodList.addEventListener("click", (e) => {
         const selectedMood = e.target.dataset.mood;
         if (!selectedMood) return;
@@ -186,19 +238,45 @@
         moodsContainer.classList.remove("active");
     });
     
-    // (Otros Event Listeners: sendBtn, modalYes, modalNo, chatListDiv, backBtn, sin cambios)
+    // Conexión del botón de enviar
     sendBtn.addEventListener("click", sendMessage);
-    modalYes.addEventListener("click", () => { /* ... */ }); 
+    
+    // (CÓDIGO RESTAURADO) Lógica del modal de confirmación: SÍ
+    modalYes.addEventListener("click", () => { 
+        const text = messageInput.value.trim();
+        if (!text) {
+            modal.style.display = "none";
+            return;
+        }
+
+        const msgData = {
+            sender: currentUser,
+            text,
+            time: new Date().toISOString()
+        };
+
+        // Emitir el mensaje al servidor
+        socket.emit("sendMessage", msgData);
+
+        // Añadir el mensaje localmente
+        addMessage(msgData);
+
+        messageInput.value = "";
+        modal.style.display = "none";
+    }); 
+    
     modalNo.addEventListener("click", () => { modal.style.display = "none"; });
+    
     chatListDiv.addEventListener("click", e => {
         if (e.target.classList.contains("add-chat")) {
             const key = formatDateKey();
             if (!chats[key]) chats[key] = [];
             saveData();
             renderChatList();
-            tryOpenChat(key); // 🔴 CAMBIO 5: Usar tryOpenChat para el botón + de chat
+            tryOpenChat(key); 
         }
     });
+    
     backBtn.addEventListener("click", () => {
         chatScreen.classList.remove("active");
         mainScreen.classList.add("active");
@@ -206,22 +284,28 @@
     
     // --- Lógica de Recepción (Socket.io) ---
 
-    // Lógica de RECEPCIÓN (Mensajes - Sin cambios)
-    socket.on("receiveMessage", (msgData) => { /* ... */ });
+    // (CÓDIGO RESTAURADO) Lógica de RECEPCIÓN (Mensajes)
+    socket.on("receiveMessage", (msgData) => { 
+        if (msgData.sender !== currentUser) {
+            addMessage(msgData);
+        }
+    });
     
-    // 🔴 CAMBIO 2: Lógica de RECEPCIÓN DE ESTADOS (Persistencia del estado de la pareja)
+    // Lógica de RECEPCIÓN DE ESTADOS (Persistencia del estado de la pareja)
     socket.on("moodChanged", (data) => {
-        // Solo actualizar si el estado NO viene de mí mismo
         if (data.sender !== currentUser) {
-                emojiCircle.textContent = data.mood;
-
-             // GUARDAR el estado de la pareja en sessionStorage (PERSISTENCIA)
-                sessionStorage.setItem("partnerMood", data.mood);
-                partnerMood = data.mood;
+            emojiCircle.textContent = data.mood;
+            sessionStorage.setItem("partnerMood", data.mood);
+            partnerMood = data.mood;
         }
     });
 
-    socket.on("statusChanged", (data) => { /* ... */ });
+    // (CÓDIGO RESTAURADO) Lógica de RECEPCIÓN DE ESTADOS (Status, por si existe el elemento)
+    socket.on("statusChanged", (data) => { 
+        if (data.sender !== currentUser && partnerStatus) {
+            partnerStatus.textContent = data.status;
+        }
+    });
 
     // --- Inicialización ---
 
