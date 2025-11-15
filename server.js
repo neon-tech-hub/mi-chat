@@ -6,31 +6,30 @@ const io = require('socket.io')(http, {
         origin: "*"
     }
 });
-const path = require('path'); // 👈 LÍNEA AÑADIDA: Necesaria para trabajar con rutas de archivos
+const path = require('path'); // ✅ CORRECCIÓN 1: Se necesita para manejar rutas de archivos
 
-// Servir archivos estáticos (tu HTML, CSS y JS del chat)
+// Servir archivos estáticos (CSS, JS del cliente, imágenes, etc.) desde la carpeta 'public'
 app.use(express.static("public"));
 
-// 1. RUTA PARA EL LOGIN (la ruta raíz '/')
+// 1. RUTA RAÍZ (Página de Login)
 app.get("/", (req, res) => {
-    // Sirve el login.html al acceder a la raíz de la aplicación
+    // Sirve el login.html cuando el usuario entra a http://localhost:3000/
     res.sendFile(path.join(__dirname, 'public', 'login.html'));
 });
 
-// 2. RUTA PARA EL CHAT 
+// 2. RUTA DEL CHAT (Página principal del chat)
 app.get("/chat", (req, res) => {
-    // Sirve el index.html al acceder a /chat (asumiendo que es la interfaz del chat)
+    // Sirve index.html, asumiendo que se accede después del login exitoso
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 
-// Conexión de clientes
+// Conexión de clientes (Lógica de Socket.io)
 io.on('connection', socket => {
     console.log("Usuario conectado:", socket.id);
 
     // Cuando un usuario manda un mensaje
     socket.on("sendMessage", data => {
-        // Lo envía a todos, incluyendo a la pareja
         io.emit("receiveMessage", data);
     });
 
