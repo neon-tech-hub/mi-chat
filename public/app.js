@@ -149,8 +149,20 @@
         }
     });
 
-    // --- Inicialización ---
+    // ... (El resto de tu lógica)
+
+    // Inicialización
     mainScreen.classList.add("active"); 
     renderChatList();
-    renderMoods(); // Renderiza la lista de emojis al inicio
+    renderMoods(); 
+
+    // 🔴 NUEVA LÍNEA CLAVE: Asegurarse de que el chat de hoy exista y se renderice
+    const todayKey = formatDateKey();
+    if (!chats[todayKey]) {
+        chats[todayKey] = [];
+        saveData();
+    }
+
+    // Llama a renderChatList nuevamente después de asegurar que existe el chat de hoy
+    renderChatList();
 })();
