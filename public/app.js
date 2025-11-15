@@ -10,6 +10,12 @@
 
     // --- Variables de Estado ---
     const AVAILABLE_MOODS = ["❤️", "😊", "😴", "😢", "😠", "😅", "✨", "⏳"];
+    // 🔴 NUEVA VARIABLE: Lista de palabras a prohibir (Insultos)
+    const PROHIBITED_WORDS = [
+        "tonto", "estúpido", "idiota", "imbécil", "boludo", "pelotudo", 
+        "tarado", "mierda", "puto", "gil", "cabrón", "zorra", "pendejo",
+        "carajo", "caca", "vaca", "bruto", "imbecil" // Puedes expandir esta lista
+    ];
     let chats = {};
     let currentChat = null;
     
@@ -59,9 +65,19 @@
         return `${d}-${m}`;
     }
 
+    // 🔴 NUEVA FUNCIÓN: Verifica si el texto contiene palabras prohibidas
+    function containsInsult(text) {
+        const lowerCaseText = text.toLowerCase();
+        
+        // Comprueba si alguna palabra prohibida está incluida en el texto
+        const foundInsult = PROHIBITED_WORDS.some(word => lowerCaseText.includes(word));
+        
+        return foundInsult;
+    }
+
     // --- Lógica de Renderizado y Flujo ---
 
-    // 🔴 CORRECCIÓN 1: La función renderChatList completa y robusta
+    // La función renderChatList completa y robusta
     function renderChatList() {
         chatListDiv.innerHTML = ""; 
 
@@ -111,14 +127,13 @@
                         <div class="chat-last">${lastMsg}</div>
                     </div>
                 `;
-                // El evento onclick llama a una función que verifica el estado
                 btn.onclick = () => tryOpenChat(day);
                 chatListDiv.appendChild(btn);
             });
         }
     }
 
-    // Función: Verifica si el usuario puede entrar al chat
+    // Función: Verifica si el usuario puede entrar al chat (Restricción de Estado)
     function tryOpenChat(day) {
         const myCurrentMood = sessionStorage.getItem("myMood");
         
@@ -140,7 +155,7 @@
         renderMessages();
     }
     
-    // (CÓDIGO RESTAURADO) Renderiza todos los mensajes
+    // (Restaurada) Renderiza todos los mensajes
     function renderMessages() { 
         messagesContainer.innerHTML = "";
         if (!currentChat || !chats[currentChat]) return;
@@ -162,7 +177,7 @@
         messagesContainer.scrollTop = messagesContainer.scrollHeight;
     }
 
-    // (CÓDIGO RESTAURADO) Añade un mensaje al historial y lo renderiza
+    // (Restaurada) Añade un mensaje al historial y lo renderiza
     function addMessage(msgData) { 
         const dayKey = formatDateKey(new Date(msgData.time));
         if (!chats[dayKey]) chats[dayKey] = [];
@@ -186,7 +201,7 @@
         });
     }
 
-    // (CÓDIGO RESTAURADO) Lógica de EMISIÓN del mensaje
+    // (Restaurada y Modificada) Lógica de EMISIÓN del mensaje con Detección de Insultos
     const sendMessage = () => { 
         if (!currentChat) {
             alert("Seleccioná un chat primero.");
@@ -196,19 +211,14 @@
         const text = messageInput.value.trim();
         if (!text) return;
 
-        const msgData = {
-            sender: currentUser,
-            text,
-            time: new Date().toISOString()
-        };
-
-        // Emitir el mensaje al servidor
-        socket.emit("sendMessage", msgData); 
-
-        // Añadir el mensaje localmente
-        addMessage(msgData);
-
-        messageInput.value = "";
+        // 🔴 DETECCIÓN DE INSULTOS
+        if (containsInsult(text)) {
+            alert("🚫 ¡Atención! Tu mensaje no debe contener insultos o palabras ofensivas. Por favor, revisá tu redacción.");
+            return; // Bloquea el envío
+        }
+        
+        // Si no hay insultos, muestra el modal de confirmación
+        modal.style.display = "block";
     };
 
     // --- Lógica de Event Listeners ---
@@ -241,7 +251,7 @@
     // Conexión del botón de enviar
     sendBtn.addEventListener("click", sendMessage);
     
-    // (CÓDIGO RESTAURADO) Lógica del modal de confirmación: SÍ
+    // (Restaurada y Modificada) Lógica del modal de confirmación: SÍ
     modalYes.addEventListener("click", () => { 
         const text = messageInput.value.trim();
         if (!text) {
@@ -249,6 +259,14 @@
             return;
         }
 
+        // 🔴 DETECCIÓN DE INSULTOS (Revisar de nuevo antes de enviar)
+        if (containsInsult(text)) {
+            alert("🚫 ¡Error! Tu mensaje contiene insultos. Por favor, revisá tu redacción antes de confirmar.");
+            modal.style.display = "none";
+            return; // Bloquea el envío
+        }
+
+        // Si no hay insultos, procede al envío
         const msgData = {
             sender: currentUser,
             text,
@@ -284,7 +302,7 @@
     
     // --- Lógica de Recepción (Socket.io) ---
 
-    // (CÓDIGO RESTAURADO) Lógica de RECEPCIÓN (Mensajes)
+    // Lógica de RECEPCIÓN (Mensajes)
     socket.on("receiveMessage", (msgData) => { 
         if (msgData.sender !== currentUser) {
             addMessage(msgData);
@@ -300,7 +318,7 @@
         }
     });
 
-    // (CÓDIGO RESTAURADO) Lógica de RECEPCIÓN DE ESTADOS (Status, por si existe el elemento)
+    // Lógica de RECEPCIÓN DE ESTADOS (Status, por si existe el elemento)
     socket.on("statusChanged", (data) => { 
         if (data.sender !== currentUser && partnerStatus) {
             partnerStatus.textContent = data.status;
