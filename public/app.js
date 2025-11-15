@@ -152,17 +152,24 @@
     // ... (El resto de tu lógica)
 
     // Inicialización
-    mainScreen.classList.add("active"); 
-    renderChatList();
-    renderMoods(); 
+    // ... (El resto de tu lógica de funciones, etc.)
 
-    // 🔴 NUEVA LÍNEA CLAVE: Asegurarse de que el chat de hoy exista y se renderice
+    // --- Inicialización ---
+
+    // 1. Asegurarse de que el chat de hoy exista (siempre)
     const todayKey = formatDateKey();
     if (!chats[todayKey]) {
         chats[todayKey] = [];
         saveData();
+        console.log(`Creado chat inicial: ${todayKey}`);
     }
 
-    // Llama a renderChatList nuevamente después de asegurar que existe el chat de hoy
-    renderChatList();
+    // 2. Mostrar la pantalla principal
+    mainScreen.classList.add("active"); 
+
+    // 3. Renderizar la lista de chats UNA SOLA VEZ
+    renderChatList(); 
+
+    // 4. Renderizar los botones de emojis
+    renderMoods();
 })();
