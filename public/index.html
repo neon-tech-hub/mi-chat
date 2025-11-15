@@ -13,6 +13,14 @@
 </head>
 <body>
 
+<script>
+  // 🔒 Verificación de login antes de cargar la app
+    const currentUser = localStorage.getItem("currentUser");
+    if (!currentUser) {
+        window.location.href = "/login.html";
+    }
+</script>
+
 <div class="app-container">
 
     <header class="app-header">
@@ -23,53 +31,16 @@
         <button id="openStateModal" class="state-add-btn" aria-label="Agregar estado">+</button>
     </header>
 
-    <!-- LOGIN -->
-    <section class="login-screen screen" id="loginScreen" aria-label="Login">
-        <h2>Ingresar</h2>
-
-        <div class="field">
-            <label for="userSelect">Usuario</label>
-            <select id="userSelect" aria-label="Seleccionar usuario">
-                <option value="">Seleccione...</option>
-                <option value="Leo">Leo</option>
-                <option value="Estefi">Estefi</option>
-            </select>
-        </div>
-
-        <div class="field">
-            <label for="passwordInput">Contraseña (DNI)</label>
-            <input type="password" id="passwordInput" placeholder="Ingrese DNI" />
-        </div>
-
-        <div class="field">
-            <label for="userStateSelect">Estado emocional</label>
-            <select id="userStateSelect">
-                <option value="">Seleccione...</option>
-                <option value="Calmo 😌">Calmo 😌</option>
-                <option value="Tenso 😬">Tenso 😬</option>
-                <option value="Triste 😢">Triste 😢</option>
-                <option value="Enojado 😡">Enojado 😡</option>
-            </select>
-        </div>
-
-        <button id="loginBtn" class="btn primary">Ingresar</button>
-        <p id="loginError" class="error" role="alert"></p>
-    </section>
-
     <!-- MAIN SCREEN -->
     <main class="screen" id="mainScreen" aria-label="Pantalla principal">
-
-        <!-- círculo emoji -->
         <div class="emoji-container">
             <div id="emojiCircle" class="emoji-circle">?</div>
         </div>
 
-        <!-- mensajito suave -->
         <p class="emotional-warning">
             Recordá que él/ella te ama. Redactá tu mensaje con responsabilidad emocional ❤️
         </p>
 
-        <!-- lista de chats -->
         <section class="chat-list" id="chatList" aria-label="Lista de chats"></section>
     </main>
 
