@@ -14,12 +14,12 @@
 <body>
 
 <script>
-  // 🔒 Verificación de login antes de cargar la app
-    const currentUser = localStorage.getItem("currentUser");
+    const currentUser = sessionStorage.getItem("currentUser");
     if (!currentUser) {
         window.location.href = "login.html";
     }
 </script>
+
 
 <div class="app-container">
 

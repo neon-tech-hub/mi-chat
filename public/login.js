@@ -1,4 +1,4 @@
-// Usuarios y contraseñas de ejemplo
+// Contraseñas válidas
 const PASSWORDS = {
     Leo: "12345678",
     Estefi: "87654321"
@@ -9,6 +9,7 @@ const loginUser = document.getElementById("loginUser");
 const loginPassword = document.getElementById("loginPassword");
 const loginError = document.getElementById("loginError");
 
+// Evento login
 loginBtn.addEventListener("click", () => {
     const user = loginUser.value.trim();
     const pass = loginPassword.value.trim();
@@ -25,9 +26,15 @@ loginBtn.addEventListener("click", () => {
         return;
     }
 
-    // Guardamos usuario solo temporalmente en sessionStorage si lo deseamos
+    // Guardado SOLO durante la sesión actual
     sessionStorage.setItem("currentUser", user);
 
-    // Redirigir al index.html
-    window.location.href = "/index.html";
+    window.location.href = "index.html";
+});
+
+// Permitir Enter
+[loginUser, loginPassword].forEach(input => {
+    input.addEventListener("keypress", e => {
+        if (e.key === "Enter") loginBtn.click();
+    });
 });
