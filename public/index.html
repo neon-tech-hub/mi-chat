@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>Chat para Conectar</title>
 
-    <!-- Tipografía (Inter) -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/styles.css" />
     <link rel="icon" href="/favicon.ico" />
@@ -30,7 +29,6 @@
         <button id="openStateModal" class="state-add-btn" aria-label="Agregar estado">+</button>
     </header>
 
-    <!-- MAIN SCREEN -->
     <main class="screen" id="mainScreen" aria-label="Pantalla principal">
         <div class="emoji-container">
             <div id="emojiCircle" class="emoji-circle">?</div>
@@ -43,7 +41,6 @@
         <section class="chat-list" id="chatList" aria-label="Lista de chats"></section>
     </main>
 
-    <!-- CHAT SCREEN -->
     <section class="screen chat-screen" id="chatScreen" aria-label="Chat">
         <div class="chat-window">
             <header class="chat-header">
@@ -51,7 +48,11 @@
                     <div id="chatAvatar" class="chat-avatar"></div>
                     <div>
                         <div id="chatPartner" class="chat-title">Pareja</div>
-                        <div id="partnerStatus" class="chat-status">Ausente</div>
+                        
+                        <div class="chat-status">
+                            <span id="partnerStatus">Ausente</span>
+                            <span id="partnerMoodText"></span>
+                        </div>
                     </div>
                 </div>
                 <div class="chat-actions">
@@ -75,7 +76,6 @@
         </div>
     </section>
 
-    <!-- MODAL DE CONFIRMACIÓN -->
     <div class="modal" id="confirmModal" role="dialog" aria-modal="true" aria-hidden="true">
         <div class="modal-content">
             <p id="modalText">¿Está bien redactado tu mensaje?</p>
@@ -88,7 +88,7 @@
 
     <div class="mood-modal" id="moodsContainer" aria-hidden="true">
         <div class="mood-list" id="moodList">
-            </div>
+        </div>
     </div>
 </div>
 

@@ -9,13 +9,13 @@
         return;
     }
 
-    // 🔴 CRUCIAL: Notificar al servidor quién eres para el manejo de estados de conexión (online/offline)
+    // CRUCIAL: Notificar al servidor quién eres para el manejo de estados de conexión (online/offline)
     socket.emit('registerUser', currentUser); 
 
     // --- Variables de Estado ---
     const AVAILABLE_MOODS = ["❤️", "😊", "😴", "😢", "😠", "😅", "✨", "⏳"];
     
-    // 🔴 NUEVA VARIABLE: Mapeo de Emojis a Nombres en español
+    // Mapeo de Emojis a Nombres en español
     const MOOD_NAMES = {
         "❤️": "enamorado",
         "😊": "feliz",
@@ -25,7 +25,7 @@
         "😅": "ansioso",
         "✨": "inspirado",
         "⏳": "ocupado",
-        "?": "indefinido" // Para el estado por defecto
+        "?": "indefinido" 
     };
 
     const PROHIBITED_WORDS = [
@@ -36,7 +36,7 @@
     let chats = {};
     let currentChat = null;
     
-    // Almacenamiento del estado de la pareja (NUEVO)
+    // Almacenamiento del estado de la pareja
     let partnerMood = sessionStorage.getItem("partnerMood") || "?"; 
     
     // Referencias al DOM
@@ -45,6 +45,8 @@
     const chatScreen = document.getElementById("chatScreen");
     const chatPartner = document.getElementById("chatPartner"); 
     const partnerStatus = document.getElementById("partnerStatus"); 
+    // 🔴 REFERENCIA ACTUALIZADA (Ahora existe en el HTML)
+    const partnerMoodText = document.getElementById("partnerMoodText"); 
     const messagesContainer = document.getElementById("messages");
     const messageInput = document.getElementById("messageInput");
     const sendBtn = document.getElementById("sendBtn");
@@ -91,33 +93,40 @@
         return foundInsult;
     }
 
-    // 🔴 NUEVA FUNCIÓN: Decide qué texto mostrar en el encabezado del chat
+    // 🔴 FUNCIÓN CRUCIAL: Gestiona el estado de Conexión (partnerStatus) y Emocional (partnerMoodText y emojiCircle)
     function updatePartnerStatusDisplay(moodEmoji, currentStatus) {
-        // currentStatus viene de socket.on("statusChanged") o es inferido al iniciar.
         const isOnline = currentStatus === 'online'; 
         
-        const statusElement = document.getElementById("partnerStatus");
+        // 1. Estado de Conexión (partnerStatus): Siempre muestra Activo/Ausente.
+        partnerStatus.textContent = isOnline ? 'Activo' : 'Ausente';
         
-        // 1. Si hay un estado de ánimo seleccionado (no es '?')
-        if (moodEmoji && moodEmoji !== "?") {
-            const moodName = MOOD_NAMES[moodEmoji] || "desconocido";
-            // Muestra el nombre del estado emocional en el chat.
-            statusElement.textContent = moodName; 
-            // Muestra el nombre del estado emocional en el círculo (Pantalla Principal).
-            emojiCircle.textContent = moodName; 
-        } else if (isOnline) {
-            // 2. Si NO hay estado de ánimo pero está activo, muestra "Activo" en el chat.
-            statusElement.textContent = 'Activo';
-            // Y el emoji por defecto de activo en el círculo.
-            emojiCircle.textContent = '❓'; 
+        // 2. Lógica del Estado Emocional (partnerMoodText y emojiCircle)
+        if (moodEmoji && moodEmoji !== "?" && MOOD_NAMES[moodEmoji]) {
+            // Caso A: Hay un estado de ánimo seleccionado.
+            
+            // a) Círculo (Pantalla Principal): Debe mostrar el EMOJI.
+            emojiCircle.textContent = moodEmoji; 
+
+            // b) Texto en Chat (partnerMoodText):
+            if (isOnline) {
+                // Si está ACTIVO, muestra el estado emocional al lado: "Activo — enojado"
+                partnerMoodText.textContent = `— ${MOOD_NAMES[moodEmoji]}`; 
+            } else {
+                // Si está AUSENTE, no debe aparecer nada al lado.
+                partnerMoodText.textContent = '';
+            }
+
         } else {
-            // 3. Si no hay estado de ánimo y está ausente, muestra "Ausente" en el chat.
-            statusElement.textContent = 'Ausente';
-            // Y el emoji por defecto de ausente en el círculo.
-            emojiCircle.textContent = '😴'; 
+            // Caso B: NO hay estado de ánimo seleccionado ('?').
+            
+            // a) Círculo (Pantalla Principal): Muestra el emoji por defecto (❓ o 😴)
+            const defaultEmoji = isOnline ? '❓' : '😴';
+            emojiCircle.textContent = defaultEmoji;
+
+            // b) Texto en Chat (partnerMoodText): No debe aparecer nada.
+            partnerMoodText.textContent = '';
         }
     }
-
 
     // --- Lógica de Renderizado y Flujo ---
 
@@ -353,7 +362,7 @@
         }
     });
     
-    // 🔴 MODIFICADO: Lógica de RECEPCIÓN DE ESTADOS EMOCIONALES (Muestra el nombre del estado en el chat)
+    // Lógica de RECEPCIÓN DE ESTADOS EMOCIONALES
     socket.on("moodChanged", (data) => {
         if (data.sender !== currentUser) {
             const moodEmoji = data.mood;
@@ -362,15 +371,12 @@
             sessionStorage.setItem("partnerMood", moodEmoji); 
             partnerMood = moodEmoji;
 
-            // 2. ACTUALIZAR la visualización del estado (emoji en círculo, texto en chat)
-            // Usamos 'online' o 'offline' actual para re-evaluar la visualización completa.
-            // Para simplificar, asumimos 'online' para actualizar el display inmediatamente tras el cambio de mood.
-            // La función statusChanged actualizará esto de forma más robusta.
+            // 2. ACTUALIZAR la visualización completa (asumimos 'online' al cambiar el mood)
             updatePartnerStatusDisplay(moodEmoji, 'online'); 
         }
     });
 
-    // 🔴 MODIFICADO: Lógica de RECEPCIÓN DE ESTADO DE CONEXIÓN (Define el emoji por defecto y el texto Activo/Ausente)
+    // Lógica de RECEPCIÓN DE ESTADO DE CONEXIÓN
     socket.on("statusChanged", (data) => { 
         if (data.sender !== currentUser && partnerStatus) {
             // data.status es 'online' o 'offline'
