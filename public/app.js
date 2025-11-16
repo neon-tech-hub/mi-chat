@@ -51,10 +51,6 @@
     const messageInput = document.getElementById("messageInput");
     const sendBtn = document.getElementById("sendBtn");
     const backBtn = document.getElementById("backBtn");
-    const modal = document.getElementById("confirmModal");
-    const modalYes = document.getElementById("modalYes");
-    const modalNo = document.getElementById("modalNo");
-    
     // Elementos del estado emocional
     const emojiCircle = document.getElementById("emojiCircle"); 
     const openStateModal = document.getElementById("openStateModal"); 
