@@ -45,12 +45,13 @@
     const chatScreen = document.getElementById("chatScreen");
     const chatPartner = document.getElementById("chatPartner"); 
     const partnerStatus = document.getElementById("partnerStatus"); 
-    // 🔴 REFERENCIA ACTUALIZADA (Ahora existe en el HTML)
+    // Referencia al estado emocional en texto
     const partnerMoodText = document.getElementById("partnerMoodText"); 
     const messagesContainer = document.getElementById("messages");
     const messageInput = document.getElementById("messageInput");
     const sendBtn = document.getElementById("sendBtn");
     const backBtn = document.getElementById("backBtn");
+    
     // Elementos del estado emocional
     const emojiCircle = document.getElementById("emojiCircle"); 
     const openStateModal = document.getElementById("openStateModal"); 
@@ -89,7 +90,7 @@
         return foundInsult;
     }
 
-    // 🔴 FUNCIÓN CRUCIAL: Gestiona el estado de Conexión (partnerStatus) y Emocional (partnerMoodText y emojiCircle)
+    // FUNCIÓN CRUCIAL: Gestiona el estado de Conexión (partnerStatus) y Emocional (partnerMoodText y emojiCircle)
     function updatePartnerStatusDisplay(moodEmoji, currentStatus) {
         const isOnline = currentStatus === 'online'; 
         
@@ -204,7 +205,7 @@
         renderMessages();
     }
     
-    // (Restaurada) Renderiza todos los mensajes
+    // Renderiza todos los mensajes
     function renderMessages() { 
         messagesContainer.innerHTML = "";
         if (!currentChat || !chats[currentChat]) return;
@@ -226,7 +227,7 @@
         messagesContainer.scrollTop = messagesContainer.scrollHeight;
     }
 
-    // (Restaurada) Añade un mensaje al historial y lo renderiza
+    // Añade un mensaje al historial y lo renderiza
     function addMessage(msgData) { 
         const dayKey = formatDateKey(new Date(msgData.time));
         if (!chats[dayKey]) chats[dayKey] = [];
@@ -250,7 +251,7 @@
         });
     }
 
-    // Lógica de EMISIÓN del mensaje con Detección de Insultos
+    // Lógica de EMISIÓN del mensaje con Detección de Insultos (SIN MODAL)
     const sendMessage = () => { 
         if (!currentChat) {
             alert("Seleccioná un chat primero.");
@@ -263,11 +264,23 @@
         // DETECCIÓN DE INSULTOS
         if (containsInsult(text)) {
             alert("🚫 ¡Atención! Tu mensaje no debe contener insultos o palabras ofensivas. Por favor, revisá tu redacción.");
-            return; // Bloquea el envío
+            return; // Bloquea el envío si hay insulto
         }
         
-        // Si no hay insultos, muestra el modal de confirmación
-        modal.style.display = "block";
+        // Si no hay insultos, procede directamente al envío
+        const msgData = {
+            sender: currentUser,
+            text,
+            time: new Date().toISOString()
+        };
+
+        // Emitir el mensaje al servidor
+        socket.emit("sendMessage", msgData);
+
+        // Añadir el mensaje localmente
+        addMessage(msgData);
+
+        messageInput.value = "";
     };
 
     // --- Lógica de Event Listeners ---
@@ -299,40 +312,6 @@
     
     // Conexión del botón de enviar
     sendBtn.addEventListener("click", sendMessage);
-    
-    // Lógica del modal de confirmación: SÍ
-    modalYes.addEventListener("click", () => { 
-        const text = messageInput.value.trim();
-        if (!text) {
-            modal.style.display = "none";
-            return;
-        }
-
-        // DETECCIÓN DE INSULTOS (Revisar de nuevo antes de enviar)
-        if (containsInsult(text)) {
-            alert("🚫 ¡Error! Tu mensaje contiene insultos. Por favor, revisá tu redacción antes de confirmar.");
-            modal.style.display = "none";
-            return; // Bloquea el envío
-        }
-
-        // Si no hay insultos, procede al envío
-        const msgData = {
-            sender: currentUser,
-            text,
-            time: new Date().toISOString()
-        };
-
-        // Emitir el mensaje al servidor
-        socket.emit("sendMessage", msgData);
-
-        // Añadir el mensaje localmente
-        addMessage(msgData);
-
-        messageInput.value = "";
-        modal.style.display = "none";
-    }); 
-    
-    modalNo.addEventListener("click", () => { modal.style.display = "none"; });
     
     chatListDiv.addEventListener("click", e => {
         if (e.target.classList.contains("add-chat")) {
@@ -383,9 +362,9 @@
         }
     });
 
-    // --- Inicialización ---
+    // --- Inicialización (Orden Corregido) ---
 
-    // 1. Asegurarse de que el chat de hoy exista (siempre)
+    // 1. Asegurarse de que el chat de hoy exista (primero)
     const todayKey = formatDateKey();
     if (!chats[todayKey]) {
         chats[todayKey] = [];
@@ -398,7 +377,7 @@
     // Al iniciar, asumimos que la pareja está 'offline'/'Ausente' hasta que el socket nos indique lo contrario.
     updatePartnerStatusDisplay(initialPartnerMood, 'offline'); 
 
-    // 3. Mostrar la pantalla principal y renderizar todo
+    // 3. Mostrar la pantalla principal y renderizar todo (ahora chats ya tiene el chat de hoy)
     mainScreen.classList.add("active"); 
     renderChatList(); 
     renderMoods(); 
