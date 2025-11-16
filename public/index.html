@@ -62,17 +62,19 @@
 
             <div class="messages" id="messages" aria-live="polite"></div>
 
-            <div class="chat-input" id="chatInput">
-                <textarea id="messageInput" placeholder="Escribe tu mensaje..." rows="2" aria-label="Escribe tu mensaje"></textarea>
-                <div class="input-actions">
-                    <div class="left-actions">
-                        <button id="pauseBtn" class="btn">Pausar 10 min</button>
-                    </div>
-                    <div class="right-actions">
-                        <button id="sendBtn" class="btn primary">Enviar</button>
+            <div class="messages" id="messages" aria-live="polite"></div>
+
+                <div class="chat-input" id="chatInput">
+                    <textarea id="messageInput" placeholder="Escribe tu mensaje..." rows="1" aria-label="Escribe tu mensaje"></textarea>
+
+                    <div class="input-actions-buttons">
+                        <button id="pauseChatBtn" class="btn secondary">Pausar chat</button>
+                        
+                        <button id="sendBtnIcon" class="btn primary icon-send" aria-label="Enviar mensaje">
+                            ➡️
+                        </button>
                     </div>
                 </div>
-            </div>
         </div>
     </section>
 

@@ -1,5 +1,5 @@
 /* --------------------------- */
-/* ESTILO TIPO INSTAGRAM  */
+/* ESTILO TIPO INSTAGRAM */
 /* --------------------------- */
 
 * {
@@ -231,17 +231,33 @@ html, body {
 .chat-item .chat-last { font-size:0.86rem; color:var(--muted); }
 
 /* CHAT SCREEN */
-.chat-screen { display:none; height:100%; }
-.chat-window { display:flex; flex-direction:column; height:100%; background: transparent; }
+.chat-screen { 
+    display:none; 
+    padding: 0; /* Quitamos padding aquí para que header/input estén pegados al borde */
+    height:100%; 
+}
+.chat-screen.active { 
+    display: block; 
+    /* El padding que antes estaba en .screen se maneja en el contenido interno (messages) */
+}
+
+/* Chat window (Contenedor principal del chat) */
+.chat-window { 
+    display: flex; 
+    flex-direction: column; 
+    height: 100%; 
+    background: transparent; 
+}
 
 /* Chat header */
 .chat-header {
     display:flex;
     justify-content:space-between;
     align-items:center;
-    padding:12px 14px;
+    padding:12px 18px; /* Agregamos padding horizontal */
     border-bottom:1px solid rgba(255,255,255,0.03);
     background: linear-gradient(180deg, rgba(255,255,255,0.01), transparent);
+    flex-shrink: 0; /* Evita que el header se encoja */
 }
 .chat-left { display:flex; gap:12px; align-items:center; }
 .chat-avatar { width:44px; height:44px; border-radius:10px; background: var(--accent-gradient); }
@@ -250,7 +266,7 @@ html, body {
 
 /* Messages area */
 .messages {
-    flex:1;
+    flex-grow: 1; /* CRÍTICO: Ocupa todo el espacio disponible */
     overflow-y:auto;
     padding:18px;
     display:flex;
@@ -299,28 +315,71 @@ html, body {
     opacity:0.85;
 }
 
-/* INPUT AREA */
+/* --------------------------------- */
+/* 🔴 INPUT AREA (DISEÑO TIPO WHATSAPP) */
+/* --------------------------------- */
+
 .chat-input {
-    padding:12px;
-    border-top:1px solid rgba(255,255,255,0.03);
+    /* Eliminamos padding-top y border-top si ya lo tiene el header */
+    padding: 10px 18px; /* Padding horizontal para centrar bien */
+    border-top: 1px solid rgba(255,255,255,0.03);
     background: linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.005));
+    
+    display: flex; /* Para alinear el textarea y los botones */
+    align-items: flex-end; /* Alinea los elementos a la parte inferior (útil para el textarea) */
+    flex-shrink: 0; /* Evita que el input se encoja */
+    gap: 8px; /* Espacio entre textarea y botones */
 }
+
 .chat-input textarea {
-    width:100%;
-    min-height:46px;
+    flex-grow: 1; /* Hace que el textarea ocupe la mayor parte del espacio */
+    resize: none; 
+    min-height: 40px; /* Ajustamos la altura base */
+    max-height: 100px; /* Limita el crecimiento */
     background: rgba(255,255,255,0.02);
     border: 1px solid rgba(255,255,255,0.04);
-    padding:12px;
-    border-radius: 10px;
-    resize:none;
+    padding: 10px 15px;
+    border-radius: 20px; /* Hacemos el borde más redondo */
     color:#fff;
     outline:none;
+    line-height: 1.5;
 }
-.input-actions{ display:flex; justify-content:space-between; align-items:center; margin-top:10px; gap:10px; }
-.left-actions{ display:flex; gap:8px; }
-.right-actions{ display:flex; gap:8px; }
 
-/* Modal */
+/* Contenedor de botones (Pausa + Enviar) */
+.input-actions-buttons {
+    display: flex;
+    gap: 8px;
+    align-items: flex-end; 
+}
+
+/* Estilo del botón de pausa */
+#pauseChatBtn {
+    background-color: #333; /* Color oscuro para el botón de pausa */
+    color: #fff;
+    border: none;
+    border-radius: 20px;
+    padding: 8px 12px;
+    font-size: 0.85rem;
+    flex-shrink: 0;
+    white-space: nowrap; /* Evita que el texto se rompa */
+}
+
+/* Estilo del botón de ENVIAR (icono/avioncito) */
+.btn.icon-send {
+    width: 40px; 
+    height: 40px;
+    padding: 0;
+    font-size: 18px; 
+    border-radius: 50%; /* Lo hace circular */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-shrink: 0; /* Evita que se encoja */
+    /* Asegúrate de que el .primary le da el color azul/degradado de IG */
+}
+
+
+/* Modal (Original, sin cambios) */
 .modal {
     display:none;
     position: fixed;
@@ -357,8 +416,6 @@ html, body {
 
 /* Responsivo */
 @media (max-width:520px){
-    /* 🔴 Eliminamos estas reglas si la aplicación siempre es Full Screen */
-    /* .app-container { margin:10px; border-radius:10px; } */
     .emoji-circle{ width:96px; height:96px; font-size:40px; }
 }
 

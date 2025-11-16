@@ -12,8 +12,12 @@
     // CRUCIAL: Notificar al servidor quién eres para el manejo de estados de conexión (online/offline)
     socket.emit('registerUser', currentUser); 
 
-    // --- Variables de Estado ---
+    // --- Variables de Estado y Control ---
     const AVAILABLE_MOODS = ["❤️", "😊", "😴", "😢", "😠", "😅", "✨", "⏳"];
+    const PAUSE_COOLDOWN = 60 * 60 * 1000; // 1 hora en milisegundos
+
+    // Control de la última pausa (para la restricción de 1 vez por hora)
+    let lastPauseTime = localStorage.getItem("lastPauseTime") ? parseInt(localStorage.getItem("lastPauseTime")) : 0;
     
     // Mapeo de Emojis a Nombres en español
     const MOOD_NAMES = {
@@ -49,7 +53,11 @@
     const partnerMoodText = document.getElementById("partnerMoodText"); 
     const messagesContainer = document.getElementById("messages");
     const messageInput = document.getElementById("messageInput");
-    const sendBtn = document.getElementById("sendBtn");
+    
+    // ⚠️ NUEVAS REFERENCIAS para el diseño actualizado
+    const sendBtnIcon = document.getElementById("sendBtnIcon"); 
+    const pauseChatBtn = document.getElementById("pauseChatBtn"); 
+
     const backBtn = document.getElementById("backBtn");
     
     // Elementos del estado emocional
@@ -125,9 +133,56 @@
         }
     }
 
-    // --- Lógica de Renderizado y Flujo ---
+    // --- Lógica de Pausa (Nueva Funcionalidad) ---
+    
+    function tryPauseChat() {
+        const now = new Date().getTime();
 
-    // La función renderChatList completa y robusta
+        if (now - lastPauseTime < PAUSE_COOLDOWN) {
+            const remainingTimeSeconds = Math.ceil((PAUSE_COOLDOWN - (now - lastPauseTime)) / 1000);
+            const remainingMinutes = Math.ceil(remainingTimeSeconds / 60);
+            alert(`❌ Debes esperar ${remainingMinutes} minutos más para volver a pausar el chat (1 pausa por hora).`);
+            return;
+        }
+
+        // Pedir al usuario el tiempo de pausa (1 a 15 min)
+        const pauseDurationInput = prompt("¿Por cuántos minutos quieres pausar el chat? (1 a 15 minutos)");
+        
+        if (pauseDurationInput === null || pauseDurationInput.trim() === "") {
+            return; // Cancelado
+        }
+
+        const durationMinutes = parseInt(pauseDurationInput);
+
+        if (isNaN(durationMinutes) || durationMinutes < 1 || durationMinutes > 15) {
+            alert("⚠️ Por favor, ingresa un número válido entre 1 y 15.");
+            return;
+        }
+
+        // 1. Aplicar la pausa (deshabilitar entrada de texto y botones)
+        messageInput.disabled = true;
+        sendBtnIcon.disabled = true;
+        pauseChatBtn.disabled = true;
+        messageInput.placeholder = `Chat pausado por ${durationMinutes} minutos...`;
+        
+        // 2. Iniciar el temporizador para reactivar
+        setTimeout(() => {
+            messageInput.disabled = false;
+            sendBtnIcon.disabled = false;
+            pauseChatBtn.disabled = false;
+            messageInput.placeholder = "Escribe tu mensaje...";
+            alert("✅ La pausa del chat ha terminado.");
+        }, durationMinutes * 60 * 1000);
+
+        // 3. Registrar el tiempo de enfriamiento (cooldown)
+        lastPauseTime = now;
+        localStorage.setItem("lastPauseTime", now);
+        
+        alert(`⏳ Chat pausado exitosamente por ${durationMinutes} minutos. ¡Desconectá un rato!`);
+    }
+
+    // --- Lógica de Renderizado y Flujo (Resto de funciones) ---
+
     function renderChatList() {
         chatListDiv.innerHTML = ""; 
 
@@ -310,8 +365,11 @@
         moodsContainer.classList.remove("active");
     });
     
-    // Conexión del botón de enviar
-    sendBtn.addEventListener("click", sendMessage);
+    // Conexión del botón de enviar (NUEVO BOTÓN)
+    sendBtnIcon.addEventListener("click", sendMessage);
+    
+    // Conexión del botón de pausa (NUEVA FUNCIÓN)
+    pauseChatBtn.addEventListener("click", tryPauseChat);
     
     chatListDiv.addEventListener("click", e => {
         if (e.target.classList.contains("add-chat")) {
