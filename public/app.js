@@ -3,12 +3,14 @@
 
     const socket = io(); 
     const currentUser = sessionStorage.getItem("currentUser");
+    
     if (!currentUser) {
         window.location.href = "login.html";
         return;
     }
-    // 🔴 AÑADIR ESTA LÍNEA para que el servidor sepa quién eres:
-    socket.emit('registerUser', currentUser);
+
+    // 🔴 CRUCIAL: Notificar al servidor quién eres para el manejo de estados de conexión (online/offline)
+    socket.emit('registerUser', currentUser); 
 
     // --- Variables de Estado ---
     const AVAILABLE_MOODS = ["❤️", "😊", "😴", "😢", "😠", "😅", "✨", "⏳"];
@@ -88,6 +90,34 @@
         
         return foundInsult;
     }
+
+    // 🔴 NUEVA FUNCIÓN: Decide qué texto mostrar en el encabezado del chat
+    function updatePartnerStatusDisplay(moodEmoji, currentStatus) {
+        // currentStatus viene de socket.on("statusChanged") o es inferido al iniciar.
+        const isOnline = currentStatus === 'online'; 
+        
+        const statusElement = document.getElementById("partnerStatus");
+        
+        // 1. Si hay un estado de ánimo seleccionado (no es '?')
+        if (moodEmoji && moodEmoji !== "?") {
+            const moodName = MOOD_NAMES[moodEmoji] || "desconocido";
+            // Muestra el nombre del estado emocional en el chat.
+            statusElement.textContent = moodName; 
+            // Muestra el nombre del estado emocional en el círculo (Pantalla Principal).
+            emojiCircle.textContent = moodName; 
+        } else if (isOnline) {
+            // 2. Si NO hay estado de ánimo pero está activo, muestra "Activo" en el chat.
+            statusElement.textContent = 'Activo';
+            // Y el emoji por defecto de activo en el círculo.
+            emojiCircle.textContent = '❓'; 
+        } else {
+            // 3. Si no hay estado de ánimo y está ausente, muestra "Ausente" en el chat.
+            statusElement.textContent = 'Ausente';
+            // Y el emoji por defecto de ausente en el círculo.
+            emojiCircle.textContent = '😴'; 
+        }
+    }
+
 
     // --- Lógica de Renderizado y Flujo ---
 
@@ -215,7 +245,7 @@
         });
     }
 
-    // (Restaurada y Modificada) Lógica de EMISIÓN del mensaje con Detección de Insultos
+    // Lógica de EMISIÓN del mensaje con Detección de Insultos
     const sendMessage = () => { 
         if (!currentChat) {
             alert("Seleccioná un chat primero.");
@@ -225,7 +255,7 @@
         const text = messageInput.value.trim();
         if (!text) return;
 
-        // 🔴 DETECCIÓN DE INSULTOS
+        // DETECCIÓN DE INSULTOS
         if (containsInsult(text)) {
             alert("🚫 ¡Atención! Tu mensaje no debe contener insultos o palabras ofensivas. Por favor, revisá tu redacción.");
             return; // Bloquea el envío
@@ -237,7 +267,7 @@
 
     // --- Lógica de Event Listeners ---
 
-    // Lógica para ABRIR el selector de estados (Sin cambios)
+    // Lógica para ABRIR el selector de estados
     openStateModal.addEventListener("click", () => {
         moodsContainer.classList.add("active"); 
     });
@@ -252,7 +282,7 @@
             mood: selectedMood
         };
 
-        // 1. Guardar mi estado emocional localmente para la restricción (NUEVO)
+        // 1. Guardar mi estado emocional localmente para la restricción 
         sessionStorage.setItem("myMood", selectedMood);
 
         // 2. Emitir el estado al servidor
@@ -265,7 +295,7 @@
     // Conexión del botón de enviar
     sendBtn.addEventListener("click", sendMessage);
     
-    // (Restaurada y Modificada) Lógica del modal de confirmación: SÍ
+    // Lógica del modal de confirmación: SÍ
     modalYes.addEventListener("click", () => { 
         const text = messageInput.value.trim();
         if (!text) {
@@ -273,7 +303,7 @@
             return;
         }
 
-        // 🔴 DETECCIÓN DE INSULTOS (Revisar de nuevo antes de enviar)
+        // DETECCIÓN DE INSULTOS (Revisar de nuevo antes de enviar)
         if (containsInsult(text)) {
             alert("🚫 ¡Error! Tu mensaje contiene insultos. Por favor, revisá tu redacción antes de confirmar.");
             modal.style.display = "none";
@@ -323,39 +353,31 @@
         }
     });
     
-    // 🔴 MODIFICADO: Lógica de RECEPCIÓN DE ESTADOS (Muestra el nombre del estado)
+    // 🔴 MODIFICADO: Lógica de RECEPCIÓN DE ESTADOS EMOCIONALES (Muestra el nombre del estado en el chat)
     socket.on("moodChanged", (data) => {
         if (data.sender !== currentUser) {
             const moodEmoji = data.mood;
-            const moodName = MOOD_NAMES[moodEmoji] || "desconocido";
 
-            // 1. Mostrar el nombre del estado seleccionado
-            emojiCircle.textContent = moodName;
-
-            // 2. GUARDAR el estado para persistencia
+            // 1. Guardar el estado para persistencia
             sessionStorage.setItem("partnerMood", moodEmoji); 
             partnerMood = moodEmoji;
+
+            // 2. ACTUALIZAR la visualización del estado (emoji en círculo, texto en chat)
+            // Usamos 'online' o 'offline' actual para re-evaluar la visualización completa.
+            // Para simplificar, asumimos 'online' para actualizar el display inmediatamente tras el cambio de mood.
+            // La función statusChanged actualizará esto de forma más robusta.
+            updatePartnerStatusDisplay(moodEmoji, 'online'); 
         }
     });
 
-    // 🔴 MODIFICADO: Lógica de RECEPCIÓN DE ESTADO DE CONEXIÓN
+    // 🔴 MODIFICADO: Lógica de RECEPCIÓN DE ESTADO DE CONEXIÓN (Define el emoji por defecto y el texto Activo/Ausente)
     socket.on("statusChanged", (data) => { 
         if (data.sender !== currentUser && partnerStatus) {
-            // Asumimos que data.status viene como 'online' o 'offline' del servidor
-            const isOnline = data.status === 'online'; 
-            
-            // 1. Mostrar el estado de conexión: 'Activo' o 'Ausente'
-            partnerStatus.textContent = isOnline ? 'Activo' : 'Ausente';
-            
-            // 2. Lógica del Emoji por Defecto (SOLO si no hay un mood seleccionado)
+            // data.status es 'online' o 'offline'
             const currentPartnerMood = sessionStorage.getItem("partnerMood") || "?";
             
-            // Si el estado guardado es '?' (no ha seleccionado un mood)
-            if (currentPartnerMood === "?") {
-                const defaultEmoji = isOnline ? '❓' : '😴'; // ? para activo, 😴 para ausente
-                emojiCircle.textContent = defaultEmoji;
-            } 
-            // Si ya seleccionó un mood, 'moodChanged' ya se encargó de mostrar el texto.
+            // 1. Llamar a la función de display con el estado de ánimo guardado y el estado de conexión recién recibido.
+            updatePartnerStatusDisplay(currentPartnerMood, data.status);
         }
     });
 
@@ -370,13 +392,9 @@
 
     // 2. Cargar el estado de la pareja si existe (PERSISTENCIA)
     const initialPartnerMood = sessionStorage.getItem("partnerMood");
-    if (initialPartnerMood && MOOD_NAMES[initialPartnerMood] && initialPartnerMood !== '?') {
-        // Si hay un estado guardado que NO es '?', mostramos el nombre
-        emojiCircle.textContent = MOOD_NAMES[initialPartnerMood];
-    } else {
-        // Si no hay estado o es '?', mostramos el '?' (servirá como default inicial)
-        emojiCircle.textContent = '?'; 
-    }
+    
+    // Al iniciar, asumimos que la pareja está 'offline'/'Ausente' hasta que el socket nos indique lo contrario.
+    updatePartnerStatusDisplay(initialPartnerMood, 'offline'); 
 
     // 3. Mostrar la pantalla principal y renderizar todo
     mainScreen.classList.add("active"); 
