@@ -4,8 +4,8 @@
 
 // Contraseñas válidas
 const PASSWORDS = {
-    Leo: "47966714",
-    Estefania: "abigail08"
+    Leo: "12345678",
+    Estefi: "87654321"
 };
 
 const loginBtn = document.getElementById("loginBtn");
@@ -57,6 +57,8 @@ if (loginBtn) {
 
     const socket = io();
     const currentUser = sessionStorage.getItem("currentUser");
+    const partnerName = currentUser === "Leo" ? "Estefi" : "Leo"; // Nuevo
+
     
     if (!currentUser && window.location.pathname.endsWith('index.html')) {
         window.location.href = "login.html";
@@ -72,16 +74,18 @@ if (loginBtn) {
     // --- Variables de Estado y Control ---
     const AVAILABLE_MOODS = ["❤️", "😊", "😴", "😢", "😠", "😅", "✨", "⏳"];
     
-    // 🔴 NUEVO: Opciones de pausa predefinidas en minutos
-    const PAUSE_OPTIONS = [2, 5, 8, 10, 12, 15]; 
-    const PAUSE_COOLDOWN = 60 * 60 * 1000; // 1 hora en milisegundos
-
-    // Control de la última pausa (para la restricción de 1 vez por hora)
-    let lastPauseTime = localStorage.getItem("lastPauseTime") ? parseInt(localStorage.getItem("lastPauseTime")) : 0;
-    
-    // 🔴 NUEVO: Variables para la funcionalidad de Responder
-    let messageToReplyId = null; 
-    let messageToReplyText = null; 
+    // 🔴 CORRECCIÓN Y ACTUALIZACIÓN: Mapeo de Emojis a Clases CSS (para la sombra de la Zona Verde)
+    const MOOD_CLASSES = {
+        "❤️": "enamorado", // Nuevo
+        "😊": "happy",
+        "😴": "cansado",
+        "😢": "sad",
+        "😠": "angry",
+        "😅": "ansioso",
+        "✨": "inspirado",
+        "⏳": "ocupado",
+        "?": "default" 
+    };
 
     // Mapeo de Emojis a Nombres en español
     const MOOD_NAMES = {
@@ -96,19 +100,16 @@ if (loginBtn) {
         "?": "indefinido" 
     };
     
-    // 🟢 NUEVO: Mapeo de Emojis a Clases CSS (para la sombra)
-    const MOOD_CLASSES = {
-        "❤️": "enamorado", 
-        "😊": "feliz",
-        "😴": "cansado",
-        "😢": "triste",
-        "😠": "enojado",
-        "😅": "ansioso",
-        "✨": "inspirado",
-        "⏳": "ocupado",
-        "❓": "default", 
-        "😴": "default" 
-    };
+    // 🔴 NUEVO: Opciones de pausa predefinidas en minutos
+    const PAUSE_OPTIONS = [2, 5, 8, 10, 12, 15]; 
+    const PAUSE_COOLDOWN = 60 * 60 * 1000; // 1 hora en milisegundos
+
+    // Control de la última pausa (para la restricción de 1 vez por hora)
+    let lastPauseTime = localStorage.getItem("lastPauseTime") ? parseInt(localStorage.getItem("lastPauseTime")) : 0;
+    
+    // 🔴 NUEVO: Variables para la funcionalidad de Responder
+    let messageToReplyId = null; 
+    let messageToReplyText = null; 
 
     const PROHIBITED_WORDS = [
         "tonto", "estúpido", "idiota", "imbécil", "boludo", "pelotudo", 
@@ -120,7 +121,8 @@ if (loginBtn) {
     
     // Almacenamiento del estado de la pareja
     let partnerMood = sessionStorage.getItem("partnerMood") || "?"; 
-    
+    let myMood = sessionStorage.getItem("myMood") || "?"; // Estado de ánimo del usuario actual
+
     // Referencias al DOM
     const chatListDiv = document.getElementById("chatList");
     const mainScreen = document.getElementById("mainScreen");
@@ -183,27 +185,36 @@ if (loginBtn) {
         return foundInsult;
     }
     
-    // 🟢 NUEVA FUNCIÓN: Control de la Sombra Emocional (CSS)
+    // 🟢 FUNCIÓN: Control de la Sombra Emocional (Zona Verde)
     /**
      * Asigna dinámicamente el color de sombra del círculo emocional
      * @param {string} moodEmoji - El emoji actual de la pareja
      */
     function updateEmotionalCircle(moodEmoji) {
         const emojiCircle = document.getElementById('emojiCircle');
-        const moodClass = MOOD_CLASSES[moodEmoji] || 'default'; 
+        // 🔴 CORRECCIÓN: Usa el mapeo MOOD_CLASSES (ej. 'happy' o 'enamorado')
+        const moodClass = MOOD_CLASSES[moodEmoji]; 
 
         if (emojiCircle) {
             // 1. Limpiar todas las clases de estado previas (mood-*)
             emojiCircle.className = 'emoji-circle'; 
             
             // 2. Aplicar la nueva clase de sombra (ej: mood-enojado)
-            if (moodClass !== 'default') {
+            if (moodClass && moodClass !== 'default') {
+                 // Añade 'mood-' + nombre de la clase
                  emojiCircle.classList.add(`mood-${moodClass}`);
             }
         }
     }
+    
+    // 🔴 FUNCIÓN: Actualiza el botón de estado en el header (Zona Roja)
+    function updateMyMoodButton(moodEmoji) {
+        const defaultEmoji = moodEmoji === '?' ? '😴' : moodEmoji;
+        openStateModal.textContent = defaultEmoji;
+    }
 
-    // FUNCIÓN CRUCIAL: Gestiona el estado de Conexión y Emocional
+
+    // FUNCIÓN CRUCIAL: Gestiona el estado de Conexión y Emocional de la pareja
     function updatePartnerStatusDisplay(moodEmoji, currentStatus) {
         const isOnline = currentStatus === 'online'; 
         
@@ -241,12 +252,14 @@ if (loginBtn) {
         updateEmotionalCircle(moodEmoji);
     }
     
-    // 🟢 NUEVA FUNCIÓN: Scroll al último mensaje (para la barra fija)
+    // 🔴 CORRECCIÓN SCROLL: Scroll al último mensaje (para la barra fija)
     function scrollToBottom() {
-        // 🔴 AUMENTAMOS el timeout para dar tiempo a que el teclado virtual suba
+        // Usamos un pequeño timeout para dar tiempo al navegador a calcular la nueva altura del teclado
         setTimeout(() => {
-            messagesContainer.scrollTop = messagesContainer.scrollHeight;
-        }, 300); 
+            if (messagesContainer) {
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            }
+        }, 150); 
     }
 
     // 🔴 NUEVA Lógica de Pausa con Lista de Opciones (Reemplaza tryPauseChat)
@@ -294,7 +307,7 @@ if (loginBtn) {
     }
 
 
-    // 🔴 NUEVA FUNCIÓN: Actualiza el estado 'leído' del mensaje y notifica al servidor
+    // 🔴 FUNCIÓN REVISADA: Actualiza el estado 'leído' del mensaje y notifica al servidor
     function updateMessageReadStatus(messageId) {
         if (!currentChat) return;
         
@@ -325,15 +338,14 @@ if (loginBtn) {
 
         // Obtener y ordenar las claves de chat
         const days = Object.keys(chats).sort((a, b) => {
+            // Asumiendo que el formato es DD-MM, lo convertimos a un objeto Date para comparar
             const currentYear = new Date().getFullYear(); 
-            const A_parts = a.split("-");
-            const B_parts = b.split("-");
+            const parseDate = (key) => {
+                const parts = key.split("-");
+                return new Date(`${currentYear}-${parts[1]}-${parts[0]}`);
+            };
             
-            // Nota: Aquí se asume el año actual para ordenar.
-            const dateA = new Date(`${currentYear}-${A_parts[1]}-${A_parts[0]}`);
-            const dateB = new Date(`${currentYear}-${B_parts[1]}-${B_parts[0]}`);
-            
-            return dateB - dateA; 
+            return parseDate(b) - parseDate(a); // Orden descendente (más nuevo primero)
         });
 
         // 2. Renderizar los chats existentes
@@ -352,18 +364,24 @@ if (loginBtn) {
                 const btn = document.createElement("button");
                 btn.className = "chat-item";
                 
-                // 🟢 Lógica de resaltado (Clase 'unread' si el último mensaje recibido no está leído)
                 const chatMessages = chats[day];
                 const lastMsg = (chatMessages && chatMessages.length)
                     ? chatMessages[chatMessages.length - 1]
                     : null;
                     
+                // 🔴 LÓGICA CORREGIDA "NO LEÍDO": Solo es no leído si el mensaje es de la pareja Y no tiene la bandera 'read: true'
                 const hasUnread = lastMsg && lastMsg.sender !== currentUser && !lastMsg.read;
                 if (hasUnread) {
                     btn.classList.add('unread');
                 }
                 
-                const lastMsgText = lastMsg ? lastMsg.text : "Toca para empezar a hablar";
+                // 🔴 AJUSTE ZONA AZUL: Mostrar el remitente del último mensaje
+                let lastMsgText = "Toca para empezar a hablar";
+                if (lastMsg) {
+                    const senderName = lastMsg.sender === currentUser ? `${currentUser}:` : `${partnerName}:`;
+                    lastMsgText = `${senderName} ${lastMsg.text}`;
+                }
+
 
                 btn.innerHTML = `
                     <div class="meta">
@@ -380,9 +398,9 @@ if (loginBtn) {
 
     // Función: Verifica si el usuario puede entrar al chat (Restricción de Estado)
     function tryOpenChat(day) {
-        const myCurrentMood = sessionStorage.getItem("myMood");
-        
-        if (!myCurrentMood || myCurrentMood === "?") {
+        myMood = sessionStorage.getItem("myMood"); // Actualizamos la variable
+
+        if (!myMood || myMood === "?") {
             alert("⚠️ ¡Debes seleccionar tu estado emocional antes de entrar a un chat!");
             openStateModal.click(); 
             return;
@@ -396,31 +414,26 @@ if (loginBtn) {
         mainScreen.classList.remove("active");
         chatScreen.classList.add("active");
 
-        chatPartner.textContent = currentUser === "Leo" ? "Estefi" : "Leo";
+        chatPartner.textContent = partnerName;
         renderMessages();
         
         // 🟢 Forzar el scroll al abrir el chat
         scrollToBottom(); 
     }
     
-    // 🔴 Modificación de renderMessages para corregir el estado "Leído"
+    // 🔴 FUNCIÓN REVISADA: renderMessages para corregir el estado "Leído" (solo en el último enviado)
     function renderMessages() { 
         messagesContainer.innerHTML = "";
         if (!currentChat || !chats[currentChat]) return;
 
-        // 🔴 Variable para rastrear el ID del último mensaje enviado que no ha sido leído.
-        let lastUnreadSentId = null; 
-        
-        // 1. Encontrar el ÚLTIMO mensaje enviado por el usuario actual que NO ha sido leído.
+        // 🔴 1. Determinar el ID del ÚLTIMO mensaje que fue ENVIADO por el usuario actual (TÚ).
+        let lastSentMessageId = null;
         const allSentMessages = chats[currentChat].filter(msg => msg.sender === currentUser);
-        const lastSentMessage = allSentMessages.length > 0 ? allSentMessages[allSentMessages.length - 1] : null;
-
-        if (lastSentMessage && !lastSentMessage.read) {
-            // Si el último mensaje enviado no está leído, lo usamos para el rastreo.
-            lastUnreadSentId = lastSentMessage.id;
+        if (allSentMessages.length > 0) {
+            lastSentMessageId = allSentMessages[allSentMessages.length - 1].id;
         }
 
-
+        // 🔴 2. Renderizar mensajes
         chats[currentChat].forEach(msg => {
             const div = document.createElement("div");
             div.className = msg.sender === currentUser ? "message sent" : "message received";
@@ -452,21 +465,22 @@ if (loginBtn) {
             ts.textContent = `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
             div.appendChild(ts);
 
-            // 🔴 LÓGICA CORREGIDA DEL ESTADO "LEÍDO"
-            if (msg.sender === currentUser) {
-                // Solo mostrar "Leído" si el mensaje está marcado como leído
-                if (msg.read) {
-                    const readStatus = document.createElement('span');
-                    readStatus.className = 'read-status';
-                    readStatus.textContent = 'Leído';
-                    ts.after(readStatus);
-                }
-            } else {
-                // Si es un mensaje RECIBIDO, marcamos como leído al verlo
+            // 🔴 LÓGICA DE LECTURA (APLICADA EN EL CONTENEDOR DE MENSAJES, NO EN LA BURBUJA)
+            messagesContainer.appendChild(div);
+
+            // 🔴 Si es un mensaje ENVIADO Y es el ÚLTIMO que enviaste Y está marcado como leído
+            if (msg.sender === currentUser && msg.id === lastSentMessageId && msg.read) {
+                const readStatus = document.createElement('span');
+                readStatus.className = 'read-status'; // Estilo: texto gris, alineado a la derecha
+                readStatus.textContent = 'Leído';
+                // 🔴 Lo añadimos AL CONTENEDOR de mensajes, DESPUÉS del mensaje
+                messagesContainer.appendChild(readStatus); 
+            }
+            
+            // 🔴 Si es un mensaje RECIBIDO, marcamos como leído al verlo
+            if (msg.sender !== currentUser) {
                 updateMessageReadStatus(msg.id);
             }
-
-            messagesContainer.appendChild(div);
         });
         
         scrollToBottom();
@@ -543,7 +557,7 @@ if (loginBtn) {
 
     // --- Lógica de Event Listeners ---
 
-    // Lógica para ABRIR el selector de estados
+    // Lógica para ABRIR el selector de estados (Zona Roja)
     openStateModal.addEventListener("click", () => {
         moodsContainer.classList.add("active"); 
     });
@@ -557,23 +571,25 @@ if (loginBtn) {
             sender: currentUser,
             mood: selectedMood
         };
-
+        
         // 1. Guardar mi estado emocional localmente para la restricción 
         sessionStorage.setItem("myMood", selectedMood);
+        myMood = selectedMood; // Actualizamos la variable local
 
         // 2. Emitir el estado al servidor
         socket.emit("updateMood", moodData);
 
-        // 3. Ocultar el selector de estados
+        // 3. Ocultar el selector de estados y actualizar el botón
         moodsContainer.classList.remove("active");
+        updateMyMoodButton(myMood); // 🔴 Actualiza el botón de la Zona Roja
     });
     
     // Conexión del botón de enviar
     sendBtnIcon.addEventListener("click", sendMessage);
     
-    // 🟢 AÑADIDO: Eventos para fijar la barra de chat al escribir (Scroll y Foco)
-    // 🔴 CORRECCIÓN: Reforzamos el scroll al enfocar
+    // 🔴 CORRECCIÓN SCROLL: Eventos para fijar la barra de chat al escribir (Scroll y Foco)
     messageInput.addEventListener('focus', () => {
+        // Asegura que la barra de input esté visible y el último mensaje esté encima del teclado
         scrollToBottom();
         // Delay extra para dispositivos móviles donde el teclado aparece con retraso
         setTimeout(scrollToBottom, 200); 
@@ -618,6 +634,8 @@ if (loginBtn) {
         if (!currentChat || !chats[currentChat] || chats[currentChat].length === 0) {
             chatScreen.classList.remove("active");
             mainScreen.classList.add("active");
+            // Re-renderizar la lista de chats para actualizar el estado de lectura/no lectura
+            renderChatList(); 
             return;
         }
 
@@ -648,6 +666,8 @@ if (loginBtn) {
         // 5. Si no hay mensaje importante, ya se respondió, o el usuario confirmó la salida, salir
         chatScreen.classList.remove("active");
         mainScreen.classList.add("active");
+        // Re-renderizar la lista de chats para actualizar el estado de lectura/no lectura
+        renderChatList(); 
     });
 
     // 🔴 NUEVO: Lógica para abrir el menú de acciones al hacer clic en un mensaje
@@ -732,8 +752,13 @@ if (loginBtn) {
                 }
 
                 saveData();
+                
+                // Solo re-renderizar si estamos en la pantalla del chat
                 if (dayKey === currentChat) {
                     renderMessages();
+                } else {
+                    // Si no estamos en el chat, actualizar la lista de chats para el indicador "no leído"
+                    renderChatList();
                 }
             }
         }
@@ -778,6 +803,10 @@ if (loginBtn) {
     
     // Al iniciar, asumimos que la pareja está 'offline'/'Ausente' hasta que el socket nos indique lo contrario.
     updatePartnerStatusDisplay(initialPartnerMood, 'offline'); 
+    
+    // 🔴 NUEVO: Inicializar el botón de estado emocional del usuario actual (Zona Roja)
+    myMood = sessionStorage.getItem("myMood") || "?";
+    updateMyMoodButton(myMood);
 
     // 3. Mostrar la pantalla principal y renderizar todo (ahora chats ya tiene el chat de hoy)
     mainScreen.classList.add("active"); 

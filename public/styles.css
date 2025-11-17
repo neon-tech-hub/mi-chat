@@ -29,6 +29,7 @@
     --shadow-angry: rgba(220, 50, 50, 0.4); /* Rojo para Enojo */
     --shadow-happy: rgba(85, 200, 85, 0.4); /* Verde para Alegría */
     --shadow-sad: rgba(100, 100, 255, 0.4); /* Azul para Tristeza */
+    --shadow-heart: rgba(255, 100, 150, 0.5); /* Rosa para Enamorado (❤️) */
 
     /* 🟢 NUEVAS VARIABLES para la lista de chats */
     --chat-item-bg: rgba(255,255,255,0.04); /* Fondo más visible para los items de la lista */
@@ -107,8 +108,31 @@ html, body {
 
 /* 🟢 CAMBIO: Ocultar el botón '+' (ya que los chats son automáticos) */
 .state-add-btn {
+    /* 🔴 Lo cambiamos, ahora es el botón de estado emocional */
     display: none;
 }
+
+/* 🔴 NUEVO: Botón de estado emocional en la esquina superior derecha (Zona Roja) */
+#openStateModal {
+    background: var(--panel); 
+    color: #fff;
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    font-size: 1.1rem;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: background 0.2s ease, transform 0.1s ease;
+}
+#openStateModal:hover {
+    background: rgba(255,255,255,0.1);
+    transform: scale(1.05);
+}
+
 
 /* SCREENS: por defecto ocultas si no tienen .active */
 .screen { display: none; padding: 18px; overflow: auto; height: 100%; }
@@ -174,7 +198,7 @@ html, body {
 /* MAIN SCREEN (Emoji y advertencia) */
 .emoji-container { display:flex; justify-content:center; margin-top:25px; } /* Más margen */
 
-/* 🟢 CAMBIO CLAVE: Reducir el círculo contenedor al tamaño del emoji y aplicar sombra de color */
+/* 🟢 ZONA VERDE (Sombra del Emoji) */
 .emoji-circle{
     width: auto; /* Tamaño automático para ajustarse al contenido */
     height: auto;
@@ -190,7 +214,7 @@ html, body {
 }
 .emoji-circle > div, .emoji-circle > span, .emoji-circle {
     font-size: 55px; /* Tamaño del emoji */
-    background: none; /* Fondo transparente para que el emoji sea el centro */
+    background: none; 
     border-radius: 50%;
     width: 1em;
     height: 1em;
@@ -199,10 +223,17 @@ html, body {
     justify-content: center;
     color: #fff;
 }
-/* Clases para sombras dinámicas (deben ser aplicadas por JS) */
+/* Clases para sombras dinámicas (aplicadas por JS) */
 .emoji-circle.mood-angry { box-shadow: 0 0 20px 5px var(--shadow-angry); }
 .emoji-circle.mood-happy { box-shadow: 0 0 20px 5px var(--shadow-happy); }
 .emoji-circle.mood-sad { box-shadow: 0 0 20px 5px var(--shadow-sad); }
+/* 🔴 NUEVO: Clase de sombra para Enamorado (Corazón) */
+.emoji-circle.mood-enamorado { box-shadow: 0 0 20px 5px var(--shadow-heart); } 
+/* 🔴 Agregando las clases que faltaban: ansioso, inspirado, ocupado */
+.emoji-circle.mood-ansioso { box-shadow: 0 0 20px 5px rgba(255, 204, 0, 0.4); } 
+.emoji-circle.mood-inspirado { box-shadow: 0 0 20px 5px rgba(100, 200, 255, 0.4); } 
+.emoji-circle.mood-ocupado { box-shadow: 0 0 20px 5px rgba(168, 168, 168, 0.4); } 
+/* ----------------------------------------------------------------- */
 
 /* 🟢 MODIFICACIÓN: Advertencia emocional (claridad) */
 .emotional-warning { 
@@ -241,35 +272,41 @@ html, body {
     border: 1px solid var(--chat-item-border); /* Borde más definido */
     cursor:pointer;
     display:flex;
-    /* 🔴 CAMBIO: Eliminamos el gap ya que el avatar será eliminado */
     gap:0; 
     align-items:center;
-    position: relative; /* Para la fecha */
+    position: relative; /* Para el indicador de no leído */
     transition: background .15s ease, transform .12s ease;
-    /* 🔴 CAMBIO: Alineación para que el texto ocupe todo el ancho */
-    justify-content: space-between; 
+    justify-content: flex-start; /* 🔴 CAMBIO: Alineación para que el texto empiece a la izquierda */
 }
 .chat-item:hover { transform: translateY(-2px); background: var(--chat-item-hover-bg); } /* Efecto hover */
 
-/* 🔴 CAMBIO CLAVE: Eliminar y ocultar el círculo/avatar en la lista de chats */
+/* 🔴 CAMBIO: Eliminar y ocultar el círculo/avatar en la lista de chats */
 .chat-item .avatar {
-    display: none; /* Oculta completamente el elemento */
+    display: none; 
 }
 
+/* 🔴 ZONA AZUL: Ajustes al contenido del chat para que aparezca solo el texto y no la fecha a la derecha */
 .chat-item .meta { 
     flex:1; 
     display:flex; 
     flex-direction:column; 
     gap:2px; 
-    /* 🔴 CAMBIO: Aseguramos que el meta ocupe casi todo el espacio */
     padding-left: 0; 
-    margin-right: 15px; /* Espacio antes de la fecha */
+    /* 🔴 CAMBIO: No hay margen extra a la derecha ya que la fecha se va */
+    margin-right: 0; 
 } 
+
+/* 🔴 ZONA AZUL: OCULTAR la fecha en el ítem de la lista */
+.chat-item .chat-date {
+    display: none;
+}
+
 
 /* 🟢 CAMBIO CLAVE: Resaltado de chat sin leer (color sutil) */
 .chat-item.unread {
     background: var(--chat-unread-highlight); /* Aplicar el degradado sutil */
     border: 1px solid rgba(255,255,255,0.1); 
+    padding-right: 25px; /* Espacio extra para el indicador de no leído */
 }
 .chat-item.unread:hover {
     background: linear-gradient(90deg, #515bd420, #dd2a7b20); 
@@ -282,6 +319,20 @@ html, body {
     color: #fff; /* Mensaje en blanco para enfatizar */
     font-weight: 600;
 }
+
+/* 🔴 NUEVO: Indicador Visual de NO LEÍDO (Punto de color) */
+.chat-item.unread::after {
+    content: '';
+    position: absolute;
+    right: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 8px; /* Tamaño del punto */
+    height: 8px;
+    border-radius: 50%;
+    background-color: var(--primary); /* Azul primario para que resalte */
+}
+
 
 /* 🟢 MODIFICACIÓN: Nombre del chat (más prominente) */
 .chat-item .chat-name { 
@@ -297,17 +348,12 @@ html, body {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis; /* Puntos suspensivos si es largo */
-    max-width: 90%; /* Limita el ancho del texto */
+    max-width: 100%; /* Ajuste para que ocupe todo el ancho disponible */
 }
 
-/* 🟢 NUEVO: Fecha del último mensaje (discreto y a la derecha) */
-.chat-item .chat-date {
-    /* 🔴 CAMBIO: Lo movemos fuera del 'position: absolute' para que esté al lado derecho */
-    font-size: 0.75rem;
-    color: rgba(255,255,255,0.5); /* Más discreto */
-    align-self: flex-start; /* Alinea con el nombre del chat */
-    margin-top: 2px;
-}
+/* 🔴 ZONA AZUL: Eliminación de la posición absoluta que tenía la fecha */
+/* .chat-item .chat-date { display: none; } */ 
+
 
 /* CHAT SCREEN */
 .chat-screen { 
@@ -371,7 +417,7 @@ html, body {
     flex-direction:column;
     gap:12px;
     background: var(--bg); 
-    /* 🔴 CAMBIO CLAVE SCROLL: Añadir padding inferior para que el último mensaje no quede bajo el input */
+    /* 🔴 CRUCIAL SCROLL: Añadir padding inferior para que el último mensaje no quede bajo el input */
     padding-bottom: 80px; 
 }
 
@@ -436,7 +482,7 @@ html, body {
     line-height: 1.2;
 }
 
-/* 🟢 CAMBIO CLAVE: Confirmación de Lectura (Estilo IG - SÓLO ÚLTIMO MENSAJE ENVIADO) */
+/* 🔴 LÓGICA DE 'LEÍDO' CORREGIDA: SÓLO para el último mensaje enviado, fuera de la burbuja */
 .read-status {
     /* 🔴 Este estilo se aplicará al SPAN del 'Leído' que se agregará debajo del último mensaje enviado */
     display: block;
@@ -444,7 +490,7 @@ html, body {
     color: var(--read-status-color); /* Color gris sutil */
     margin-top: 4px;
     text-align: right;
-    align-self: flex-end;
+    align-self: flex-end; /* Asegura que se alinee con el lado derecho de la burbuja */
     font-weight: 500; 
     padding-right: 2px;
 }
@@ -708,7 +754,7 @@ html, body {
 
     .messages {
         flex-grow: 1; /* Permite que el área de mensajes se encoja cuando el input está visible */
-        /* 🔴 CAMBIO CLAVE SCROLL (MÓVIL): Asegura el padding inferior de 80px */
+        /* 🔴 CRUCIAL SCROLL (MÓVIL): Asegura el padding inferior de 80px */
         padding-bottom: 80px; 
     }
     
@@ -722,10 +768,11 @@ html, body {
     .chat-item .avatar {
         display: none; 
     }
-    .chat-item .meta { margin-right: 12px; }
+    .chat-item .meta { margin-right: 0; }
     .chat-item .chat-name { font-size: 1rem; }
     .chat-item .chat-last { font-size: 0.85rem; }
-    .chat-item .chat-date { top: initial; right: initial; font-size: 0.7rem; margin-top: 2px; }
+    /* 🔴 Ocultamos la fecha también en móvil */
+    .chat-item .chat-date { display: none; }
 }
 
 /* --- Modales --- (No cambiados) */
