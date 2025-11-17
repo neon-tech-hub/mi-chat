@@ -74,7 +74,7 @@ if (loginBtn) {
     // --- Variables de Estado y Control ---
     const AVAILABLE_MOODS = ["❤️", "😊", "😴", "😢", "😠", "😅", "✨", "⏳"];
     
-    // 🔴 CORRECCIÓN Y ACTUALIZACIÓN: Mapeo de Emojis a Clases CSS (para la sombra de la Zona Verde)
+    // 🔴 Mapeo de Emojis a Clases CSS (para la sombra de la Zona Verde)
     const MOOD_CLASSES = {
         "❤️": "enamorado", // Nuevo
         "😊": "happy",
@@ -100,14 +100,14 @@ if (loginBtn) {
         "?": "indefinido" 
     };
     
-    // 🔴 NUEVO: Opciones de pausa predefinidas en minutos
+    // 🔴 Opciones de pausa predefinidas en minutos
     const PAUSE_OPTIONS = [2, 5, 8, 10, 12, 15]; 
     const PAUSE_COOLDOWN = 60 * 60 * 1000; // 1 hora en milisegundos
 
     // Control de la última pausa (para la restricción de 1 vez por hora)
     let lastPauseTime = localStorage.getItem("lastPauseTime") ? parseInt(localStorage.getItem("lastPauseTime")) : 0;
     
-    // 🔴 NUEVO: Variables para la funcionalidad de Responder
+    // 🔴 Variables para la funcionalidad de Responder
     let messageToReplyId = null; 
     let messageToReplyText = null; 
 
@@ -326,6 +326,7 @@ if (loginBtn) {
 
     // --- Lógica de Renderizado y Flujo (Resto de funciones) ---
 
+    // 🔴 FUNCIÓN CORREGIDA: Incluye el contador de mensajes nuevos y oculta el texto.
     function renderChatList() {
         chatListDiv.innerHTML = ""; 
 
@@ -364,29 +365,41 @@ if (loginBtn) {
                 const btn = document.createElement("button");
                 btn.className = "chat-item";
                 
-                const chatMessages = chats[day];
-                const lastMsg = (chatMessages && chatMessages.length)
+                const chatMessages = chats[day] || []; // Asegurarse de que sea un array
+                const lastMsg = (chatMessages.length)
                     ? chatMessages[chatMessages.length - 1]
                     : null;
                     
-                // 🔴 LÓGICA CORREGIDA "NO LEÍDO": Solo es no leído si el mensaje es de la pareja Y no tiene la bandera 'read: true'
-                const hasUnread = lastMsg && lastMsg.sender !== currentUser && !lastMsg.read;
+                // 1. LÓGICA CLAVE: Contamos cuántos mensajes RECIBIDOS NO leídos tiene este chat
+                const unreadMessagesCount = chatMessages.filter(
+                    msg => msg.sender !== currentUser && !msg.read
+                ).length;
+                
+                // 2. Determinar si hay algún mensaje no leído
+                const hasUnread = unreadMessagesCount > 0;
+                
                 if (hasUnread) {
                     btn.classList.add('unread');
                 }
                 
-                // 🔴 AJUSTE ZONA AZUL: Mostrar el remitente del último mensaje
-                let lastMsgText = "Toca para empezar a hablar";
+                // 3. LÓGICA CLAVE: Ocultar el mensaje si hay no leídos y mostrar el contador
+                let chatLastContent = "Toca para empezar a hablar";
                 if (lastMsg) {
-                    const senderName = lastMsg.sender === currentUser ? `${currentUser}:` : `${partnerName}:`;
-                    lastMsgText = `${senderName} ${lastMsg.text}`;
+                    if (hasUnread) {
+                        // Muestra el contador y oculta el contenido del mensaje
+                        const plural = unreadMessagesCount > 1 ? 's' : '';
+                        chatLastContent = `${unreadMessagesCount} mensaje${plural} nuevo${plural}`;
+                    } else {
+                        // Si está todo leído (o son mensajes enviados por ti), muestra el último mensaje
+                        const senderName = lastMsg.sender === currentUser ? `Tú:` : `${partnerName}:`;
+                        chatLastContent = `${senderName} ${lastMsg.text}`;
+                    }
                 }
-
 
                 btn.innerHTML = `
                     <div class="meta">
                         <div class="chat-name">Chat ${day}</div>
-                        <div class="chat-last">${lastMsgText}</div>
+                        <div class="chat-last">${chatLastContent}</div>
                     </div>
                     <span class="chat-date">${day}</span>
                 `;
@@ -415,6 +428,7 @@ if (loginBtn) {
         chatScreen.classList.add("active");
 
         chatPartner.textContent = partnerName;
+        // La llamada a renderMessages() aquí es lo que activa la lectura de los mensajes no leídos
         renderMessages();
         
         // 🟢 Forzar el scroll al abrir el chat
@@ -426,14 +440,14 @@ if (loginBtn) {
         messagesContainer.innerHTML = "";
         if (!currentChat || !chats[currentChat]) return;
 
-        // 🔴 1. Determinar el ID del ÚLTIMO mensaje que fue ENVIADO por el usuario actual (TÚ).
+        // 1. Determinar el ID del ÚLTIMO mensaje que fue ENVIADO por el usuario actual (TÚ).
         let lastSentMessageId = null;
         const allSentMessages = chats[currentChat].filter(msg => msg.sender === currentUser);
         if (allSentMessages.length > 0) {
             lastSentMessageId = allSentMessages[allSentMessages.length - 1].id;
         }
 
-        // 🔴 2. Renderizar mensajes
+        // 2. Renderizar mensajes
         chats[currentChat].forEach(msg => {
             const div = document.createElement("div");
             div.className = msg.sender === currentUser ? "message sent" : "message received";
@@ -477,9 +491,10 @@ if (loginBtn) {
                 messagesContainer.appendChild(readStatus); 
             }
             
-            // 🔴 Si es un mensaje RECIBIDO, marcamos como leído al verlo
+            // 🔴 Si es un mensaje RECIBIDO, marcamos como leído al verlo (SÓLO si aún no está leído)
             if (msg.sender !== currentUser) {
-                updateMessageReadStatus(msg.id);
+                // updateMessageReadStatus se encarga de verificar que msg.read sea false antes de marcar y notificar.
+                updateMessageReadStatus(msg.id); 
             }
         });
         
@@ -494,8 +509,10 @@ if (loginBtn) {
         saveData();
 
         if (dayKey === currentChat) {
+            // Si estamos en el chat, se re-renderiza y automáticamente se marcan como leídos
             renderMessages();
         }
+        // Siempre actualiza la lista para mostrar el indicador/contador
         renderChatList();
     }
     
