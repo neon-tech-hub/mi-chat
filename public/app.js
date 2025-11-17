@@ -1,13 +1,70 @@
+// =======================================================
+// A. PARTE DE LOGIN (Recuperada de tu primer mensaje)
+// =======================================================
+
+// Contraseñas válidas
+const PASSWORDS = {
+    Leo: "12345678",
+    Estefi: "87654321"
+};
+
+const loginBtn = document.getElementById("loginBtn");
+const loginUser = document.getElementById("loginUser");
+const loginPassword = document.getElementById("loginPassword");
+const loginError = document.getElementById("loginError");
+
+if (loginBtn) {
+    // Evento login (solo se ejecuta si estamos en la pantalla de login)
+    loginBtn.addEventListener("click", () => {
+        const user = loginUser.value.trim();
+        const pass = loginPassword.value.trim();
+
+        loginError.textContent = "";
+
+        if (!user || !pass) {
+            loginError.textContent = "Ingrese usuario y contraseña.";
+            return;
+        }
+
+        if (!PASSWORDS[user] || PASSWORDS[user] !== pass) {
+            loginError.textContent = "Usuario o contraseña incorrecta.";
+            return;
+        }
+
+        // Guardado SOLO durante la sesión actual
+        sessionStorage.setItem("currentUser", user);
+
+        window.location.href = "index.html";
+    });
+
+    // Permitir Enter
+    [loginUser, loginPassword].forEach(input => {
+        input.addEventListener("keypress", e => {
+            if (e.key === "Enter") loginBtn.click();
+        });
+    });
+}
+
+// =======================================================
+// B. PARTE DE CHAT/INTERFAZ
+// =======================================================
+
 (() => {
     "use strict";
+    
+    // Si no tenemos socket.io cargado, salimos.
+    if (typeof io === 'undefined') return;
 
     const socket = io();
     const currentUser = sessionStorage.getItem("currentUser");
     
-    if (!currentUser) {
+    if (!currentUser && window.location.pathname.endsWith('index.html')) {
         window.location.href = "login.html";
         return;
     }
+
+    // Si estamos en login, la lógica de abajo no se ejecuta.
+    if (window.location.pathname.endsWith('login.html')) return; 
 
     // CRUCIAL: Notificar al servidor quién eres para el manejo de estados de conexión (online/offline)
     socket.emit('registerUser', currentUser); 
@@ -37,6 +94,20 @@
         "✨": "inspirado",
         "⏳": "ocupado",
         "?": "indefinido" 
+    };
+    
+    // 🟢 NUEVO: Mapeo de Emojis a Clases CSS (para la sombra)
+    const MOOD_CLASSES = {
+        "❤️": "enamorado", 
+        "😊": "feliz",
+        "😴": "cansado",
+        "😢": "triste",
+        "😠": "enojado",
+        "😅": "ansioso",
+        "✨": "inspirado",
+        "⏳": "ocupado",
+        "❓": "default", 
+        "😴": "default" 
     };
 
     const PROHIBITED_WORDS = [
@@ -111,6 +182,26 @@
         
         return foundInsult;
     }
+    
+    // 🟢 NUEVA FUNCIÓN: Control de la Sombra Emocional (CSS)
+    /**
+     * Asigna dinámicamente el color de sombra del círculo emocional
+     * @param {string} moodEmoji - El emoji actual de la pareja
+     */
+    function updateEmotionalCircle(moodEmoji) {
+        const emojiCircle = document.getElementById('emojiCircle');
+        const moodClass = MOOD_CLASSES[moodEmoji] || 'default'; 
+
+        if (emojiCircle) {
+            // 1. Limpiar todas las clases de estado previas (mood-*)
+            emojiCircle.className = 'emoji-circle'; 
+            
+            // 2. Aplicar la nueva clase de sombra (ej: mood-enojado)
+            if (moodClass !== 'default') {
+                 emojiCircle.classList.add(`mood-${moodClass}`);
+            }
+        }
+    }
 
     // FUNCIÓN CRUCIAL: Gestiona el estado de Conexión y Emocional
     function updatePartnerStatusDisplay(moodEmoji, currentStatus) {
@@ -145,6 +236,16 @@
             // b) Texto en Chat (partnerMoodText): No debe aparecer nada.
             partnerMoodText.textContent = '';
         }
+        
+        // 🟢 LLAMADA A LA FUNCIÓN DE CONTROL VISUAL para aplicar la sombra
+        updateEmotionalCircle(moodEmoji);
+    }
+    
+    // 🟢 NUEVA FUNCIÓN: Scroll al último mensaje (para la barra fija)
+    function scrollToBottom() {
+        setTimeout(() => {
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }, 100); 
     }
 
     // 🔴 NUEVA Lógica de Pausa con Lista de Opciones (Reemplaza tryPauseChat)
@@ -250,15 +351,24 @@
             days.forEach(day => {
                 const btn = document.createElement("button");
                 btn.className = "chat-item";
-                const lastMsg = (chats[day] && chats[day].length)
-                    ? chats[day][chats[day].length - 1].text
-                    : "Toca para empezar a hablar";
                 
+                // 🟢 Lógica de resaltado (Clase 'unread' si el último mensaje recibido no está leído)
+                const lastMsg = (chats[day] && chats[day].length)
+                    ? chats[day][chats[day].length - 1]
+                    : null;
+                    
+                const hasUnread = lastMsg && lastMsg.sender !== currentUser && !lastMsg.read;
+                if (hasUnread) {
+                    btn.classList.add('unread');
+                }
+                
+                const lastMsgText = lastMsg ? lastMsg.text : "Toca para empezar a hablar";
+
                 btn.innerHTML = `
                     <div class="avatar"></div>
                     <div class="meta">
                         <div class="chat-name">Chat ${day}</div>
-                        <div class="chat-last">${lastMsg}</div>
+                        <div class="chat-last">${lastMsgText}</div>
                     </div>
                 `;
                 btn.onclick = () => tryOpenChat(day);
@@ -287,6 +397,9 @@
 
         chatPartner.textContent = currentUser === "Leo" ? "Estefi" : "Leo";
         renderMessages();
+        
+        // 🟢 Forzar el scroll al abrir el chat
+        scrollToBottom(); 
     }
     
     // 🔴 Modificación de renderMessages para las nuevas funcionalidades
@@ -303,7 +416,8 @@
             
             // 🟢 Resaltado para MENSAJE IMPORTANTE (Si lo marcó el emisor)
             if (msg.isImportant) {
-                div.classList.add('important-message');
+                 // Usamos la clase CSS definida en styles.css
+                div.classList.add(msg.sender === currentUser ? 'important-local' : 'important-remote');
             }
 
             // 🟢 Bloque de RESPUESTA (si existe replyToText)
@@ -346,7 +460,8 @@
             messagesContainer.appendChild(div);
         });
         
-        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        // El scroll se maneja con la función scrollToBottom() llamada al final.
+        scrollToBottom();
     }
 
     // Añade un mensaje al historial y lo renderiza
@@ -379,6 +494,9 @@
             alert("Seleccioná un chat primero.");
             return;
         }
+        
+        // Bloquear envío si el chat está pausado
+        if(messageInput.disabled) return;
 
         const text = messageInput.value.trim();
         if (!text) return;
@@ -445,6 +563,10 @@
     // Conexión del botón de enviar
     sendBtnIcon.addEventListener("click", sendMessage);
     
+    // 🟢 AÑADIDO: Eventos para fijar la barra de chat al escribir (Scroll y Foco)
+    messageInput.addEventListener('focus', scrollToBottom);
+    messageInput.addEventListener('input', scrollToBottom);
+
     // 🔴 Conexión del botón de pausa al nuevo modal
     pauseChatBtn.addEventListener("click", openPauseModal);
 
@@ -478,15 +600,14 @@
     
     // 🔴 NUEVA LÓGICA: Alerta si intenta salir sin responder un mensaje importante
     backBtn.addEventListener("click", () => {
-        // 1. Ocultar la pantalla de chat si no hay chat activo
-        if (!currentChat) {
+        // 1. Si no hay chat activo o no hay mensajes, salir directamente
+        if (!currentChat || !chats[currentChat] || chats[currentChat].length === 0) {
             chatScreen.classList.remove("active");
             mainScreen.classList.add("active");
             return;
         }
 
         // 2. Buscar el último mensaje *marcado como importante* que el currentUser *recibió*
-        // Se busca en orden inverso para encontrar el más reciente.
         const importantReceivedMessage = chats[currentChat].slice().reverse().find(
             msg => msg.isImportant && msg.sender !== currentUser
         );

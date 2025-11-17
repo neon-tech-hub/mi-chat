@@ -1,6 +1,6 @@
 /* --------------------------- */
 /* ESTILO TIPO INSTAGRAM       */
-/* (Optimizado para Pantalla Inicial y Legibilidad) */
+/* (Optimizado y Revisado)     */
 /* --------------------------- */
 
 * {
@@ -22,14 +22,21 @@
     --bubble-them: #262626; /* Burbujas recibidas un poco más oscuras */
     --important: #ffcc00; /* Amarillo para importante */
     --shadow: 0 6px 18px rgba(0,0,0,0.6);
-    --read-status-color: #4CAF50; /* Verde sutil para 'Leído' */
+    /* 🟢 CAMBIO: Gris sutil para "Leído" */
+    --read-status-color: #7d7d7d; 
+
+    /* Colores Emocionales para Sombra */
+    --shadow-angry: rgba(220, 50, 50, 0.4); /* Rojo para Enojo */
+    --shadow-happy: rgba(85, 200, 85, 0.4); /* Verde para Alegría */
+    --shadow-sad: rgba(100, 100, 255, 0.4); /* Azul para Tristeza */
 
     /* 🟢 NUEVAS VARIABLES para la lista de chats */
     --chat-item-bg: rgba(255,255,255,0.04); /* Fondo más visible para los items de la lista */
     --chat-item-hover-bg: rgba(255,255,255,0.06);
     --chat-item-border: rgba(255,255,255,0.08);
-    --chat-unread-indicator: #00FF7F; /* Color para mensajes no leídos */
-
+    /* 🟢 CAMBIO: Degradado para resaltar chats sin leer */
+    --chat-unread-highlight: linear-gradient(90deg, #515bd415, #dd2a7b15); 
+    
     /* 🟢 NUEVA VARIABLE para el fondo de la barra de entrada */
     --input-bg-color: #1a1a1c;
 }
@@ -83,12 +90,13 @@ html, body {
     gap:10px;
 }
 
-/* 🟢 MODIFICACIÓN: Logo de la cabecera más pequeño y redondo si es el avatar del usuario */
+/* 🟢 CAMBIO: Eliminado el círculo degradado del logo en el header */
 .app-header .ig-logo-gradient {
-    width: 32px; /* Un poco más pequeño */
-    height: 32px;
-    border-radius: 50%; /* Redondo en la cabecera */
-    box-shadow: 0 4px 10px rgba(129,52,175,0.1);
+    width: 0; 
+    height: 0;
+    padding: 0;
+    background: none;
+    box-shadow: none;
 }
 
 .brand-text{
@@ -97,19 +105,10 @@ html, body {
     letter-spacing:0.2px;
 }
 
-/* Header button (botón +) */
+/* 🟢 CAMBIO: Ocultar el botón '+' (ya que los chats son automáticos) */
 .state-add-btn {
-    background: var(--panel); /* Usa el color del panel */
-    border: 1px solid rgba(255,255,255,0.12); /* Borde más visible */
-    color: #fff;
-    width: 38px; /* Un poco más grande */
-    height: 38px;
-    font-size: 24px; /* Icono más grande */
-    border-radius: 50%; /* Redondo */
-    cursor: pointer;
-    transition: transform .18s ease, background .18s;
+    display: none;
 }
-.state-add-btn:hover { transform: translateY(-1px); background: rgba(255,255,255,0.04); } /* Hover más sutil */
 
 /* SCREENS: por defecto ocultas si no tienen .active */
 .screen { display: none; padding: 18px; overflow: auto; height: 100%; }
@@ -174,28 +173,36 @@ html, body {
 
 /* MAIN SCREEN (Emoji y advertencia) */
 .emoji-container { display:flex; justify-content:center; margin-top:25px; } /* Más margen */
+
+/* 🟢 CAMBIO CLAVE: Reducir el círculo contenedor al tamaño del emoji y aplicar sombra de color */
 .emoji-circle{
-    width:130px; /* Más grande */
-    height:130px; /* Más grande */
-    border-radius:50%;
-    padding:6px; /* Más padding */
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    background: var(--accent-gradient);
-    box-shadow: 0 12px 30px rgba(81,91,212,0.1); /* Sombra más definida */
+    width: auto; /* Tamaño automático para ajustarse al contenido */
+    height: auto;
+    border-radius: 50%;
+    padding: 15px; /* Padding interno para que la sombra actúe */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--panel); /* Fondo del círculo */
+    /* Sombra por defecto, que debe ser sobrescrita por JS con el color emocional */
+    box-shadow: 0 0 15px rgba(255, 255, 255, 0.1); 
+    transition: box-shadow 0.3s ease;
 }
 .emoji-circle > div, .emoji-circle > span, .emoji-circle {
-    font-size:55px; /* Emoji más grande */
-    background: var(--panel); /* Usa el color del panel para el fondo del emoji */
-    border-radius:50%;
-    width:100%;
-    height:100%;
-    display:flex;
-    align-items:center;
-    justify-content:center;
+    font-size: 55px; /* Tamaño del emoji */
+    background: none; /* Fondo transparente para que el emoji sea el centro */
+    border-radius: 50%;
+    width: 1em;
+    height: 1em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     color: #fff;
 }
+/* Clases para sombras dinámicas (deben ser aplicadas por JS) */
+.emoji-circle.mood-angry { box-shadow: 0 0 20px 5px var(--shadow-angry); }
+.emoji-circle.mood-happy { box-shadow: 0 0 20px 5px var(--shadow-happy); }
+.emoji-circle.mood-sad { box-shadow: 0 0 20px 5px var(--shadow-sad); }
 
 /* 🟢 MODIFICACIÓN: Advertencia emocional (claridad) */
 .emotional-warning { 
@@ -223,22 +230,8 @@ html, body {
 /* CHAT LIST */
 .chat-list { margin-top:30px; display:flex; flex-direction:column; gap:14px; } /* Más espacio */
 
-/* 🟢 MODIFICACIÓN: Botón de añadir chat */
-.chat-list .add-chat {
-    align-self:center;
-    width:56px; /* Un poco más grande */
-    height:56px; /* Un poco más grande */
-    border-radius:50%; /* Círculo perfecto */
-    font-size:28px; /* Icono más grande */
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    background: var(--chat-item-bg); /* Fondo más visible */
-    border: 1px dashed var(--chat-item-border); /* Borde más visible */
-    cursor:pointer;
-    transition: background .12s ease;
-}
-.chat-list .add-chat:hover { background: var(--chat-item-hover-bg); }
+/* 🟢 MODIFICACIÓN: Botón de añadir chat (oculto ya que se eliminó el botón '+' del header) */
+.chat-list .add-chat { display: none; }
 
 /* 🟢 MODIFICACIÓN: cada item de la lista (estilo IG DM card mejorado) */
 .chat-item {
@@ -255,35 +248,49 @@ html, body {
 }
 .chat-item:hover { transform: translateY(-2px); background: var(--chat-item-hover-bg); } /* Efecto hover */
 
-/* 🟢 MODIFICACIÓN: Avatar de los items de la lista (redondo) */
+/* 🟢 CAMBIO CLAVE: Avatar de los items de la lista (Eliminado degradado) */
 .chat-item .avatar {
     width:50px; /* Más grande */
     height:50px; /* Más grande */
     border-radius:50%; /* Redondo */
-    background: var(--accent-gradient);
+    background: var(--bubble-them); /* Fondo oscuro consistente */
+    border: 2px solid rgba(255,255,255,0.1); /* Borde sutil */
     flex-shrink:0;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.3); /* Sombra más suave */
-    /* 🟢 NUEVO: Letra inicial o emoji dentro */
+    box-shadow: none; /* Sombra eliminada */
+    
     display: flex;
     justify-content: center;
     align-items: center;
     font-size: 1.8rem; /* Tamaño de la inicial/emoji */
     font-weight: 600;
-    color: #fff;
+    color: var(--muted); /* Color gris para la inicial/emoji */
     background-color: var(--panel); /* Fallback */
 }
 
 .chat-item .meta { flex:1; display:flex; flex-direction:column; gap:2px; } /* Menos gap */
+
+/* 🟢 CAMBIO CLAVE: Resaltado de chat sin leer (color sutil) */
+.chat-item.unread {
+    background: var(--chat-unread-highlight); /* Aplicar el degradado sutil */
+    border: 1px solid rgba(255,255,255,0.1); 
+}
+.chat-item.unread:hover {
+    background: linear-gradient(90deg, #515bd420, #dd2a7b20); 
+}
+.chat-item.unread .chat-name {
+    color: #fff; /* Nombre en blanco para mejor contraste */
+    font-weight: 700;
+}
+.chat-item.unread .chat-last {
+    color: #fff; /* Mensaje en blanco para enfatizar */
+    font-weight: 600;
+}
 
 /* 🟢 MODIFICACIÓN: Nombre del chat (más prominente) */
 .chat-item .chat-name { 
     font-weight:700; 
     font-size:1.05rem; /* Más grande */
     color: #fff; /* Blanco puro para el nombre */
-}
-/* 🟢 NUEVO: Indicador de chat no leído */
-.chat-item.unread .chat-name {
-    color: var(--primary); /* Azul de Instagram para chats no leídos */
 }
 
 /* 🟢 MODIFICACIÓN: Último mensaje (solo texto) */
@@ -336,19 +343,21 @@ html, body {
     z-index: 10;
 }
 .chat-left { display:flex; gap:12px; align-items:center; }
+
+/* 🟢 CAMBIO CLAVE: Avatar de chat (Solo Borde Primario y Texto "LyE") */
 .chat-avatar { 
-    width:44px; 
-    height:44px; 
-    border-radius:50%; 
-    background: var(--accent-gradient);
-    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    width: 44px; 
+    height: 44px; 
+    border-radius: 50%; 
+    background: transparent; /* Fondo transparente */
+    border: 2px solid var(--primary); /* Borde con color primario */
+    box-shadow: none;
     display: flex;
     justify-content: center;
     align-items: center;
-    font-size: 1.5rem;
-    font-weight: 600;
-    color: #fff;
-    background-color: var(--panel); 
+    font-size: 1rem; /* Más pequeño para iniciales */
+    font-weight: 700;
+    color: var(--primary); /* Letras del mismo color que el borde */
 }
 .chat-title { font-weight:700; font-size:1.1rem; }
 .chat-status { font-size:0.85rem; color:var(--muted); }
@@ -365,7 +374,6 @@ html, body {
     flex-direction:column;
     gap:12px;
     background: var(--bg); 
-    /* 🔴 CAMBIO: Eliminamos el padding fijo aquí. Lo manejaremos con el JS o con el `env(safe-area-inset-bottom)` */
     padding-bottom: 15px; 
 }
 
@@ -430,54 +438,75 @@ html, body {
     line-height: 1.2;
 }
 
-/* 2. Confirmación de Lectura (Leído) */
+/* 🟢 CAMBIO CLAVE: Confirmación de Lectura (Estilo IG - SÓLO ÚLTIMO MENSAJE ENVIADO) */
 .read-status {
+    /* 🔴 Este estilo se aplicará al SPAN del 'Leído' que se agregará debajo del último mensaje enviado */
     display: block;
-    font-size: 0.72rem;
-    color: var(--read-status-color); 
+    font-size: 0.7rem; /* Texto pequeño */
+    color: var(--read-status-color); /* Color gris sutil */
     margin-top: 4px;
     text-align: right;
     align-self: flex-end;
-    font-weight: 600; 
+    font-weight: 500; 
+    padding-right: 2px;
 }
 
-/* 3. Mensaje Importante (Resaltado) */
-.important-message {
-    border: 3px solid var(--important); 
-    background: #2a2a1e !important; 
-    box-shadow: 0 0 12px rgba(255, 204, 0, 0.5); 
-    color: #fff !important; 
+/* 3. Mensaje Importante */
+/* 🟢 CAMBIO 1: Para quien lo marca (YO) */
+.message.sent.important-local {
+    background: #007bb8; /* Azul ligeramente más oscuro que el bubble-me */
+    border: 1px solid #005680;
 }
+/* Indicador de 'resaltado' debajo del horario */
+.message.sent.important-local .ts::after {
+    content: ' ✨ resaltado';
+    color: #ffcc00; /* Amarillo sutil */
+    font-size: 0.7rem;
+    font-weight: 600;
+    margin-left: 5px;
+}
+
+/* 🟢 CAMBIO 2: Para quien lo recibe (PAREJA) */
+.message.received.important-remote {
+    /* Fondo llamativo que combine con el estilo general (usamos la paleta) */
+    background: linear-gradient(90deg, rgba(221, 42, 123, 0.9), rgba(129, 52, 175, 0.9));
+    color: #fff;
+    border: 2px solid #ffcc00; /* Borde amarillo para visibilidad */
+    box-shadow: 0 0 15px rgba(221, 42, 123, 0.6); 
+    font-weight: 600;
+}
+.message.received.important-remote .ts {
+    color: rgba(255, 255, 255, 0.85); /* Aseguramos que el timestamp sea legible */
+}
+
 
 /* --------------------------------- */
 /* INPUT AREA (FLOTANTE MEJORADA)    */
 /* --------------------------------- */
 
 .chat-input {
-    /* 🟢 CAMBIOS CLAVE: Eliminamos el transform y la sombra gruesa */
-    position: sticky; /* 🔴 Mejor que 'fixed' para móviles si el teclado empuja el viewport */
+    /* Mantenemos sticky y bottom: 0 para que el JS pueda forzar el scroll y se adhiera al teclado */
+    position: sticky; 
     bottom: 0; 
     left: 0;
     right: 0;
-    width: 100%; /* Ocupa todo el ancho disponible */
+    width: 100%; 
     max-width: 500px;
-    margin: 0 auto; /* Centra el input en pantallas grandes */
+    margin: 0 auto; 
     
     padding: 10px 18px; 
     
-    background: var(--input-bg-color); /* Color de fondo sutil */
-    border-top: 1px solid rgba(255,255,255,0.08); /* Borde superior para separarlo */
+    background: var(--input-bg-color); 
+    border-top: 1px solid rgba(255,255,255,0.08); 
     
-    /* 🔴 Eliminamos border-radius y box-shadow para un look más limpio (tipo IG/WhatsApp) */
     border-radius: 0; 
-    box-shadow: 0 -2px 10px rgba(0,0,0,0.3); /* Sombra muy sutil abajo */
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.3); 
     z-index: 100; 
 
     display: flex;
     align-items: flex-end;
     gap: 8px;
     
-    /* Ajuste para el espacio del sistema */
     padding-bottom: calc(10px + env(safe-area-inset-bottom)); 
 }
 
@@ -487,9 +516,8 @@ html, body {
     min-height: 40px;
     max-height: 100px;
     
-    /* 🟢 MEJORA: Look más limpio (color sutil, menos borde) */
     background: rgba(255,255,255,0.05);
-    border: none; /* Quitamos el borde, confiamos en el padding y el fondo */
+    border: none; 
     
     padding: 10px 15px;
     border-radius: 20px;
@@ -513,7 +541,6 @@ html, body {
 
 /* Estilo del botón de pausa */
 #pauseChatBtn {
-    /* 🟢 MEJORA: Hacemos que se parezca más a un botón de acción rápida */
     background-color: #3f3f3f; 
     color: #fff;
     border: none;
@@ -529,23 +556,26 @@ html, body {
     font-weight: 600;
 }
 
-/* Estilo del botón de ENVIAR (icono/avioncito) */
+/* 🟢 CAMBIO CLAVE: Estilo del botón de ENVIAR (estilo WhatsApp/Telegram) */
 .btn.icon-send {
     background: var(--primary); 
     border: none;
     width: 40px; 
     height: 40px;
     padding: 0;
-    font-size: 18px; 
+    font-size: 20px; /* Tamaño más adecuado para el avión */
     border-radius: 50%;
     display: flex;
     justify-content: center;
     align-items: center;
     flex-shrink: 0;
     color: #fff;
-    transform: rotate(315deg); /* Gira el ícono ✈️ (que está en el HTML) para que apunte bien */
+    transform: rotate(0deg); /* Eliminamos la rotación */
+    text-align: center;
+    line-height: 1;
+    padding-left: 2px; /* Ajuste visual para centrar el emoji ✈️ */
 }
-.btn.icon-send:hover { transform: translateY(-1px) rotate(315deg); background: #0084e6; }
+.btn.icon-send:hover { transform: translateY(-1px); background: #0084e6; }
 
 
 /* Modal (Original y Modificado para centrado) */
@@ -558,17 +588,18 @@ html, body {
     align-items:center;
     z-index:999;
 }
-#messageActionModal .modal-content {
+/* Estilo del modal de acciones de mensaje (tipo menú contextual) */
+#messageActionsModal .modal-content {
     padding: 10px 0; 
     text-align: left;
     max-width: 250px;
 }
-#messageActionModal .modal-actions {
+#messageActionsModal .modal-actions {
     flex-direction: column;
     gap: 0;
     margin: 0;
 }
-#messageActionModal .modal-actions .btn {
+#messageActionsModal .modal-actions .btn {
     width: 100%;
     padding: 12px 18px;
     text-align: left;
@@ -576,7 +607,7 @@ html, body {
     border: none;
     border-radius: 0;
 }
-#messageActionModal .modal-actions .btn:hover {
+#messageActionsModal .modal-actions .btn:hover {
     background: rgba(255, 255, 255, 0.05);
     transform: none;
 }
@@ -638,7 +669,10 @@ html, body {
         justify-content: space-between;
     }
 
-    .emoji-circle{ width:100px; height:100px; font-size:45px; } 
+    /* Ajuste de tamaño para el emoji en móvil (el tamaño se basa en el tamaño del texto ahora) */
+    .emoji-circle > div, .emoji-circle > span, .emoji-circle {
+        font-size: 45px; /* Ligeramente más pequeño en móvil */
+    } 
     .emotional-warning { font-size: 0.9rem; }
 
     /* 🟢 CHAT INPUT: Diseño limpio de borde a borde */

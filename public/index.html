@@ -63,7 +63,7 @@
             <div class="messages" id="messages" aria-live="polite"></div>
 
             <div class="chat-input" id="chatInput">
-                <textarea id="messageInput" placeholder="Escribe tu mensaje..." rows="1" aria-label="Escribe tu mensaje"></textarea>
+                <textarea id="messageInput" placeholder="Escribe tu mensaje..." aria-label="Escribe tu mensaje"></textarea>
 
                 <div class="input-actions-buttons">
                     <button id="pauseChatBtn" class="btn secondary">Pausar chat</button>
@@ -78,6 +78,7 @@
 
     <div id="pauseTimeModal" class="modal">
         <div class="modal-content">
+            <button class="close-modal-btn btn-close-corner" aria-label="Cerrar modal">X</button> 
             <h3>Seleccioná el tiempo de Pausa</h3>
             <p>Recordá: solo podés pausar el chat una vez por hora.</p>
             <div id="pauseTimeButtons" class="modal-actions mood-list">
@@ -88,6 +89,7 @@
     
     <div id="messageActionsModal" class="modal">
         <div class="modal-content">
+                <button class="close-modal-btn btn-close-corner" aria-label="Cerrar modal">X</button>
             <p id="selectedMessageText" class="chat-last"></p>
             <div class="modal-actions">
                 <button id="replyMessageBtn" class="btn">↩️ Responder</button>
