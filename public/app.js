@@ -4,8 +4,8 @@
 
 // Contraseñas válidas
 const PASSWORDS = {
-    Leo: "12345678",
-    Estefi: "87654321"
+    Leo: "47966714",
+    Estefania: "abigail08"
 };
 
 const loginBtn = document.getElementById("loginBtn");
@@ -243,9 +243,10 @@ if (loginBtn) {
     
     // 🟢 NUEVA FUNCIÓN: Scroll al último mensaje (para la barra fija)
     function scrollToBottom() {
+        // 🔴 AUMENTAMOS el timeout para dar tiempo a que el teclado virtual suba
         setTimeout(() => {
             messagesContainer.scrollTop = messagesContainer.scrollHeight;
-        }, 100); 
+        }, 300); 
     }
 
     // 🔴 NUEVA Lógica de Pausa con Lista de Opciones (Reemplaza tryPauseChat)
@@ -340,7 +341,6 @@ if (loginBtn) {
             const empty = document.createElement("div");
             empty.className = "chat-item empty-message";
             empty.innerHTML = `
-                <div class="avatar"></div>
                 <div class="meta">
                 <div class="chat-name">Sin chats</div>
                 <div class="chat-last">Presioná '+' para iniciar</div>
@@ -353,8 +353,9 @@ if (loginBtn) {
                 btn.className = "chat-item";
                 
                 // 🟢 Lógica de resaltado (Clase 'unread' si el último mensaje recibido no está leído)
-                const lastMsg = (chats[day] && chats[day].length)
-                    ? chats[day][chats[day].length - 1]
+                const chatMessages = chats[day];
+                const lastMsg = (chatMessages && chatMessages.length)
+                    ? chatMessages[chatMessages.length - 1]
                     : null;
                     
                 const hasUnread = lastMsg && lastMsg.sender !== currentUser && !lastMsg.read;
@@ -365,11 +366,11 @@ if (loginBtn) {
                 const lastMsgText = lastMsg ? lastMsg.text : "Toca para empezar a hablar";
 
                 btn.innerHTML = `
-                    <div class="avatar"></div>
                     <div class="meta">
                         <div class="chat-name">Chat ${day}</div>
                         <div class="chat-last">${lastMsgText}</div>
                     </div>
+                    <span class="chat-date">${day}</span>
                 `;
                 btn.onclick = () => tryOpenChat(day);
                 chatListDiv.appendChild(btn);
@@ -402,29 +403,38 @@ if (loginBtn) {
         scrollToBottom(); 
     }
     
-    // 🔴 Modificación de renderMessages para las nuevas funcionalidades
+    // 🔴 Modificación de renderMessages para corregir el estado "Leído"
     function renderMessages() { 
         messagesContainer.innerHTML = "";
         if (!currentChat || !chats[currentChat]) return;
 
-        let lastSentMessage = null; // Para rastrear el último mensaje que envié
+        // 🔴 Variable para rastrear el ID del último mensaje enviado que no ha sido leído.
+        let lastUnreadSentId = null; 
         
+        // 1. Encontrar el ÚLTIMO mensaje enviado por el usuario actual que NO ha sido leído.
+        const allSentMessages = chats[currentChat].filter(msg => msg.sender === currentUser);
+        const lastSentMessage = allSentMessages.length > 0 ? allSentMessages[allSentMessages.length - 1] : null;
+
+        if (lastSentMessage && !lastSentMessage.read) {
+            // Si el último mensaje enviado no está leído, lo usamos para el rastreo.
+            lastUnreadSentId = lastSentMessage.id;
+        }
+
+
         chats[currentChat].forEach(msg => {
             const div = document.createElement("div");
             div.className = msg.sender === currentUser ? "message sent" : "message received";
-            div.dataset.messageId = msg.id; // CRUCIAL para responder/marcar
+            div.dataset.messageId = msg.id; 
             
-            // 🟢 Resaltado para MENSAJE IMPORTANTE (Si lo marcó el emisor)
+            // 🟢 Resaltado para MENSAJE IMPORTANTE
             if (msg.isImportant) {
-                 // Usamos la clase CSS definida en styles.css
                 div.classList.add(msg.sender === currentUser ? 'important-local' : 'important-remote');
             }
 
-            // 🟢 Bloque de RESPUESTA (si existe replyToText)
+            // 🟢 Bloque de RESPUESTA
             if (msg.replyToText) {
                 const replyBlock = document.createElement('div');
                 replyBlock.className = 'reply-block';
-                // Mostramos el remitente original (Tú o el nombre)
                 const originalSenderName = msg.replyToId.endsWith(currentUser) ? 'Tú' : (currentUser === "Leo" ? "Estefi" : "Leo");
                 replyBlock.innerHTML = `
                     <strong>${originalSenderName}:</strong> ${msg.replyToText}
@@ -442,10 +452,9 @@ if (loginBtn) {
             ts.textContent = `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
             div.appendChild(ts);
 
-            // 🟢 Para la confirmación de lectura y rastreo
+            // 🔴 LÓGICA CORREGIDA DEL ESTADO "LEÍDO"
             if (msg.sender === currentUser) {
-                lastSentMessage = msg;
-                // Añadir el status de "Leído" si ya lo está (en el envío)
+                // Solo mostrar "Leído" si el mensaje está marcado como leído
                 if (msg.read) {
                     const readStatus = document.createElement('span');
                     readStatus.className = 'read-status';
@@ -453,14 +462,13 @@ if (loginBtn) {
                     ts.after(readStatus);
                 }
             } else {
-                // Marcar como leído si lo estoy viendo
+                // Si es un mensaje RECIBIDO, marcamos como leído al verlo
                 updateMessageReadStatus(msg.id);
             }
 
             messagesContainer.appendChild(div);
         });
         
-        // El scroll se maneja con la función scrollToBottom() llamada al final.
         scrollToBottom();
     }
 
@@ -513,10 +521,10 @@ if (loginBtn) {
             sender: currentUser,
             text,
             time: new Date().toISOString(),
-            read: false, // 🔴 Nuevo campo
-            replyToId: messageToReplyId, // 🔴 Nuevo campo
-            replyToText: messageToReplyText, // 🔴 Nuevo campo
-            isImportant: false // 🔴 Nuevo campo
+            read: false, // 🔴 Se inicializa en FALSE, solo cambia al recibir el evento del server
+            replyToId: messageToReplyId, 
+            replyToText: messageToReplyText, 
+            isImportant: false 
         };
 
         // Emitir el mensaje al servidor
@@ -564,8 +572,14 @@ if (loginBtn) {
     sendBtnIcon.addEventListener("click", sendMessage);
     
     // 🟢 AÑADIDO: Eventos para fijar la barra de chat al escribir (Scroll y Foco)
-    messageInput.addEventListener('focus', scrollToBottom);
+    // 🔴 CORRECCIÓN: Reforzamos el scroll al enfocar
+    messageInput.addEventListener('focus', () => {
+        scrollToBottom();
+        // Delay extra para dispositivos móviles donde el teclado aparece con retraso
+        setTimeout(scrollToBottom, 200); 
+    });
     messageInput.addEventListener('input', scrollToBottom);
+
 
     // 🔴 Conexión del botón de pausa al nuevo modal
     pauseChatBtn.addEventListener("click", openPauseModal);

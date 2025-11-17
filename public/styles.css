@@ -1,6 +1,6 @@
 /* --------------------------- */
-/* ESTILO TIPO INSTAGRAM       */
-/* (Optimizado y Revisado)     */
+/* ESTILO TIPO INSTAGRAM       */
+/* (Optimizado y Revisado)     */
 /* --------------------------- */
 
 * {
@@ -241,33 +241,30 @@ html, body {
     border: 1px solid var(--chat-item-border); /* Borde más definido */
     cursor:pointer;
     display:flex;
-    gap:15px; /* Más espacio */
+    /* 🔴 CAMBIO: Eliminamos el gap ya que el avatar será eliminado */
+    gap:0; 
     align-items:center;
     position: relative; /* Para la fecha */
     transition: background .15s ease, transform .12s ease;
+    /* 🔴 CAMBIO: Alineación para que el texto ocupe todo el ancho */
+    justify-content: space-between; 
 }
 .chat-item:hover { transform: translateY(-2px); background: var(--chat-item-hover-bg); } /* Efecto hover */
 
-/* 🟢 CAMBIO CLAVE: Avatar de los items de la lista (Eliminado degradado) */
+/* 🔴 CAMBIO CLAVE: Eliminar y ocultar el círculo/avatar en la lista de chats */
 .chat-item .avatar {
-    width:50px; /* Más grande */
-    height:50px; /* Más grande */
-    border-radius:50%; /* Redondo */
-    background: var(--bubble-them); /* Fondo oscuro consistente */
-    border: 2px solid rgba(255,255,255,0.1); /* Borde sutil */
-    flex-shrink:0;
-    box-shadow: none; /* Sombra eliminada */
-    
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 1.8rem; /* Tamaño de la inicial/emoji */
-    font-weight: 600;
-    color: var(--muted); /* Color gris para la inicial/emoji */
-    background-color: var(--panel); /* Fallback */
+    display: none; /* Oculta completamente el elemento */
 }
 
-.chat-item .meta { flex:1; display:flex; flex-direction:column; gap:2px; } /* Menos gap */
+.chat-item .meta { 
+    flex:1; 
+    display:flex; 
+    flex-direction:column; 
+    gap:2px; 
+    /* 🔴 CAMBIO: Aseguramos que el meta ocupe casi todo el espacio */
+    padding-left: 0; 
+    margin-right: 15px; /* Espacio antes de la fecha */
+} 
 
 /* 🟢 CAMBIO CLAVE: Resaltado de chat sin leer (color sutil) */
 .chat-item.unread {
@@ -305,11 +302,11 @@ html, body {
 
 /* 🟢 NUEVO: Fecha del último mensaje (discreto y a la derecha) */
 .chat-item .chat-date {
-    position: absolute;
-    top: 15px; /* Alineado con el nombre */
-    right: 15px;
+    /* 🔴 CAMBIO: Lo movemos fuera del 'position: absolute' para que esté al lado derecho */
     font-size: 0.75rem;
     color: rgba(255,255,255,0.5); /* Más discreto */
+    align-self: flex-start; /* Alinea con el nombre del chat */
+    margin-top: 2px;
 }
 
 /* CHAT SCREEN */
@@ -374,7 +371,8 @@ html, body {
     flex-direction:column;
     gap:12px;
     background: var(--bg); 
-    padding-bottom: 15px; 
+    /* 🔴 CAMBIO CLAVE SCROLL: Añadir padding inferior para que el último mensaje no quede bajo el input */
+    padding-bottom: 80px; 
 }
 
 /* Burbuja base */
@@ -481,7 +479,7 @@ html, body {
 
 
 /* --------------------------------- */
-/* INPUT AREA (FLOTANTE MEJORADA)    */
+/* INPUT AREA (FLOTANTE MEJORADA)    */
 /* --------------------------------- */
 
 .chat-input {
@@ -621,6 +619,22 @@ html, body {
     text-align:center;
     border: 1px solid rgba(255,255,255,0.08); 
     box-shadow: 0 10px 30px rgba(0,0,0,0.7); 
+    position: relative; /* Para el botón de cierre de esquina */
+}
+
+/* 🔴 NUEVO: Botón de cierre de esquina */
+.btn-close-corner {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 5px;
+    line-height: 1;
+    z-index: 10;
 }
 
 .modal-content h3, .modal-content h4 {
@@ -694,22 +708,24 @@ html, body {
 
     .messages {
         flex-grow: 1; /* Permite que el área de mensajes se encoja cuando el input está visible */
-        padding-bottom: 15px; /* Quitamos el padding grande aquí */
+        /* 🔴 CAMBIO CLAVE SCROLL (MÓVIL): Asegura el padding inferior de 80px */
+        padding-bottom: 80px; 
     }
     
     /* Ajustes generales para móvil */
     .chat-item {
         padding: 12px;
-        gap: 12px;
+        /* 🔴 CAMBIO: Eliminamos el gap */
+        gap: 0; 
     }
+    /* 🔴 CAMBIO CLAVE: Eliminar y ocultar el círculo/avatar en la lista de chats */
     .chat-item .avatar {
-        width: 44px;
-        height: 44px;
-        font-size: 1.5rem;
+        display: none; 
     }
+    .chat-item .meta { margin-right: 12px; }
     .chat-item .chat-name { font-size: 1rem; }
     .chat-item .chat-last { font-size: 0.85rem; }
-    .chat-item .chat-date { top: 12px; right: 12px; font-size: 0.7rem; }
+    .chat-item .chat-date { top: initial; right: initial; font-size: 0.7rem; margin-top: 2px; }
 }
 
 /* --- Modales --- (No cambiados) */
