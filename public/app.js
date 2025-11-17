@@ -14,11 +14,18 @@
 
     // --- Variables de Estado y Control ---
     const AVAILABLE_MOODS = ["❤️", "😊", "😴", "😢", "😠", "😅", "✨", "⏳"];
+    
+    // 🔴 NUEVO: Opciones de pausa predefinidas en minutos
+    const PAUSE_OPTIONS = [2, 5, 8, 10, 12, 15]; 
     const PAUSE_COOLDOWN = 60 * 60 * 1000; // 1 hora en milisegundos
 
     // Control de la última pausa (para la restricción de 1 vez por hora)
     let lastPauseTime = localStorage.getItem("lastPauseTime") ? parseInt(localStorage.getItem("lastPauseTime")) : 0;
     
+    // 🔴 NUEVO: Variables para la funcionalidad de Responder
+    let messageToReplyId = null; 
+    let messageToReplyText = null; 
+
     // Mapeo de Emojis a Nombres en español
     const MOOD_NAMES = {
         "❤️": "enamorado",
@@ -54,10 +61,9 @@
     const messagesContainer = document.getElementById("messages");
     const messageInput = document.getElementById("messageInput");
     
-    // ⚠️ NUEVAS REFERENCIAS para el diseño actualizado
+    // NUEVAS REFERENCIAS para el diseño actualizado
     const sendBtnIcon = document.getElementById("sendBtnIcon"); 
     const pauseChatBtn = document.getElementById("pauseChatBtn"); 
-
     const backBtn = document.getElementById("backBtn");
     
     // Elementos del estado emocional
@@ -66,6 +72,14 @@
     const moodsContainer = document.getElementById("moodsContainer");
     const moodList = document.getElementById("moodList");
 
+    // 🔴 NUEVAS REFERENCIAS para Modales de Interacción y Pausa
+    const pauseTimeModal = document.getElementById("pauseTimeModal");
+    const pauseTimeButtons = document.getElementById("pauseTimeButtons");
+    const messageActionsModal = document.getElementById("messageActionsModal");
+    const selectedMessageText = document.getElementById("selectedMessageText");
+    const replyMessageBtn = document.getElementById("replyMessageBtn");
+    const markImportantBtn = document.getElementById("markImportantBtn");
+    
     // --- Funciones de Utilidad y Almacenamiento ---
 
     function saveData() { localStorage.setItem("chatData", JSON.stringify({ chats })); }
@@ -98,7 +112,7 @@
         return foundInsult;
     }
 
-    // FUNCIÓN CRUCIAL: Gestiona el estado de Conexión (partnerStatus) y Emocional (partnerMoodText y emojiCircle)
+    // FUNCIÓN CRUCIAL: Gestiona el estado de Conexión y Emocional
     function updatePartnerStatusDisplay(moodEmoji, currentStatus) {
         const isOnline = currentStatus === 'online'; 
         
@@ -133,9 +147,9 @@
         }
     }
 
-    // --- Lógica de Pausa (Nueva Funcionalidad) ---
+    // 🔴 NUEVA Lógica de Pausa con Lista de Opciones (Reemplaza tryPauseChat)
     
-    function tryPauseChat() {
+    function openPauseModal() {
         const now = new Date().getTime();
 
         if (now - lastPauseTime < PAUSE_COOLDOWN) {
@@ -145,20 +159,15 @@
             return;
         }
 
-        // Pedir al usuario el tiempo de pausa (1 a 15 min)
-        const pauseDurationInput = prompt("¿Por cuántos minutos quieres pausar el chat? (1 a 15 minutos)");
-        
-        if (pauseDurationInput === null || pauseDurationInput.trim() === "") {
-            return; // Cancelado
-        }
+        // Generar botones de tiempo dinámicamente
+        pauseTimeButtons.innerHTML = PAUSE_OPTIONS.map(min => 
+            `<button class="btn primary small pause-option" data-minutes="${min}">${min} min</button>`
+        ).join('');
 
-        const durationMinutes = parseInt(pauseDurationInput);
+        pauseTimeModal.style.display = 'flex';
+    }
 
-        if (isNaN(durationMinutes) || durationMinutes < 1 || durationMinutes > 15) {
-            alert("⚠️ Por favor, ingresa un número válido entre 1 y 15.");
-            return;
-        }
-
+    function applyPause(durationMinutes) {
         // 1. Aplicar la pausa (deshabilitar entrada de texto y botones)
         messageInput.disabled = true;
         sendBtnIcon.disabled = true;
@@ -175,10 +184,29 @@
         }, durationMinutes * 60 * 1000);
 
         // 3. Registrar el tiempo de enfriamiento (cooldown)
-        lastPauseTime = now;
-        localStorage.setItem("lastPauseTime", now);
+        lastPauseTime = new Date().getTime();
+        localStorage.setItem("lastPauseTime", lastPauseTime);
         
         alert(`⏳ Chat pausado exitosamente por ${durationMinutes} minutos. ¡Desconectá un rato!`);
+        pauseTimeModal.style.display = 'none';
+    }
+
+
+    // 🔴 NUEVA FUNCIÓN: Actualiza el estado 'leído' del mensaje y notifica al servidor
+    function updateMessageReadStatus(messageId) {
+        if (!currentChat) return;
+        
+        // Encuentra el chat y el mensaje
+        const chat = chats[currentChat];
+        const msg = chat.find(m => m.id === messageId);
+
+        // Solo marcamos como leído si el mensaje fue recibido y aún no está marcado
+        if (msg && msg.sender !== currentUser && !msg.read) {
+            msg.read = true;
+            saveData();
+            // Notificar al servidor que el mensaje fue leído
+            socket.emit("messageRead", { chatId: currentChat, messageId: messageId });
+        }
     }
 
     // --- Lógica de Renderizado y Flujo (Resto de funciones) ---
@@ -260,15 +288,34 @@
         renderMessages();
     }
     
-    // Renderiza todos los mensajes
+    // 🔴 Modificación de renderMessages para las nuevas funcionalidades
     function renderMessages() { 
         messagesContainer.innerHTML = "";
         if (!currentChat || !chats[currentChat]) return;
 
+        let lastSentMessage = null; // Para rastrear el último mensaje que envié
+        
         chats[currentChat].forEach(msg => {
             const div = document.createElement("div");
             div.className = msg.sender === currentUser ? "message sent" : "message received";
-            div.textContent = msg.text;
+            div.dataset.messageId = msg.id; // CRUCIAL para responder/marcar
+
+            // 🟢 Resaltado para MENSAJE IMPORTANTE (Si lo marcó el emisor)
+            if (msg.isImportant) {
+                div.classList.add('important-message');
+            }
+
+            // 🟢 Bloque de RESPUESTA (si existe replyToText)
+            if (msg.replyToText) {
+                const replyBlock = document.createElement('div');
+                replyBlock.className = 'reply-block';
+                replyBlock.textContent = msg.replyToText; // Usamos el texto de cache
+                div.appendChild(replyBlock);
+            }
+
+            const msgText = document.createElement('p');
+            msgText.textContent = msg.text;
+            div.appendChild(msgText);
 
             const ts = document.createElement("span");
             ts.className = "ts";
@@ -276,9 +323,29 @@
             ts.textContent = `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
             div.appendChild(ts);
 
+            // 🟢 Para la confirmación de lectura y rastreo
+            if (msg.sender === currentUser) {
+                lastSentMessage = msg;
+            } else {
+                // Marcar como leído si lo estoy viendo
+                updateMessageReadStatus(msg.id);
+            }
+
             messagesContainer.appendChild(div);
         });
 
+        // 🟢 Añadir el estado "Leído" al último mensaje enviado
+        if (lastSentMessage && lastSentMessage.read) {
+            const lastSentDiv = messagesContainer.querySelector(`[data-message-id="${lastSentMessage.id}"]`);
+            if (lastSentDiv) {
+                const readStatus = document.createElement('span');
+                readStatus.className = 'read-status';
+                readStatus.textContent = 'Leído';
+                // Añadir el estado 'Leído' junto al timestamp del último mensaje enviado
+                lastSentDiv.querySelector('.ts').after(readStatus);
+            }
+        }
+        
         messagesContainer.scrollTop = messagesContainer.scrollHeight;
     }
 
@@ -306,7 +373,7 @@
         });
     }
 
-    // Lógica de EMISIÓN del mensaje con Detección de Insultos (SIN MODAL)
+    // 🔴 Modificación de sendMessage para incluir ID y datos de respuesta/importante
     const sendMessage = () => { 
         if (!currentChat) {
             alert("Seleccioná un chat primero.");
@@ -324,9 +391,14 @@
         
         // Si no hay insultos, procede directamente al envío
         const msgData = {
+            id: new Date().getTime().toString(), // 🔴 ID único CRUCIAL
             sender: currentUser,
             text,
-            time: new Date().toISOString()
+            time: new Date().toISOString(),
+            read: false, // 🔴 Nuevo campo
+            replyToId: messageToReplyId, // 🔴 Nuevo campo
+            replyToText: messageToReplyText, // 🔴 Nuevo campo
+            isImportant: false // 🔴 Nuevo campo
         };
 
         // Emitir el mensaje al servidor
@@ -336,6 +408,11 @@
         addMessage(msgData);
 
         messageInput.value = "";
+
+        // 🔴 Restablecer el estado de respuesta
+        messageToReplyId = null;
+        messageToReplyText = null;
+        messageInput.placeholder = "Escribe tu mensaje..."; 
     };
 
     // --- Lógica de Event Listeners ---
@@ -365,12 +442,30 @@
         moodsContainer.classList.remove("active");
     });
     
-    // Conexión del botón de enviar (NUEVO BOTÓN)
+    // Conexión del botón de enviar
     sendBtnIcon.addEventListener("click", sendMessage);
     
-    // Conexión del botón de pausa (NUEVA FUNCIÓN)
-    pauseChatBtn.addEventListener("click", tryPauseChat);
-    
+    // 🔴 Conexión del botón de pausa al nuevo modal
+    pauseChatBtn.addEventListener("click", openPauseModal);
+
+    // 🔴 Listener para la selección de tiempo en el modal de pausa
+    pauseTimeButtons.addEventListener("click", (e) => {
+        const target = e.target;
+        if (target.classList.contains('pause-option')) {
+            const duration = parseInt(target.dataset.minutes);
+            if (!isNaN(duration)) {
+                applyPause(duration);
+            }
+        }
+    });
+
+    // 🔴 Listener para cerrar los modales
+    document.querySelectorAll('.close-modal-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.target.closest('.modal').style.display = 'none';
+        });
+    });
+
     chatListDiv.addEventListener("click", e => {
         if (e.target.classList.contains("add-chat")) {
             const key = formatDateKey();
@@ -381,17 +476,137 @@
         }
     });
     
+    // 🔴 NUEVA LÓGICA: Alerta si intenta salir sin responder un mensaje importante
     backBtn.addEventListener("click", () => {
+        // 1. Ocultar la pantalla de chat si no hay chat activo
+        if (!currentChat) {
+            chatScreen.classList.remove("active");
+            mainScreen.classList.add("active");
+            return;
+        }
+
+        // 2. Buscar el último mensaje *marcado como importante* que el currentUser *recibió*
+        const importantReceivedMessage = chats[currentChat].slice().reverse().find(
+            msg => msg.isImportant && msg.sender !== currentUser
+        );
+
+        if (importantReceivedMessage) {
+            // 3. Comprobar si ya existe una respuesta directa a ese mensaje
+            const hasReplied = chats[currentChat].some(
+                msg => msg.sender === currentUser && msg.replyToId === importantReceivedMessage.id
+            );
+
+            if (!hasReplied) {
+                // 4. Mostrar la alerta de confirmación si NO ha respondido
+                const confirmation = confirm(
+                    `⚠️ ¡Alerta de Pareja! ⚠️\n\nTu pareja marcó el mensaje: "${importantReceivedMessage.text.substring(0, 50)}..." como importante.\n\n¿Seguro que querés salir sin responder?`
+                );
+
+                if (!confirmation) {
+                    // Si el usuario cancela, se queda en el chat
+                    return;
+                }
+            }
+        }
+
+        // 5. Si no hay mensaje importante, ya se respondió, o el usuario confirmó la salida, salir
         chatScreen.classList.remove("active");
         mainScreen.classList.add("active");
     });
-    
+
+    // 🔴 NUEVO: Lógica para abrir el menú de acciones al hacer clic en un mensaje
+    messagesContainer.addEventListener('click', (e) => {
+        let target = e.target.closest('.message');
+        if (!target) return;
+
+        const messageId = target.dataset.messageId;
+        
+        // Obtener el objeto mensaje real
+        const msg = chats[currentChat].find(m => m.id === messageId);
+        if (!msg) return;
+
+        // Configurar la ventana modal
+        messageActionsModal.style.display = 'flex';
+        messageActionsModal.dataset.messageId = messageId;
+        selectedMessageText.textContent = msg.text.substring(0, 100) + (msg.text.length > 100 ? '...' : '');
+
+        // Deshabilitar "Marcar Importante" si ya lo está o si es un mensaje recibido
+        markImportantBtn.disabled = msg.isImportant || msg.sender !== currentUser;
+        
+        // El botón Responder siempre está disponible
+    });
+
+    // 🔴 NUEVO: Listener para el botón RESPONDER
+    replyMessageBtn.addEventListener('click', () => {
+        const messageId = messageActionsModal.dataset.messageId;
+        const msg = chats[currentChat].find(m => m.id === messageId);
+
+        if (msg) {
+            // Almacenar el ID y Texto para el próximo envío
+            messageToReplyId = messageId;
+            messageToReplyText = msg.text.substring(0, 50) + (msg.text.length > 50 ? '...' : ''); 
+
+            // Indicar al usuario que está respondiendo y cerrar modal
+            messageInput.placeholder = `Respondiendo a: "${messageToReplyText}"`;
+            messageInput.focus();
+            messageActionsModal.style.display = 'none';
+        }
+    });
+
+    // 🔴 NUEVO: Listener para el botón MARCAR IMPORTANTE
+    markImportantBtn.addEventListener('click', () => {
+        const messageId = messageActionsModal.dataset.messageId;
+        const msgIndex = chats[currentChat].findIndex(m => m.id === messageId);
+
+        if (msgIndex !== -1) {
+            // Marcar localmente
+            chats[currentChat][msgIndex].isImportant = true;
+            saveData();
+            renderMessages(); // Actualizar la visualización para el resaltado
+
+            // Notificar al servidor (y al otro usuario)
+            socket.emit("markImportant", { chatId: currentChat, messageId: messageId });
+
+            messageActionsModal.style.display = 'none';
+            alert("🌟 Mensaje marcado como importante. ¡Tu pareja recibirá una alerta si intenta salir sin responder!");
+        }
+    });
+
     // --- Lógica de Recepción (Socket.io) ---
 
     // Lógica de RECEPCIÓN (Mensajes)
     socket.on("receiveMessage", (msgData) => { 
         if (msgData.sender !== currentUser) {
             addMessage(msgData);
+        }
+    });
+    
+    // 🔴 NUEVO: Lógica de RECEPCIÓN de estado de lectura
+    socket.on("messageStatusUpdate", (data) => {
+        if (data.status === 'read' && data.sender !== currentUser) {
+            const dayKey = data.chatId;
+            if (chats[dayKey]) {
+                const msg = chats[dayKey].find(m => m.id === data.messageId);
+                if (msg) {
+                    msg.read = true;
+                    saveData();
+                    if (dayKey === currentChat) {
+                        renderMessages();
+                    }
+                }
+            }
+        } else if (data.status === 'important' && data.sender !== currentUser) {
+             const dayKey = data.chatId;
+            if (chats[dayKey]) {
+                const msg = chats[dayKey].find(m => m.id === data.messageId);
+                if (msg) {
+                    msg.isImportant = true;
+                    saveData();
+                    if (dayKey === currentChat) {
+                        renderMessages();
+                    }
+                }
+            }
         }
     });
     

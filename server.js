@@ -8,9 +8,13 @@ const io = require('socket.io')(http, {
 });
 const path = require('path');
 
-// 🔴 NUEVO: Mapa para rastrear los IDs de socket por nombre de usuario.
-// Esto es esencial para saber quién se desconectó.
+// Mapa para rastrear los IDs de socket por nombre de usuario.
 const userSockets = {}; // Ejemplo: { "Leo": "socketId123", "Estefi": "socketId456" }
+// 🔴 NUEVO: Mapa para rastrear el estado de pausa
+const chatPaused = {
+    Leo: null, // null o timestamp del fin de la pausa
+    Estefi: null
+};
 
 // Servir archivos estáticos (CSS, JS del cliente, imágenes, etc.) desde la carpeta 'public'
 app.use(express.static("public"));
@@ -31,35 +35,52 @@ io.on('connection', socket => {
     console.log("Usuario conectado:", socket.id);
 
     // ----------------------------------------------------
-    // 🔴 CAMBIO 1: REGISTRO DEL USUARIO AL CONECTARSE
-    // El cliente debe enviar su nombre al conectarse.
+    // 1. REGISTRO DEL USUARIO AL CONECTARSE
+    // ----------------------------------------------------
     socket.on('registerUser', (userName) => {
         // Asocia el ID del socket al nombre de usuario
         userSockets[userName] = socket.id;
         socket.userName = userName; // Almacena el nombre en el socket para usarlo en 'disconnect'
         console.log(`Usuario registrado: ${userName} con ID: ${socket.id}`);
 
-        // Determinar el nombre del otro usuario para enviarle el estado
         const partnerName = userName === "Leo" ? "Estefi" : "Leo";
+        const partnerSocketId = userSockets[partnerName];
 
-        // 1. Notificar al otro usuario que este usuario está ONLINE
+        // 1. Notificar a todos que este usuario está ONLINE
         io.emit("statusChanged", {
             sender: userName,
             status: 'online'
         });
 
         // 2. Si el otro usuario ya está conectado, enviar su estado a este nuevo socket
-        if (userSockets[partnerName]) {
+        if (partnerSocketId) {
             socket.emit("statusChanged", {
                 sender: partnerName,
                 status: 'online'
             });
         }
+        
+        // 3. 🔴 Nuevo: Enviar el estado de pausa actual a ambos usuarios
+        // Si el usuario registrado está pausado, notifica a ambos.
+        if (chatPaused[userName] && chatPaused[userName] > Date.now()) {
+            io.emit("chatPausedState", {
+                pausedBy: userName,
+                endTime: chatPaused[userName]
+            });
+        }
+        // Si el compañero está pausado, notifica a ambos.
+        if (chatPaused[partnerName] && chatPaused[partnerName] > Date.now()) {
+            io.emit("chatPausedState", {
+                pausedBy: partnerName,
+                endTime: chatPaused[partnerName]
+            });
+        }
     });
+
     // ----------------------------------------------------
-
-
-    // Cuando un usuario manda un mensaje
+    // 2. MANEJO DE MENSAJES BASE
+    // ----------------------------------------------------
+    // Cuando un usuario manda un mensaje (el objeto data ahora incluye replyTo y important)
     socket.on("sendMessage", data => {
         io.emit("receiveMessage", data);
     });
@@ -69,14 +90,67 @@ io.on('connection', socket => {
         io.emit("moodChanged", data);
     });
 
-    // 🔴 ELIMINADO: Esta línea ya no es necesaria, el registro y disconnect manejan el estado.
-    // socket.on("updateStatus", data => {
-    //     io.emit("statusChanged", data);
-    // });
+    // ----------------------------------------------------
+    // 3. 🔴 NUEVO: MANEJO DEL ESTADO DE PAUSA
+    // ----------------------------------------------------
+    socket.on('pauseChat', ({ sender, durationMs }) => {
+        const endTime = Date.now() + durationMs;
+        chatPaused[sender] = endTime;
 
+        console.log(`Chat pausado por ${sender} hasta ${new Date(endTime).toLocaleTimeString()}`);
+        
+        // Notificar a todos el estado de pausa y cuándo termina
+        io.emit("chatPausedState", {
+            pausedBy: sender,
+            endTime: endTime
+        });
+
+        // Configurar un timeout para enviar el evento de 'chatUnpaused' cuando termine la pausa
+        setTimeout(() => {
+            // Solo si el estado no ha cambiado desde que se inició el temporizador
+            if (chatPaused[sender] === endTime) {
+                chatPaused[sender] = null; // Quitar la marca de pausa
+                console.log(`Chat despausado: ${sender}`);
+                io.emit("chatUnpaused", { user: sender });
+            }
+        }, durationMs);
+    });
+    
+    // ----------------------------------------------------
+    // 4. 🔴 NUEVO: CONFIRMACIÓN DE LECTURA
+    // ----------------------------------------------------
+    socket.on('messageRead', ({ messageId, receiver }) => {
+        const partnerSocketId = userSockets[receiver];
+        
+        if (partnerSocketId) {
+            // Envía el evento SOLO al socket del usuario que envió el mensaje (el que lo marca como "Leído")
+            io.to(partnerSocketId).emit('updateMessageReadStatus', { 
+                messageId: messageId, 
+                read: true 
+            });
+            console.log(`Mensaje ${messageId} marcado como leído por ${socket.userName}. Notificado a ${receiver}.`);
+        }
+    });
 
     // ----------------------------------------------------
-    // 🔴 CAMBIO 2: MANEJO DE DESCONEXIÓN (OFFLINE)
+    // 5. 🔴 NUEVO: MARCAR MENSAJE COMO IMPORTANTE
+    // ----------------------------------------------------
+    socket.on('markImportant', ({ messageId, targetUser }) => {
+        const partnerSocketId = userSockets[targetUser];
+        
+        if (partnerSocketId) {
+            // Envía el evento SOLO al compañero (el que recibió el mensaje)
+            io.to(partnerSocketId).emit('messageMarkedImportant', {
+                messageId: messageId,
+                important: true 
+            });
+            console.log(`Mensaje ${messageId} marcado como importante por ${socket.userName}. Notificado a ${targetUser}.`);
+        }
+    });
+
+    // ----------------------------------------------------
+    // 6. MANEJO DE DESCONEXIÓN (OFFLINE)
+    // ----------------------------------------------------
     socket.on("disconnect", () => {
         const userName = socket.userName;
         

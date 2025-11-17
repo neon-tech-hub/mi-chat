@@ -19,6 +19,7 @@
     --accent-gradient: linear-gradient(135deg, #f58529, #dd2a7b, #8134af, #515bd4);
     --bubble-me: #0095f6;
     --bubble-them: #1f1f1f;
+    --important: #ffcc00; /* Amarillo para importante */
     --shadow: 0 6px 18px rgba(0,0,0,0.6);
 }
 
@@ -147,6 +148,7 @@ html, body {
     transition: transform .12s ease, background .12s;
 }
 .btn:hover { transform: translateY(-2px); background: rgba(255,255,255,0.03); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important; }
 
 .btn.small { padding: 6px 10px; font-size:0.9rem; border-radius:8px; }
 .primary {
@@ -238,7 +240,6 @@ html, body {
 }
 .chat-screen.active { 
     display: block; 
-    /* El padding que antes estaba en .screen se maneja en el contenido interno (messages) */
 }
 
 /* Chat window (Contenedor principal del chat) */
@@ -286,8 +287,10 @@ html, body {
     font-size:0.97rem;
     box-shadow: 0 8px 20px rgba(0,0,0,0.45);
     position: relative;
-    display:inline-block;
+    display:flex; /* Usar flex para alinear contenido interno (texto, ts, read) */
+    flex-direction: column;
     animation: pop .12s ease both;
+    cursor: pointer; /* Para indicar que se puede hacer clic/tocar para las acciones */
 }
 
 /* enviado por mi */
@@ -313,14 +316,51 @@ html, body {
     color: rgba(255,255,255,0.65);
     margin-top:6px;
     opacity:0.85;
+    text-align: right; /* Alinea el TS a la derecha de la burbuja */
 }
 
 /* --------------------------------- */
-/* 🔴 INPUT AREA (DISEÑO TIPO WHATSAPP) */
+/* 🟢 NUEVOS ESTILOS DE MENSAJES */
+/* --------------------------------- */
+
+/* 1. Bloque de Respuesta (Reply) */
+.reply-block {
+    padding: 5px 8px;
+    background: rgba(255, 255, 255, 0.1);
+    border-left: 3px solid var(--primary);
+    border-radius: 4px;
+    margin-bottom: 6px;
+    font-size: 0.8rem;
+    color: var(--muted);
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    line-height: 1.2;
+}
+
+/* 2. Confirmación de Lectura (Leído) */
+.read-status {
+    display: block;
+    font-size: 0.72rem;
+    color: #9b9b9b; /* Color gris */
+    margin-top: 4px;
+    text-align: right;
+    align-self: flex-end; /* Lo alinea a la derecha de la columna del mensaje */
+}
+
+/* 3. Mensaje Importante (Resaltado) */
+.important-message {
+    /* Resalta el mensaje recibido que es importante (afecta al mensaje recibido, no al enviado) */
+    border: 2px solid var(--important); /* Borde amarillo llamativo */
+    background: #2a2a1e !important; /* Fondo más oscuro para resaltarlo */
+    box-shadow: 0 0 10px var(--important); /* Sombra para que destaque más */
+}
+
+/* --------------------------------- */
+/* INPUT AREA */
 /* --------------------------------- */
 
 .chat-input {
-    /* Eliminamos padding-top y border-top si ya lo tiene el header */
     padding: 10px 18px; /* Padding horizontal para centrar bien */
     border-top: 1px solid rgba(255,255,255,0.03);
     background: linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.005));
@@ -375,36 +415,51 @@ html, body {
     justify-content: center;
     align-items: center;
     flex-shrink: 0; /* Evita que se encoja */
-    /* Asegúrate de que el .primary le da el color azul/degradado de IG */
 }
 
 
-/* Modal (Original, sin cambios) */
+/* Modal (Original y Modificado para centrado) */
 .modal {
     display:none;
     position: fixed;
     inset:0;
-    background: rgba(0,0,0,0.6);
+    background: rgba(0,0,0,0.8); /* Oscurecido más el fondo */
     justify-content:center;
     align-items:center;
     z-index:999;
 }
 .modal-content {
-    /* 🔴 CAMBIO: CENTRADO DE MODAL */
     background: linear-gradient(180deg, #0f1112, #0b0b0b);
     padding:18px;
     width:88%;
     max-width:360px;
     border-radius:12px;
-    text-align:center; /* Centra el texto aquí */
+    text-align:center;
     border: 1px solid rgba(255,255,255,0.03);
 }
-/* Agregamos esto para asegurar que los botones también se centren */
+
+.modal-content h3, .modal-content h4 {
+    margin-bottom: 8px;
+}
+.modal-content p {
+    color: var(--muted);
+    margin-bottom: 15px;
+}
+
+/* Aseguramos que los botones de acción del modal tengan un buen layout */
 .modal-actions {
     display: flex;
-    justify-content: center; /* Centra los botones horizontalmente */
+    justify-content: center;
     gap: 15px;
-    margin-top: 15px;
+    margin: 15px 0;
+    flex-wrap: wrap; /* Para que los botones se adapten en móvil */
+}
+
+/* Estilo específico para los botones de pausa (lista de opciones) */
+#pauseTimeButtons .pause-option {
+    border-radius: 20px;
+    padding: 8px 14px;
+    font-size: 1rem;
 }
 
 
@@ -417,6 +472,9 @@ html, body {
 /* Responsivo */
 @media (max-width:520px){
     .emoji-circle{ width:96px; height:96px; font-size:40px; }
+    /* Ajustes para que la barra de chat ocupe bien en móvil si es muy angosto */
+    .chat-input { padding: 8px 12px; }
+    #pauseChatBtn { padding: 6px 10px; font-size: 0.8rem; }
 }
 
 /* --- Modal de Emojis (mood-modal) --- */

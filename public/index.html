@@ -62,23 +62,42 @@
 
             <div class="messages" id="messages" aria-live="polite"></div>
 
-            <div class="messages" id="messages" aria-live="polite"></div>
+            <div class="chat-input" id="chatInput">
+                <textarea id="messageInput" placeholder="Escribe tu mensaje..." rows="1" aria-label="Escribe tu mensaje"></textarea>
 
-                <div class="chat-input" id="chatInput">
-                    <textarea id="messageInput" placeholder="Escribe tu mensaje..." rows="1" aria-label="Escribe tu mensaje"></textarea>
-
-                    <div class="input-actions-buttons">
-                        <button id="pauseChatBtn" class="btn secondary">Pausar chat</button>
-                        
-                        <button id="sendBtnIcon" class="btn primary icon-send" aria-label="Enviar mensaje">
-                            ➡️
-                        </button>
-                    </div>
+                <div class="input-actions-buttons">
+                    <button id="pauseChatBtn" class="btn secondary">Pausar chat</button>
+                    
+                    <button id="sendBtnIcon" class="btn primary icon-send" aria-label="Enviar mensaje">
+                        ➡️
+                    </button>
                 </div>
+            </div>
         </div>
     </section>
 
-
+    <div id="pauseTimeModal" class="modal">
+        <div class="modal-content">
+            <h3>Seleccioná el tiempo de Pausa</h3>
+            <p>Recordá: solo podés pausar el chat una vez por hora.</p>
+            <div id="pauseTimeButtons" class="modal-actions mood-list">
+                </div>
+            <button class="btn small secondary close-modal-btn">Cancelar</button>
+        </div>
+    </div>
+    
+    <div id="messageActionsModal" class="modal">
+        <div class="modal-content">
+            <h4>Mensaje Seleccionado</h4>
+            <p id="selectedMessageText" class="chat-last"></p>
+            <div class="modal-actions" style="flex-direction:column; gap:10px;">
+                <button id="replyMessageBtn" class="btn primary">↩️ Responder</button>
+                <button id="markImportantBtn" class="btn small secondary">🌟 Marcar como importante</button>
+            </div>
+            <button class="btn small secondary close-modal-btn">Cancelar</button>
+        </div>
+    </div>
+    
     <div class="mood-modal" id="moodsContainer" aria-hidden="true">
         <div class="mood-list" id="moodList">
         </div>
