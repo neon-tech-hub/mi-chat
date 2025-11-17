@@ -44,7 +44,8 @@
 
 html, body {
     width: 100%;
-    height: 100%;
+    /* 🟢 CRUCIAL: Altura 100% para posicionamiento fijo */
+    height: 100%; 
     margin: 0;
     padding: 0;
     overflow: hidden;
@@ -417,8 +418,8 @@ html, body {
     flex-direction:column;
     gap:12px;
     background: var(--bg); 
-    /* 🔴 CRUCIAL SCROLL: Añadir padding inferior para que el último mensaje no quede bajo el input */
-    padding-bottom: 80px; 
+    /* 🔴 CRUCIAL SCROLL: Ajuste de padding inferior para que el último mensaje no quede bajo el input fijo */
+    padding-bottom: 75px; 
 }
 
 /* Burbuja base */
@@ -525,12 +526,12 @@ html, body {
 
 
 /* --------------------------------- */
-/* INPUT AREA (FLOTANTE MEJORADA)    */
+/* INPUT AREA (FIJO Y CENTRADO)    */
 /* --------------------------------- */
 
 .chat-input {
-    /* Mantenemos sticky y bottom: 0 para que el JS pueda forzar el scroll y se adhiera al teclado */
-    position: sticky; 
+    /* 🔴 CLAVE: Cambiamos a FIXED para que siempre flote encima del teclado */
+    position: fixed; 
     bottom: 0; 
     left: 0;
     right: 0;
@@ -538,7 +539,8 @@ html, body {
     max-width: 500px;
     margin: 0 auto; 
     
-    padding: 10px 18px; 
+    /* 🔴 Ajuste de padding vertical para centrar el contenido */
+    padding: 8px 18px; 
     
     background: var(--input-bg-color); 
     border-top: 1px solid rgba(255,255,255,0.08); 
@@ -548,17 +550,22 @@ html, body {
     z-index: 100; 
 
     display: flex;
-    align-items: flex-end;
+    /* 🔴 CLAVE: Centrado vertical de todos los elementos */
+    align-items: center; 
     gap: 8px;
     
-    padding-bottom: calc(10px + env(safe-area-inset-bottom)); 
+    /* Mantenemos el safe area, pero con menos padding base */
+    padding-bottom: calc(8px + env(safe-area-inset-bottom)); 
 }
 
 .chat-input textarea {
     flex-grow: 1;
-    resize: none; 
+    /* 🔴 CLAVE: Altura mínima ajustada */
+    height: 40px; 
     min-height: 40px;
     max-height: 100px;
+    /* Permitimos el resize vertical si el contenido es largo */
+    resize: vertical; 
     
     background: rgba(255,255,255,0.05);
     border: none; 
@@ -580,16 +587,19 @@ html, body {
 .input-actions-buttons {
     display: flex;
     gap: 8px;
-    align-items: flex-end; 
+    /* 🔴 Centramos los botones con el textarea */
+    align-items: center; 
 }
 
 /* Estilo del botón de pausa */
 #pauseChatBtn {
+    /* 🔴 Ajustamos padding y height para que se centre bien */
+    height: 40px; 
     background-color: #3f3f3f; 
     color: #fff;
     border: none;
     border-radius: 20px;
-    padding: 8px 12px;
+    padding: 0 12px; /* Solo padding horizontal */
     font-size: 0.85rem;
     flex-shrink: 0;
     white-space: nowrap;
@@ -600,7 +610,7 @@ html, body {
     font-weight: 600;
 }
 
-/* 🟢 CAMBIO CLAVE: Estilo del botón de ENVIAR (estilo WhatsApp/Telegram) */
+/* 🟢 CAMBIO CLAVE: Estilo del botón de ENVIAR (tamaño fijo 40x40 para centrado) */
 .btn.icon-send {
     background: var(--primary); 
     border: none;
@@ -735,11 +745,11 @@ html, body {
     } 
     .emotional-warning { font-size: 0.9rem; }
 
-    /* 🟢 CHAT INPUT: Diseño limpio de borde a borde */
+    /* 🟢 CHAT INPUT: Posicionamiento fijo en móvil */
     .chat-input { 
-        position: sticky; /* Mantenemos sticky para que se pegue al viewport visible */
+        position: fixed; /* CLAVE: fixed en móvil */
         bottom: 0;
-        padding: 10px 15px; /* Padding ajustado */
+        padding: 8px 15px; /* Padding ajustado */
         max-width: 100%; 
         left: 0; 
         transform: none; 
@@ -747,15 +757,15 @@ html, body {
         margin-bottom: 0; /* Sin margen adicional */
         
         /* 🔴 Padding inferior ajustado para el safe area */
-        padding-bottom: calc(10px + env(safe-area-inset-bottom)); 
+        padding-bottom: calc(8px + env(safe-area-inset-bottom)); 
     }
     
-    #pauseChatBtn { padding: 8px 10px; font-size: 0.85rem; }
+    #pauseChatBtn { height: 40px; padding: 0 10px; font-size: 0.85rem; }
 
     .messages {
         flex-grow: 1; /* Permite que el área de mensajes se encoja cuando el input está visible */
-        /* 🔴 CRUCIAL SCROLL (MÓVIL): Asegura el padding inferior de 80px */
-        padding-bottom: 80px; 
+        /* 🔴 CRUCIAL SCROLL (MÓVIL): Asegura el padding inferior de 75px */
+        padding-bottom: 75px; 
     }
     
     /* Ajustes generales para móvil */
