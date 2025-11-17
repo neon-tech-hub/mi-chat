@@ -29,6 +29,9 @@
     --chat-item-hover-bg: rgba(255,255,255,0.06);
     --chat-item-border: rgba(255,255,255,0.08);
     --chat-unread-indicator: #00FF7F; /* Color para mensajes no leídos */
+
+    /* 🟢 NUEVA VARIABLE para el fondo de la barra de entrada */
+    --input-bg-color: #1a1a1c;
 }
 
 html, body {
@@ -318,7 +321,7 @@ html, body {
     flex-direction: column; 
     height: 100%; 
     background: transparent; 
-    position: relative; /* Para que .chat-input se posicione respecto a este */
+    position: relative; 
 }
 
 /* Chat header */
@@ -327,17 +330,16 @@ html, body {
     justify-content:space-between;
     align-items:center;
     padding:12px 18px; 
-    border-bottom:1px solid rgba(255,255,255,0.06); /* Borde más visible */
-    background: var(--panel); /* Fondo del header de chat */
+    border-bottom:1px solid rgba(255,255,255,0.06); 
+    background: var(--panel); 
     flex-shrink: 0; 
     z-index: 10;
 }
 .chat-left { display:flex; gap:12px; align-items:center; }
-/* 🟢 MODIFICACIÓN: Avatar de chat (redondo) */
 .chat-avatar { 
     width:44px; 
     height:44px; 
-    border-radius:50%; /* Redondo */
+    border-radius:50%; 
     background: var(--accent-gradient);
     box-shadow: 0 4px 10px rgba(0,0,0,0.2);
     display: flex;
@@ -346,11 +348,11 @@ html, body {
     font-size: 1.5rem;
     font-weight: 600;
     color: #fff;
-    background-color: var(--panel); /* Fallback */
+    background-color: var(--panel); 
 }
 .chat-title { font-weight:700; font-size:1.1rem; }
 .chat-status { font-size:0.85rem; color:var(--muted); }
-.chat-status.online { color: var(--read-status-color); font-weight: 500; } /* Verde para online */
+.chat-status.online { color: var(--read-status-color); font-weight: 500; } 
 
 
 /* Messages area */
@@ -362,8 +364,9 @@ html, body {
     display:flex;
     flex-direction:column;
     gap:12px;
-    background: var(--bg); /* Fondo del área de mensajes */
-    padding-bottom: 80px; 
+    background: var(--bg); 
+    /* 🔴 CAMBIO: Eliminamos el padding fijo aquí. Lo manejaremos con el JS o con el `env(safe-area-inset-bottom)` */
+    padding-bottom: 15px; 
 }
 
 /* Burbuja base */
@@ -447,24 +450,35 @@ html, body {
 }
 
 /* --------------------------------- */
-/* INPUT AREA (FLOTANTE)             */
+/* INPUT AREA (FLOTANTE MEJORADA)    */
 /* --------------------------------- */
 
 .chat-input {
-    position: fixed; 
+    /* 🟢 CAMBIOS CLAVE: Eliminamos el transform y la sombra gruesa */
+    position: sticky; /* 🔴 Mejor que 'fixed' para móviles si el teclado empuja el viewport */
     bottom: 0; 
-    left: 50%;
-    transform: translateX(-50%); 
-    width: 95%; 
-    max-width: 500px; 
+    left: 0;
+    right: 0;
+    width: 100%; /* Ocupa todo el ancho disponible */
+    max-width: 500px;
+    margin: 0 auto; /* Centra el input en pantallas grandes */
     
     padding: 10px 18px; 
-    border-top: none; 
-    background: var(--panel); /* Usa el color del panel para el input flotante */
-    border-radius: 25px; 
-    box-shadow: 0 -8px 25px rgba(0,0,0,0.5), 0 0 15px rgba(0,0,0,0.3); 
+    
+    background: var(--input-bg-color); /* Color de fondo sutil */
+    border-top: 1px solid rgba(255,255,255,0.08); /* Borde superior para separarlo */
+    
+    /* 🔴 Eliminamos border-radius y box-shadow para un look más limpio (tipo IG/WhatsApp) */
+    border-radius: 0; 
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.3); /* Sombra muy sutil abajo */
     z-index: 100; 
-    margin-bottom: calc(15px + env(safe-area-inset-bottom)); 
+
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+    
+    /* Ajuste para el espacio del sistema */
+    padding-bottom: calc(10px + env(safe-area-inset-bottom)); 
 }
 
 .chat-input textarea {
@@ -472,14 +486,23 @@ html, body {
     resize: none; 
     min-height: 40px;
     max-height: 100px;
-    background: rgba(255,255,255,0.08); /* Más visible */
-    border: 1px solid rgba(255,255,255,0.12); /* Más definido */
+    
+    /* 🟢 MEJORA: Look más limpio (color sutil, menos borde) */
+    background: rgba(255,255,255,0.05);
+    border: none; /* Quitamos el borde, confiamos en el padding y el fondo */
+    
     padding: 10px 15px;
     border-radius: 20px;
     color:#fff;
     outline:none;
     line-height: 1.5;
+    transition: background .15s ease;
 }
+
+.chat-input textarea:focus {
+    background: rgba(255,255,255,0.1);
+}
+
 
 /* Contenedor de botones (Pausa + Enviar) */
 .input-actions-buttons {
@@ -490,7 +513,8 @@ html, body {
 
 /* Estilo del botón de pausa */
 #pauseChatBtn {
-    background-color: #3f3f3f; /* Un poco más claro */
+    /* 🟢 MEJORA: Hacemos que se parezca más a un botón de acción rápida */
+    background-color: #3f3f3f; 
     color: #fff;
     border: none;
     border-radius: 20px;
@@ -500,7 +524,7 @@ html, body {
     white-space: nowrap;
 }
 #pauseChatBtn.active {
-    background-color: var(--important); /* Amarillo cuando está activa */
+    background-color: var(--important); 
     color: #222;
     font-weight: 600;
 }
@@ -519,8 +543,9 @@ html, body {
     align-items: center;
     flex-shrink: 0;
     color: #fff;
+    transform: rotate(315deg); /* Gira el ícono ✈️ (que está en el HTML) para que apunte bien */
 }
-.btn.icon-send:hover { transform: translateY(-1px); background: #0084e6; }
+.btn.icon-send:hover { transform: translateY(-1px) rotate(315deg); background: #0084e6; }
 
 
 /* Modal (Original y Modificado para centrado) */
@@ -557,23 +582,23 @@ html, body {
 }
 
 .modal-content {
-    background: var(--panel); /* Usa el color del panel para modales */
-    padding:24px; /* Más padding */
+    background: var(--panel); 
+    padding:24px; 
     width:88%;
-    max-width:380px; /* Más ancho */
-    border-radius:15px; /* Más redondeado */
+    max-width:380px; 
+    border-radius:15px; 
     text-align:center;
-    border: 1px solid rgba(255,255,255,0.08); /* Borde más visible */
-    box-shadow: 0 10px 30px rgba(0,0,0,0.7); /* Sombra más fuerte */
+    border: 1px solid rgba(255,255,255,0.08); 
+    box-shadow: 0 10px 30px rgba(0,0,0,0.7); 
 }
 
 .modal-content h3, .modal-content h4 {
-    margin-bottom: 10px; /* Más espacio */
+    margin-bottom: 10px; 
     color: #fff;
 }
 .modal-content p {
     color: var(--muted);
-    margin-bottom: 20px; /* Más espacio */
+    margin-bottom: 20px; 
     font-size: 0.95rem;
 }
 
@@ -588,8 +613,8 @@ html, body {
 
 /* Estilo específico para los botones de pausa (lista de opciones) */
 #pauseTimeButtons .pause-option {
-    border-radius: 25px; /* Más redondeado */
-    padding: 10px 16px; /* Más padding */
+    border-radius: 25px; 
+    padding: 10px 16px; 
     font-size: 1rem;
     background: rgba(255,255,255,0.08);
     border: 1px solid rgba(255,255,255,0.15);
@@ -605,23 +630,40 @@ html, body {
 
 /* Responsivo */
 @media (max-width:520px){
-    .emoji-circle{ width:100px; height:100px; font-size:45px; } /* Ajuste de tamaño */
+    /* 🔴 Ajustamos .chat-window para usar Flexbox y que los mensajes se encojan */
+    .chat-window {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+
+    .emoji-circle{ width:100px; height:100px; font-size:45px; } 
     .emotional-warning { font-size: 0.9rem; }
 
+    /* 🟢 CHAT INPUT: Diseño limpio de borde a borde */
     .chat-input { 
-        padding: 10px 15px; /* Ajuste de padding */
+        position: sticky; /* Mantenemos sticky para que se pegue al viewport visible */
+        bottom: 0;
+        padding: 10px 15px; /* Padding ajustado */
         max-width: 100%; 
         left: 0; 
         transform: none; 
-        border-radius: 0; /* Sin bordes redondeados en móvil */
-        margin-bottom: env(safe-area-inset-bottom); /* Sin margen adicional */
+        border-radius: 0; 
+        margin-bottom: 0; /* Sin margen adicional */
+        
+        /* 🔴 Padding inferior ajustado para el safe area */
+        padding-bottom: calc(10px + env(safe-area-inset-bottom)); 
     }
+    
     #pauseChatBtn { padding: 8px 10px; font-size: 0.85rem; }
 
     .messages {
-        padding-bottom: 70px; /* Ajusta este valor para el nuevo input */
+        flex-grow: 1; /* Permite que el área de mensajes se encoja cuando el input está visible */
+        padding-bottom: 15px; /* Quitamos el padding grande aquí */
     }
     
+    /* Ajustes generales para móvil */
     .chat-item {
         padding: 12px;
         gap: 12px;
@@ -636,7 +678,7 @@ html, body {
     .chat-item .chat-date { top: 12px; right: 12px; font-size: 0.7rem; }
 }
 
-/* --- Modal de Emojis (mood-modal) --- */
+/* --- Modales --- (No cambiados) */
 .mood-modal {
     display: none;
     position: fixed;
@@ -644,7 +686,7 @@ html, body {
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.85); /* Fondo más oscuro */
+    background-color: rgba(0, 0, 0, 0.85); 
     justify-content: center;
     align-items: center;
     z-index: 1000;
@@ -655,23 +697,23 @@ html, body {
 }
 
 .mood-list {
-    background-color: var(--panel); /* Usa el color del panel */
-    padding: 20px; /* Más padding */
-    border-radius: 12px; /* Más redondeado */
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.6); /* Sombra más fuerte */
+    background-color: var(--panel); 
+    padding: 20px; 
+    border-radius: 12px; 
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.6); 
     display: flex;
-    gap: 12px; /* Más espacio */
+    gap: 12px; 
     flex-wrap: wrap;
     max-width: 90%;
     justify-content: center;
 }
 
 .mood-btn {
-    background: rgba(255,255,255,0.08); /* Fondo sutil */
-    border: 1px solid rgba(255,255,255,0.15); /* Borde más visible */
-    border-radius: 10px; /* Más redondeado */
-    padding: 10px 15px; /* Más padding */
-    font-size: 1.6rem; /* Más grande */
+    background: rgba(255,255,255,0.08); 
+    border: 1px solid rgba(255,255,255,0.15); 
+    border-radius: 10px; 
+    padding: 10px 15px; 
+    font-size: 1.6rem; 
     cursor: pointer;
     transition: background-color 0.2s ease, border-color 0.2s ease;
     color: white;

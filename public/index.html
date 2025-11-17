@@ -35,7 +35,7 @@
         </div>
 
         <p class="emotional-warning">
-            Recordá que él/ella te ama. Redactá tu mensaje con responsabilidad emocional ❤️
+            Recordá que él/ella te ama. Redactá tu mensaje con <strong>responsabilidad emocional</strong> <span class="heart-icon">❤️</span>
         </p>
 
         <section class="chat-list" id="chatList" aria-label="Lista de chats"></section>
@@ -69,7 +69,7 @@
                     <button id="pauseChatBtn" class="btn secondary">Pausar chat</button>
                     
                     <button id="sendBtnIcon" class="btn primary icon-send" aria-label="Enviar mensaje">
-                        ➡️
+                        <span style="transform: rotate(45deg); display: inline-block;">✈️</span>
                     </button>
                 </div>
             </div>
@@ -81,20 +81,19 @@
             <h3>Seleccioná el tiempo de Pausa</h3>
             <p>Recordá: solo podés pausar el chat una vez por hora.</p>
             <div id="pauseTimeButtons" class="modal-actions mood-list">
-                </div>
+            </div>
             <button class="btn small secondary close-modal-btn">Cancelar</button>
         </div>
     </div>
     
     <div id="messageActionsModal" class="modal">
         <div class="modal-content">
-            <h4>Mensaje Seleccionado</h4>
             <p id="selectedMessageText" class="chat-last"></p>
-            <div class="modal-actions" style="flex-direction:column; gap:10px;">
-                <button id="replyMessageBtn" class="btn primary">↩️ Responder</button>
-                <button id="markImportantBtn" class="btn small secondary">🌟 Marcar como importante</button>
+            <div class="modal-actions">
+                <button id="replyMessageBtn" class="btn">↩️ Responder</button>
+                <button id="markImportantBtn" class="btn">🌟 Marcar como importante</button>
             </div>
-            <button class="btn small secondary close-modal-btn">Cancelar</button>
+            <button class="btn small secondary close-modal-btn" style="margin-top: 10px;">Cancelar</button>
         </div>
     </div>
     
