@@ -1,6 +1,6 @@
-/* --------------------------------- */
-/* ESTILOS MINIMALISTAS (DARK MODE)  */
-/* --------------------------------- */
+/* --------------------------- */
+/* ESTILO TIPO INSTAGRAM */
+/* --------------------------- */
 
 * {
     margin: 0;
@@ -11,19 +11,18 @@
     -moz-osx-font-smoothing: grayscale;
 }
 
-:root {
-    /* Paleta de Colores */
-    --bg-dark: #0a0a0a;             /* Fondo muy oscuro */
-    --surface-dark: #121212;        /* Superficie de paneles/modales */
-    --text-primary: #f0f0f0;        /* Texto principal (blanco suave) */
-    --text-muted: #888;             /* Texto secundario/timestamps (gris) */
-    --primary: #515bd4;             /* Azul/Violeta minimalista (para acciones) */
-    --accent-gradient: linear-gradient(135deg, #dd2a7b, #8134af); /* Degradado simple para avatars/logos */
-    --bubble-me: var(--primary);    /* Burbuja enviada (color primario) */
-    --bubble-them: #2c2c2c;         /* Burbuja recibida (gris oscuro) */
-    --important: #ffeb3b;           /* Amarillo brillante para importante */
-    --shadow-subtle: 0 4px 12px rgba(0,0,0,0.4);
-    --shadow-float: 0 8px 30px rgba(0,0,0,0.8);
+:root{
+    --bg: #0f0f10;
+    --panel: #0f1112;
+    --muted: #9b9b9b;
+    --primary: #0095f6; /* azul IG-like */
+    --accent-gradient: linear-gradient(135deg, #f58529, #dd2a7b, #8134af, #515bd4);
+    --bubble-me: #0095f6;
+    --bubble-them: #1f1f1f;
+    --important: #ffcc00; /* Amarillo para importante */
+    --shadow: 0 6px 18px rgba(0,0,0,0.6);
+    /* 🟢 NUEVA VARIABLE para el color de 'Leído' */
+    --read-status-color: #4CAF50; 
 }
 
 html, body {
@@ -31,320 +30,562 @@ html, body {
     height: 100%;
     margin: 0;
     padding: 0;
-    overflow: hidden;
-    /* Fondo simple y oscuro */
-    background-color: var(--bg-dark);
-    color: var(--text-primary);
-    padding-bottom: env(safe-area-inset-bottom);
+    overflow: hidden; /* Evita barras de desplazamiento */
+    /* Fondo */
+    background: radial-gradient(1200px 400px at 10% 10%, rgba(81,91,212,0.06), transparent 8%),
+                radial-gradient(800px 300px at 90% 90%, rgba(218,77,78,0.04), transparent 8%),
+                var(--bg);
+    color: #fff;
+    /* 🔴 NUEVO: Padding inferior para "flotar" el input en móvil */
+    padding-bottom: env(safe-area-inset-bottom); /* Para dispositivos con notch/barra inferior */
 }
 
 /* Container */
 .app-container {
-    max-width: 500px; /* Limita el ancho en desktop/tablets */
+    max-width: 100vw;
     width: 100%;
-    height: 100%;
-    margin: 0 auto; /* Centrar el contenedor principal */
+    height: 100%; /* Sigue siendo 100% */
+    margin: 0;
+    
     display: flex;
     flex-direction: column;
+    border-radius: 0;
     overflow: hidden;
-    /* Superficie sutil */
-    background: var(--surface-dark); 
+    background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+    border: none;
+    box-shadow: none;
 }
 
-/* --------------------------- */
-/* HEADER & NAVIGATION         */
-/* --------------------------- */
-
-.app-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 14px 18px;
-    background: var(--surface-dark);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-    flex-shrink: 0;
-    z-index: 50; /* Asegura que la cabecera esté por encima */
+/* HEADER */
+.app-header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding: 12px 16px;
+    background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+    border-bottom: 1px solid rgba(255,255,255,0.03);
 }
 
-.brand { display: flex; align-items: center; gap: 10px; }
-.ig-logo-gradient {
-    width: 38px;
-    height: 38px;
-    border-radius: 12px; /* Más moderno que 10px */
+.brand {
+    display:flex;
+    align-items:center;
+    gap:10px;
+}
+
+.ig-logo-gradient{
+    width:36px;
+    height:36px;
+    border-radius:10px;
     background: var(--accent-gradient);
-    box-shadow: 0 4px 10px rgba(129, 52, 175, 0.2);
-    flex-shrink: 0;
+    box-shadow: 0 6px 18px rgba(129,52,175,0.12), inset 0 -6px 18px rgba(0,0,0,0.25);
+    flex-shrink:0;
 }
-.brand-text { font-weight: 700; font-size: 1.1rem; }
 
-/* Botón de estado */
+.brand-text{
+    font-weight:700;
+    font-size:1rem;
+    letter-spacing:0.2px;
+}
+
+/* Header button */
 .state-add-btn {
-    background: var(--surface-dark);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    color: var(--text-primary);
-    width: 38px;
-    height: 38px;
-    font-size: 20px;
-    border-radius: 50%; /* Redondo */
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.06);
+    color: #fff;
+    width: 36px;
+    height: 36px;
+    font-size: 22px;
+    border-radius: 10px;
     cursor: pointer;
-    transition: all .18s ease;
+    transition: transform .18s ease, background .18s;
 }
-.state-add-btn:hover { background: #333; }
-.state-add-btn:active { transform: scale(0.95); }
+.state-add-btn:hover { transform: translateY(-2px); background: rgba(255,255,255,0.02); }
 
-/* Pantallas */
+/* SCREENS: por defecto ocultas si no tienen .active */
 .screen { display: none; padding: 18px; overflow: auto; height: 100%; }
 .screen.active { display: block; }
 
-/* --------------------------- */
-/* LOGIN SCREEN                */
-/* --------------------------- */
-
+/* LOGIN */
 .login-screen {
-    padding: 40px 28px;
-    height: 100%;
-    justify-content: center;
+    padding: 28px;
+    display:flex;
+    flex-direction:column;
+    gap: 16px;
+    align-items: stretch;
+    justify-content:center;
+    height:100%;
 }
-.login-screen h2 { font-size: 1.5rem; margin-bottom: 20px; }
 
+.login-screen h2{
+    text-align:center;
+    font-size:1.25rem;
+    margin-bottom:4px;
+}
+
+.field { display:flex; flex-direction:column; gap:8px; }
+.field label { color: var(--muted); font-size:0.9rem; }
 .field input, .field select {
-    background: #1c1c1c;
-    border: 1px solid #333;
-    padding: 14px;
-    border-radius: 8px;
-    color: var(--text-primary);
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(255,255,255,0.04);
+    padding: 12px;
+    border-radius: 10px;
+    color: #fff;
+    outline: none;
+    transition: box-shadow .12s ease, border-color .12s ease;
 }
 .field input:focus, .field select:focus {
-    border-color: var(--primary);
-    box-shadow: 0 0 0 3px rgba(81, 91, 212, 0.3);
+    box-shadow: 0 6px 18px rgba(0,0,0,0.6);
+    border-color: rgba(0,149,246,0.9);
 }
 
 /* BOTONES */
 .btn {
-    padding: 12px 18px;
-    border-radius: 8px;
-    background: #2c2c2c;
-    border: none;
+    padding: 10px 14px;
+    border-radius: 10px;
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(255,255,255,0.04);
     cursor: pointer;
-    color: var(--text-primary);
-    transition: all .15s ease;
+    color: #fff;
+    transition: transform .12s ease, background .12s;
 }
-.btn:hover { background: #3c3c3c; transform: none; }
-.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.btn:hover { transform: translateY(-2px); background: rgba(255,255,255,0.03); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important; }
 
+.btn.small { padding: 6px 10px; font-size:0.9rem; border-radius:8px; }
 .primary {
-    background: var(--primary);
-    color: var(--text-primary);
-    box-shadow: var(--shadow-subtle);
+    background: linear-gradient(90deg, rgba(0,149,246,1), rgba(0,118,197,1));
+    border: none;
+    box-shadow: 0 8px 20px rgba(0,149,246,0.12);
 }
-.primary:hover { background: #6a74e5; }
-.primary:active { transform: scale(0.98); }
+.primary:hover { transform: translateY(-2px); }
 
-/* --------------------------- */
-/* MAIN SCREEN (EMOJI)         */
-/* --------------------------- */
+/* ERROR */
+.error { color: #ff6b6b; margin-top:6px; font-size:0.9rem; }
 
-.emoji-container { margin-top: 25px; }
-.emoji-circle {
-    width: 130px;
-    height: 130px;
-    padding: 6px;
+/* MAIN SCREEN */
+.emoji-container { display:flex; justify-content:center; margin-top:8px; }
+.emoji-circle{
+    width:122px;
+    height:122px;
+    border-radius:50%;
+    padding:4px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
     background: var(--accent-gradient);
-    box-shadow: var(--shadow-subtle);
+    box-shadow: 0 10px 30px rgba(81,91,212,0.08);
 }
 .emoji-circle > div, .emoji-circle > span, .emoji-circle {
-    font-size: 55px;
-    background: var(--surface-dark); /* Color de fondo del panel */
+    font-size:48px;
+    background: #0f1112;
+    border-radius:50%;
+    width:100%;
+    height:100%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    color: #fff;
 }
-.emotional-warning { font-size: 0.9rem; color: #aaa; margin-top: 20px; }
 
-/* --------------------------- */
-/* CHAT LIST                   */
-/* --------------------------- */
+/* advertencia */
+.emotional-warning { margin-top:18px; text-align:center; color:var(--muted); font-size:0.88rem; }
 
-.chat-list { margin-top: 25px; }
+/* CHAT LIST */
+.chat-list { margin-top:20px; display:flex; flex-direction:column; gap:12px; }
 
+.chat-list .add-chat {
+    align-self:center;
+    width:52px;
+    height:52px;
+    border-radius:12px;
+    font-size:26px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background: linear-gradient(90deg, rgba(255,255,255,0.03), rgba(255,255,255,0.02));
+    border: 1px dashed rgba(255,255,255,0.04);
+    cursor:pointer;
+}
+
+/* cada item de la lista (estilo IG DM card) */
 .chat-item {
-    background: var(--surface-dark);
-    padding: 14px;
-    border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    transition: background .15s ease;
+    background: linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.005));
+    padding: 12px;
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.03);
+    cursor:pointer;
+    display:flex;
+    gap:12px;
+    align-items:center;
+    transition: transform .12s ease, background .12s ease;
 }
-.chat-item:hover { background: #1c1c1c; transform: none; } /* Quitamos el transform para hacerlo más minimalista */
+.chat-item:hover { transform: translateY(-3px); background: rgba(255,255,255,0.02); }
 
 .chat-item .avatar {
-    width: 50px;
-    height: 50px;
-    border-radius: 12px;
+    width:44px;
+    height:44px;
+    border-radius:10px;
     background: var(--accent-gradient);
+    flex-shrink:0;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.4);
 }
-.chat-item .meta { gap: 2px; }
-.chat-item .chat-name { font-weight: 600; font-size: 1.05rem; }
-.chat-item .chat-last { font-size: 0.9rem; color: var(--text-muted); }
+.chat-item .meta { flex:1; display:flex; flex-direction:column; gap:4px; }
+.chat-item .chat-name { font-weight:600; font-size:1rem; }
+.chat-item .chat-last { font-size:0.86rem; color:var(--muted); }
 
-/* --------------------------- */
-/* CHAT SCREEN                 */
-/* --------------------------- */
+/* CHAT SCREEN */
+.chat-screen { 
+    display:none; 
+    padding: 0; 
+    height:100%; 
+}
+.chat-screen.active { 
+    display: block; 
+}
 
+/* Chat window (Contenedor principal del chat) */
+.chat-window { 
+    display: flex; 
+    flex-direction: column; 
+    height: 100%; 
+    background: transparent; 
+    position: relative; /* Para que .chat-input se posicione respecto a este */
+}
+
+/* Chat header */
 .chat-header {
-    padding: 12px 18px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-    background: var(--surface-dark);
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:12px 18px; 
+    border-bottom:1px solid rgba(255,255,255,0.03);
+    background: linear-gradient(180deg, rgba(255,255,255,0.01), transparent);
+    flex-shrink: 0; 
 }
-.chat-title { font-weight: 700; font-size: 1.1rem; }
-.chat-status { font-size: 0.8rem; color: #0f0; /* Estado online visible */ }
-.chat-status.offline { color: var(--text-muted); }
+.chat-left { display:flex; gap:12px; align-items:center; }
+.chat-avatar { width:44px; height:44px; border-radius:10px; background: var(--accent-gradient); }
+.chat-title { font-weight:700; font-size:1rem; }
+.chat-status { font-size:0.85rem; color:var(--muted); }
+/* 🟢 NUEVO: Estado online */
+.chat-status.online { color: #00FF7F; font-weight: 500; } 
 
-/* Mensajes */
+
+/* Messages area */
 .messages {
-    padding: 18px;
-    gap: 10px; /* Reducimos ligeramente el espacio */
-    background: var(--bg-dark); /* El área de mensajes es más oscura que el header */
-    padding-bottom: 90px;
+    flex-grow: 1; 
+    min-height: 0; 
+    overflow-y:auto;
+    padding:18px;
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+    background: linear-gradient(180deg, rgba(255,255,255,0.005), transparent);
+    /* 🔴 NUEVO: Padding inferior dinámico para compensar el input flotante */
+    padding-bottom: 80px; /* Ajusta este valor si el input es más alto/bajo */
 }
 
+/* Burbuja base */
 .message {
-    max-width: 85%; /* Aumentamos ligeramente el ancho de las burbujas */
-    padding: 12px 16px;
-    border-radius: 18px;
-    font-size: 0.95rem;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3); /* Sombra más sutil */
+    max-width:75%;
+    padding: 10px 14px;
+    border-radius: 16px;
+    line-height:1.3;
+    word-break: break-word;
+    font-size:0.97rem;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.45);
+    position: relative;
+    display:flex;
+    flex-direction: column;
+    animation: pop .12s ease both;
+    cursor: pointer;
 }
 
+/* enviado por mi */
 .message.sent {
     background: var(--bubble-me);
-    color: var(--text-primary);
-    border-bottom-right-radius: 8px;
+    color: #fff;
+    align-self:flex-end;
+    border-bottom-right-radius:6px;
 }
 
+/* recibido */
 .message.received {
     background: var(--bubble-them);
-    color: var(--text-primary);
-    border-bottom-left-radius: 8px;
+    color: #e9e9e9;
+    align-self:flex-start;
+    border-bottom-left-radius:6px;
 }
 
-/* Timestamp y Leído */
-.message .ts, .read-status {
-    font-size: 0.75rem;
-    color: rgba(255, 255, 255, 0.7);
-    margin-top: 5px;
-}
-.read-status {
-    color: #4CAF50; /* Un color de confirmación visualmente distinto */
-    font-weight: 600;
+/* timestamp pequeño */
+.message .ts {
+    display:block;
+    font-size:0.72rem;
+    color: rgba(255,255,255,0.65);
+    margin-top:6px;
+    opacity:0.85;
+    text-align: right;
 }
 
 /* --------------------------------- */
-/* FUNCIONALIDADES AVANZADAS         */
+/* 🟢 NUEVOS ESTILOS DE MENSAJES (Integrados en estilo IG) */
 /* --------------------------------- */
 
-/* Bloque de Respuesta (Reply) */
+/* 1. Bloque de Respuesta (Reply) */
 .reply-block {
-    padding: 6px 10px;
-    background: rgba(255, 255, 255, 0.08); /* Fondo claro sobre burbuja oscura */
-    border-left: 4px solid var(--text-muted);
-    border-radius: 6px;
-    margin-bottom: 8px;
-    font-size: 0.85rem;
-    color: var(--text-muted);
+    padding: 5px 8px;
+    /* Color de fondo sutil sobre la burbuja */
+    background: rgba(255, 255, 255, 0.08); 
+    /* Borde de color primario para destacar la cita */
+    border-left: 3px solid var(--primary); 
+    border-radius: 4px;
+    margin-bottom: 6px;
+    font-size: 0.8rem;
+    color: var(--muted);
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    line-height: 1.2;
 }
 
-/* Mensaje Importante (Resaltado) */
-.important-message {
-    border: 3px solid var(--important);
-    background: #2a2a1e !important;
-    box-shadow: 0 0 15px var(--important); /* Sombra que destaca más */
+/* 2. Confirmación de Lectura (Leído) */
+.read-status {
+    display: block;
+    font-size: 0.72rem;
+    /* Color verde sutil pero visible para confirmación */
+    color: var(--read-status-color); 
+    margin-top: 4px;
+    text-align: right;
+    align-self: flex-end;
+    font-weight: 600; /* Le damos un poco de peso para que se vea */
 }
+
+/* 3. Mensaje Importante (Resaltado) */
+.important-message {
+    /* Borde más grueso y notable */
+    border: 3px solid var(--important); 
+    /* Fondo ligeramente diferente, pero manteniendo la base oscura */
+    background: #2a2a1e !important; 
+    box-shadow: 0 0 12px rgba(255, 204, 0, 0.5); /* Sombra que emana el color importante */
+    /* Aseguramos que el texto dentro del mensaje importante tenga un color legible */
+    color: #fff !important; 
+}
+
 
 /* --------------------------------- */
-/* INPUT AREA (FLOTANTE)             */
+/* INPUT AREA (MODIFICADO PARA FLOTAR) */
 /* --------------------------------- */
 
 .chat-input {
-    position: fixed;
-    bottom: 0;
-    left: 50%; /* Centrar */
+    /* Mantenemos tus estilos de flotante, pero centramos con max-width */
+    position: fixed; 
+    bottom: 0; 
+    left: 50%;
     transform: translateX(-50%); /* Centrar */
-    width: 95%; 
-    max-width: 480px; 
-    margin: 0 0 15px 0; /* Sin margin-auto */
-    padding: 10px 15px;
-    background: var(--surface-dark); /* Fondo del panel flotante */
-    border-radius: 25px;
-    box-shadow: var(--shadow-float); /* Sombra más fuerte */
-    z-index: 100;
-    margin-bottom: calc(15px + env(safe-area-inset-bottom));
+    width: 95%; /* Ajuste para que no toque bordes */
+    max-width: 500px; 
+    
+    padding: 10px 18px; 
+    border-top: none; 
+    background: var(--bubble-them); /* Fondo oscuro consistente */
+    border-radius: 25px; 
+    box-shadow: 0 -8px 25px rgba(0,0,0,0.5), 0 0 15px rgba(0,0,0,0.3); 
+    z-index: 100; 
+
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+    /* Para dispositivos con notch/barra inferior */
+    margin-bottom: calc(15px + env(safe-area-inset-bottom)); 
 }
 
 .chat-input textarea {
-    background: #1c1c1c; 
-    border: 1px solid #333;
-    padding: 10px 18px;
+    flex-grow: 1;
+    resize: none; 
+    min-height: 40px;
+    max-height: 100px;
+    background: rgba(255,255,255,0.05); 
+    border: 1px solid rgba(255,255,255,0.08); 
+    padding: 10px 15px;
     border-radius: 20px;
-    color: var(--text-primary);
+    color:#fff;
+    outline:none;
+    line-height: 1.5;
 }
 
-/* Botón de ENVIAR (icono/avioncito) */
-.btn.icon-send {
-    background: var(--primary);
-    border: none;
-    width: 40px; 
-    height: 40px;
-    color: var(--text-primary);
+/* Contenedor de botones (Pausa + Enviar) */
+.input-actions-buttons {
+    display: flex;
+    gap: 8px;
+    align-items: flex-end; 
 }
-.btn.icon-send:hover { background: #6a74e5; transform: none; }
-.btn.icon-send:active { transform: scale(0.95); }
 
-/* Botón de Pausa */
+/* Estilo del botón de pausa */
 #pauseChatBtn {
     background-color: #333;
-    color: var(--text-primary);
+    color: #fff;
     border: none;
     border-radius: 20px;
     padding: 8px 12px;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
+    flex-shrink: 0;
+    white-space: nowrap;
 }
 
-/* --------------------------------- */
-/* MODAL GENERAL Y MOOD MODAL        */
-/* --------------------------------- */
+/* Estilo del botón de ENVIAR (icono/avioncito) */
+.btn.icon-send {
+    /* Hacemos que el botón de enviar sea el color primario de IG */
+    background: var(--primary); 
+    border: none;
+    width: 40px; 
+    height: 40px;
+    padding: 0;
+    font-size: 18px; 
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-shrink: 0;
+    color: #fff;
+}
+.btn.icon-send:hover { transform: translateY(-1px); background: #0084e6; }
 
-.modal { z-index: 999; } /* Mantener alto */
+
+/* Modal (Original y Modificado para centrado) */
+.modal {
+    display:none;
+    position: fixed;
+    inset:0;
+    background: rgba(0,0,0,0.8); 
+    justify-content:center;
+    align-items:center;
+    z-index:999;
+}
+/* 🟢 NUEVO: Estilo para el modal de acciones del mensaje */
+#messageActionModal .modal-content {
+    padding: 10px 0; /* Más estrecho para una lista de opciones */
+    text-align: left;
+    max-width: 250px;
+}
+#messageActionModal .modal-actions {
+    flex-direction: column;
+    gap: 0;
+    margin: 0;
+}
+#messageActionModal .modal-actions .btn {
+    width: 100%;
+    padding: 12px 18px;
+    text-align: left;
+    background: none;
+    border: none;
+    border-radius: 0;
+}
+#messageActionModal .modal-actions .btn:hover {
+    background: rgba(255, 255, 255, 0.05);
+    transform: none;
+}
+/* ------------------------------------------------ */
+
 .modal-content {
-    background: var(--surface-dark);
-    padding: 24px; /* Un poco más de padding */
-    border-radius: 12px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow: var(--shadow-float);
+    background: linear-gradient(180deg, #0f1112, #0b0b0b);
+    padding:18px;
+    width:88%;
+    max-width:360px;
+    border-radius:12px;
+    text-align:center;
+    border: 1px solid rgba(255,255,255,0.03);
 }
 
-.modal-content p { color: #ccc; }
+.modal-content h3, .modal-content h4 {
+    margin-bottom: 8px;
+}
+.modal-content p {
+    color: var(--muted);
+    margin-bottom: 15px;
+}
 
-.modal-actions .btn { border-radius: 6px; }
+/* Aseguramos que los botones de acción del modal tengan un buen layout */
+.modal-actions {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin: 15px 0;
+    flex-wrap: wrap;
+}
 
-/* Modal de Emojis */
-.mood-modal { z-index: 1000; }
+/* Estilo específico para los botones de pausa (lista de opciones) */
+#pauseTimeButtons .pause-option {
+    border-radius: 20px;
+    padding: 8px 14px;
+    font-size: 1rem;
+}
+
+
+/* Animations */
+@keyframes pop {
+    from{ transform: scale(.98); opacity:0; }
+    to{ transform: scale(1); opacity:1; }
+}
+
+/* Responsivo */
+@media (max-width:520px){
+    .emoji-circle{ width:96px; height:96px; font-size:40px; }
+    /* Ajustes para que la barra de chat ocupe bien en móvil si es muy angosto */
+    .chat-input { 
+        padding: 8px 12px; 
+        max-width: 100%; /* Ajuste a 100% de ancho en móviles */
+        left: 0; /* Aseguramos que esté a la izquierda */
+        transform: none; /* Desactivamos el centrado basado en transform */
+    }
+    #pauseChatBtn { padding: 6px 10px; font-size: 0.8rem; }
+
+    /* Asegurar que el padding del .messages sea suficiente */
+    .messages {
+        padding-bottom: 90px; 
+    }
+}
+
+/* --- Modal de Emojis (mood-modal) --- */
+.mood-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.mood-modal.active {
+    display: flex;
+}
+
 .mood-list {
-    background-color: var(--surface-dark);
-    padding: 20px;
-    border-radius: 12px;
-}
-.mood-btn {
-    border: 1px solid #444;
+    background-color: #2c2c2c;
+    padding: 15px;
     border-radius: 10px;
-    padding: 10px 14px;
-    font-size: 1.8rem;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    max-width: 90%;
+    justify-content: center;
 }
-.mood-btn:hover { background-color: #333; border-color: #555; }
 
-/* --------------------------------- */
-/* RESPONSIVE                        */
-/* --------------------------------- */
+.mood-btn {
+    background: none;
+    border: 1px solid #444;
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 1.5rem;
+    cursor: pointer;
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+    color: white;
+}
 
-@media (max-width:520px) {
-    .app-container { max-width: 100vw; }
-    .chat-input { max-width: 100%; border-radius: 0; padding: 10px 18px; }
-    /* Ajustar el fondo del input para que vaya de borde a borde */
-    .chat-input { transform: none; left: 0; right: 0; margin-bottom: calc(15px + env(safe-area-inset-bottom)); }
+.mood-btn:hover {
+    background-color: #444;
+    border-color: #666;
 }
