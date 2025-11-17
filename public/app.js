@@ -1,7 +1,7 @@
 (() => {
     "use strict";
 
-    const socket = io(); 
+    const socket = io();
     const currentUser = sessionStorage.getItem("currentUser");
     
     if (!currentUser) {
@@ -227,6 +227,7 @@
             const A_parts = a.split("-");
             const B_parts = b.split("-");
             
+            // Nota: Aquí se asume el año actual para ordenar.
             const dateA = new Date(`${currentYear}-${A_parts[1]}-${A_parts[0]}`);
             const dateB = new Date(`${currentYear}-${B_parts[1]}-${B_parts[0]}`);
             
@@ -299,7 +300,7 @@
             const div = document.createElement("div");
             div.className = msg.sender === currentUser ? "message sent" : "message received";
             div.dataset.messageId = msg.id; // CRUCIAL para responder/marcar
-
+            
             // 🟢 Resaltado para MENSAJE IMPORTANTE (Si lo marcó el emisor)
             if (msg.isImportant) {
                 div.classList.add('important-message');
@@ -309,7 +310,11 @@
             if (msg.replyToText) {
                 const replyBlock = document.createElement('div');
                 replyBlock.className = 'reply-block';
-                replyBlock.textContent = msg.replyToText; // Usamos el texto de cache
+                // Mostramos el remitente original (Tú o el nombre)
+                const originalSenderName = msg.replyToId.endsWith(currentUser) ? 'Tú' : (currentUser === "Leo" ? "Estefi" : "Leo");
+                replyBlock.innerHTML = `
+                    <strong>${originalSenderName}:</strong> ${msg.replyToText}
+                `;
                 div.appendChild(replyBlock);
             }
 
@@ -326,6 +331,13 @@
             // 🟢 Para la confirmación de lectura y rastreo
             if (msg.sender === currentUser) {
                 lastSentMessage = msg;
+                // Añadir el status de "Leído" si ya lo está (en el envío)
+                if (msg.read) {
+                    const readStatus = document.createElement('span');
+                    readStatus.className = 'read-status';
+                    readStatus.textContent = 'Leído';
+                    ts.after(readStatus);
+                }
             } else {
                 // Marcar como leído si lo estoy viendo
                 updateMessageReadStatus(msg.id);
@@ -333,18 +345,6 @@
 
             messagesContainer.appendChild(div);
         });
-
-        // 🟢 Añadir el estado "Leído" al último mensaje enviado
-        if (lastSentMessage && lastSentMessage.read) {
-            const lastSentDiv = messagesContainer.querySelector(`[data-message-id="${lastSentMessage.id}"]`);
-            if (lastSentDiv) {
-                const readStatus = document.createElement('span');
-                readStatus.className = 'read-status';
-                readStatus.textContent = 'Leído';
-                // Añadir el estado 'Leído' junto al timestamp del último mensaje enviado
-                lastSentDiv.querySelector('.ts').after(readStatus);
-            }
-        }
         
         messagesContainer.scrollTop = messagesContainer.scrollHeight;
     }
@@ -486,6 +486,7 @@
         }
 
         // 2. Buscar el último mensaje *marcado como importante* que el currentUser *recibió*
+        // Se busca en orden inverso para encontrar el más reciente.
         const importantReceivedMessage = chats[currentChat].slice().reverse().find(
             msg => msg.isImportant && msg.sender !== currentUser
         );
@@ -530,7 +531,7 @@
         messageActionsModal.dataset.messageId = messageId;
         selectedMessageText.textContent = msg.text.substring(0, 100) + (msg.text.length > 100 ? '...' : '');
 
-        // Deshabilitar "Marcar Importante" si ya lo está o si es un mensaje recibido
+        // Deshabilitar "Marcar Importante" si ya lo está O si es un mensaje que recibí (solo puedo marcar los que envié)
         markImportantBtn.disabled = msg.isImportant || msg.sender !== currentUser;
         
         // El botón Responder siempre está disponible
@@ -581,30 +582,23 @@
         }
     });
     
-    // 🔴 NUEVO: Lógica de RECEPCIÓN de estado de lectura
+    // 🔴 NUEVO: Lógica de RECEPCIÓN de estado de lectura (read) y marcado (important)
     socket.on("messageStatusUpdate", (data) => {
-        if (data.status === 'read' && data.sender !== currentUser) {
-            const dayKey = data.chatId;
-            if (chats[dayKey]) {
-                const msg = chats[dayKey].find(m => m.id === data.messageId);
-                if (msg) {
+        const dayKey = data.chatId;
+        if (chats[dayKey]) {
+            const msg = chats[dayKey].find(m => m.id === data.messageId);
+            if (msg) {
+                if (data.status === 'read' && data.sender !== currentUser) {
+                    // Actualización de estado de lectura (recibido por el remitente original)
                     msg.read = true;
-                    saveData();
-                    if (dayKey === currentChat) {
-                        renderMessages();
-                    }
-                }
-            }
-        } else if (data.status === 'important' && data.sender !== currentUser) {
-             const dayKey = data.chatId;
-            if (chats[dayKey]) {
-                const msg = chats[dayKey].find(m => m.id === data.messageId);
-                if (msg) {
+                } else if (data.status === 'important' && data.sender !== currentUser) {
+                    // Actualización de estado importante (recibido por el destinatario)
                     msg.isImportant = true;
-                    saveData();
-                    if (dayKey === currentChat) {
-                        renderMessages();
-                    }
+                }
+
+                saveData();
+                if (dayKey === currentChat) {
+                    renderMessages();
                 }
             }
         }
