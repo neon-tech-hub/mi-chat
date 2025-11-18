@@ -137,20 +137,40 @@ html, body {
     font-size: 4rem; 
     line-height: 1;
     margin-bottom: 5px;
-    border-radius: 50%; /* Opcional: para que la sombra se vea mejor */
-    padding: 10px; /* Espacio para que la sombra no choque con el emoji */
-    transition: box-shadow 0.3s ease-out; /* Animación suave para el cambio de sombra */
+    /* ✅ Usamos inline-flex para centrar el emoji perfectamente (si fuera necesario) */
+    display: inline-flex; 
+    justify-content: center;
+    align-items: center;
+    box-shadow: none !important;
+    transition: box-shadow 0.3s ease-out; 
 }
 
-/* 🟢 ESTILOS DE SOMBRA DINÁMICA - CUMPLIENDO EL REQUISITO */
-#partnerMoodDisplay.mood-enamorado { box-shadow: 0 0 25px 5px var(--mood-enamorado); }
-#partnerMoodDisplay.mood-happy { box-shadow: 0 0 25px 5px var(--mood-happy); }
-#partnerMoodDisplay.mood-cansado { box-shadow: 0 0 15px 3px var(--mood-cansado); }
-#partnerMoodDisplay.mood-enojado { box-shadow: 0 0 25px 5px var(--mood-enojado); } /* 👈 Ejemplo Rojo */
-#partnerMoodDisplay.mood-triste { box-shadow: 0 0 25px 5px var(--mood-triste); }
-#partnerMoodDisplay.mood-estresado { box-shadow: 0 0 25px 5px var(--mood-estresado); }
-#partnerMoodDisplay.mood-porhablar { box-shadow: 0 0 25px 5px var(--mood-porhablar); }
-#partnerMoodDisplay.mood-default { box-shadow: 0 0 15px 3px var(--mood-default); }
+/* 🌟 EFECTO GLOW (Text Shadow) - Más blur y difusión para "tapar" el borde nativo del emoji */
+/* (offset-x offset-y blur-radius color) */
+#partnerMoodDisplay.mood-enamorado > #partnerMoodEmoji { 
+    text-shadow: 0 0 15px var(--mood-enamorado), 0 0 30px var(--mood-enamorado), 0 0 50px var(--mood-enamorado); 
+}
+#partnerMoodDisplay.mood-happy > #partnerMoodEmoji { 
+    text-shadow: 0 0 15px var(--mood-happy), 0 0 30px var(--mood-happy), 0 0 50px var(--mood-happy); 
+}
+#partnerMoodDisplay.mood-cansado > #partnerMoodEmoji { 
+    text-shadow: 0 0 10px var(--mood-cansado), 0 0 20px var(--mood-cansado); 
+}
+#partnerMoodDisplay.mood-enojado > #partnerMoodEmoji { 
+    text-shadow: 0 0 15px var(--mood-enojado), 0 0 30px var(--mood-enojado), 0 0 50px var(--mood-enojado); 
+} 
+#partnerMoodDisplay.mood-triste > #partnerMoodEmoji { 
+    text-shadow: 0 0 15px var(--mood-triste), 0 0 30px var(--mood-triste), 0 0 50px var(--mood-triste); 
+}
+#partnerMoodDisplay.mood-estresado > #partnerMoodEmoji { 
+    text-shadow: 0 0 15px var(--mood-estresado), 0 0 30px var(--mood-estresado), 0 0 50px var(--mood-estresado); 
+}
+#partnerMoodDisplay.mood-porhablar > #partnerMoodEmoji { 
+    text-shadow: 0 0 15px var(--mood-porhablar), 0 0 30px var(--mood-porhablar), 0 0 50px var(--mood-porhablar); 
+}
+#partnerMoodDisplay.mood-default > #partnerMoodEmoji { 
+    text-shadow: 0 0 10px var(--mood-default), 0 0 20px var(--mood-default); 
+}
 /* ---------------------------------------------------- */
 
 /* Estilo del texto de estado */
