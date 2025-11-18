@@ -22,7 +22,6 @@
     --bubble-them: #262626; /* Burbujas recibidas un poco más oscuras */
     --important: #ffcc00; /* Amarillo para importante */
     --shadow: 0 6px 18px rgba(0,0,0,0.6);
-    /* 🟢 CAMBIO: Gris sutil para "Leído" */
     --read-status-color: #7d7d7d; 
     
     /* Colores para el círculo emocional (Zona Verde) */
@@ -49,20 +48,73 @@ body {
 
 .app-container {
     display: flex;
+    flex-direction: column; /* 👈 CORRECCIÓN CLAVE 1: Apila header y main verticalmente */
     width: 100%;
     height: 100vh;
     overflow: hidden;
 }
 
-/* Alternancia de pantallas (mainScreen vs chatScreen) */
-.app-container > div:not(.active) {
-    display: none;
+/* Encabezado de la aplicación */
+.app-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    background-color: var(--panel);
+    border-bottom: 1px solid var(--bubble-them);
+    box-shadow: var(--shadow);
+    flex-shrink: 0; /* Asegura que el header mantenga su tamaño fijo */
 }
-.app-container > div.active {
+
+.app-header .brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.app-header .brand-text {
+    font-size: 1.2rem;
+    font-weight: 600;
+}
+
+/* Botón de Mood Propio (Zona Roja) - Ajustado para estar en el header */
+.my-mood-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--accent-gradient);
+    color: #fff;
+    border: 2px solid #fff;
+    font-size: 1.2rem;
+    cursor: pointer;
+    box-shadow: var(--shadow);
+    transition: transform 0.2s;
+    /* 🔴 Eliminamos las propiedades 'absolute' de la versión anterior */
+    position: relative; 
+}
+
+.my-mood-btn:hover {
+    transform: scale(1.05);
+}
+
+
+/* Alternancia de pantallas (mainScreen vs chatScreen) */
+.app-container > .screen {
+    /* Por defecto, los screens no crecen */
+    display: none;
+    width: 100%;
+    height: 100%;
+    flex-grow: 0;
+    overflow: hidden;
+}
+
+.app-container > .screen.active {
     display: flex; /* O grid */
     flex-direction: column;
     width: 100%;
-    height: 100%;
+    /* 👈 CORRECCIÓN CLAVE 2: Hace que la pantalla activa ocupe el espacio restante (debajo del header) */
+    flex-grow: 1; 
+    height: auto; 
 }
 
 /* Pantalla principal (Lista de chats y estado de la pareja) */
@@ -70,7 +122,8 @@ body {
     display: grid;
     grid-template-columns: 350px 1fr; /* Sidebar width y main content */
     width: 100%;
-    height: 100%;
+    /* 👈 CORRECCIÓN CLAVE 3: Asegura que el grid ocupe todo el alto del contenedor padre */
+    height: 100%; 
 }
 
 .sidebar {
@@ -82,13 +135,12 @@ body {
     height: 100%; 
 }
 
-/* 🔴 CORRECCIÓN CLAVE: Eliminar height: 100% para que el flexbox lo maneje */
 #chatList {
     display: flex;
     flex-direction: column;
     gap: 10px;
     padding: 0 15px;
-    /* height: 100%; */ /* <-- ELIMINADO/COMENTADO */
+    /* Dejamos que flexbox maneje la altura sin el height: 100% */
 }
 
 .main-content {
@@ -100,7 +152,7 @@ body {
     text-align: center;
 }
 
-/* --- Login Screen --- */
+/* --- Login Screen --- (Mantengo tus estilos) */
 .login-container {
     width: 100%;
     height: 100vh;
@@ -184,7 +236,7 @@ body {
     transition: background-color 0.2s, box-shadow 0.2s;
     text-align: left;
     border: none;
-    width: 100%; /* Asegura que el botón ocupe todo el ancho */
+    width: 100%; 
 }
 
 .chat-item:hover {
@@ -193,7 +245,7 @@ body {
 }
 
 .chat-item.unread {
-    border: 2px solid var(--primary); /* Resalta chats con mensajes nuevos */
+    border: 2px solid var(--primary); 
 }
 
 .chat-item .meta {
@@ -227,7 +279,7 @@ body {
 }
 
 .add-chat {
-    width: calc(100% - 30px); /* 100% menos el padding lateral de 15px*2 */
+    width: calc(100% - 30px); 
     margin: 0 15px 15px 15px;
     padding: 15px;
     background: var(--accent-gradient);
@@ -286,7 +338,7 @@ body {
     align-items: center;
     background-color: var(--bg);
     transition: box-shadow 0.4s ease-out;
-    box-shadow: 0 0 0 10px var(--panel); /* Borde por defecto */
+    box-shadow: 0 0 0 10px var(--panel); 
 }
 
 /* Sombras dinámicas para el estado emocional */
@@ -298,7 +350,6 @@ body {
 .emoji-circle.mood-ansioso { box-shadow: 0 0 20px 10px var(--mood-ansioso); }
 .emoji-circle.mood-inspirado { box-shadow: 0 0 20px 10px var(--mood-inspirado); }
 .emoji-circle.mood-ocupado { box-shadow: 0 0 20px 10px var(--mood-ocupado); }
-/* El estado por defecto no lleva sombra de color */
 
 /* Texto del estado de ánimo */
 .status-text {
@@ -308,33 +359,13 @@ body {
     margin-top: 15px;
 }
 
-/* Botón de Mood Propio (Zona Roja) */
-.my-mood-btn {
-    width: 50px;
-    height: 50px;
-    border-radius: 50%;
-    background: var(--accent-gradient);
-    color: #fff;
-    border: 3px solid #fff;
-    font-size: 1.5rem;
-    cursor: pointer;
-    box-shadow: var(--shadow);
-    transition: transform 0.2s;
-    position: absolute; /* Posición absoluta dentro de main-content o header */
-    bottom: 20px;
-    right: 20px;
-}
-
-.my-mood-btn:hover {
-    transform: scale(1.05);
-}
 
 /* --------------------------- */
 /* Chat Screen                 */
 /* --------------------------- */
 
 #chatScreen {
-    /* Por defecto es display: flex; flex-direction: column; */
+    /* Ya está flex-direction: column por el .screen.active */
     width: 100%;
     height: 100%;
 }
@@ -348,6 +379,7 @@ body {
     gap: 15px;
     box-shadow: var(--shadow);
     z-index: 10;
+    flex-shrink: 0; /* Asegura que el header del chat no se achique */
 }
 
 .chat-header .back-btn {
@@ -374,15 +406,13 @@ body {
     font-size: 0.9rem;
     color: var(--muted);
     margin: 0;
-    display: inline-block; /* Para que el texto de estado se alinee */
+    display: inline-block; 
 }
 
-/* Estilos para estado de conexión (Activo/Ausente) */
 .chat-header-info p #partnerStatus {
     font-weight: 600;
 }
 
-/* Estilos para el estado emocional (ej: "— enojado") */
 .chat-header-info p #partnerMoodText {
     color: var(--muted); 
     font-weight: 400;
@@ -413,7 +443,7 @@ body {
 
 /* Mensajes */
 .messages-container {
-    flex-grow: 1;
+    flex-grow: 1; /* 👈 CRÍTICO: El contenedor de mensajes debe ocupar todo el espacio restante */
     overflow-y: auto;
     padding: 20px;
     display: flex;
@@ -426,11 +456,10 @@ body {
     padding: 10px 15px;
     border-radius: 18px;
     position: relative;
-    cursor: pointer; /* Para abrir el menú de acciones */
+    cursor: pointer; 
     transition: box-shadow 0.2s;
 }
 
-/* Mensaje Importante (Resaltado) */
 .message.important {
     box-shadow: 0 0 10px var(--important); 
     border: 1px solid var(--important);
@@ -454,8 +483,7 @@ body {
     background-color: var(--bubble-me);
     color: #fff;
     align-self: flex-end;
-    /* 🟢 INDICADOR DE LECTURA */
-    padding-bottom: 18px; /* Espacio para el status */
+    padding-bottom: 18px; 
 }
 
 /* Mensaje Recibido (Pareja) */
@@ -481,7 +509,7 @@ body {
     display: block;
 }
 
-/* 🟢 Estado de Lectura */
+/* Estado de Lectura */
 .read-status {
     position: absolute;
     bottom: 3px;
@@ -499,6 +527,7 @@ body {
     display: flex;
     align-items: center;
     gap: 10px;
+    flex-shrink: 0; /* Asegura que el footer no se achique */
 }
 
 .chat-footer textarea {
@@ -509,7 +538,7 @@ body {
     background: var(--bg);
     color: #fff;
     font-size: 1rem;
-    resize: none; /* Deshabilita el redimensionamiento vertical */
+    resize: none; 
     max-height: 100px;
     overflow-y: auto;
     transition: border-color 0.2s;
@@ -533,6 +562,7 @@ body {
     justify-content: center;
     align-items: center;
     transition: background 0.2s;
+    flex-shrink: 0;
 }
 
 .chat-footer .send-btn:hover {
@@ -558,6 +588,10 @@ body {
     justify-content: center;
     align-items: center;
     z-index: 1000;
+}
+
+.modal-backdrop.active {
+    display: flex;
 }
 
 .modal-content {
@@ -589,7 +623,7 @@ body {
 
 /* Modal de Estados de Ánimo */
 #moodsContainer {
-    /* Ya tiene la clase .modal-backdrop, solo necesita .active para mostrarse */
+    /* Ya usa .modal-backdrop */
 }
 
 .mood-list {
@@ -700,49 +734,35 @@ body {
 @media (max-width: 768px) {
     /* Estructura */
     #mainScreen {
-        grid-template-columns: 1fr; /* Una columna */
-        /* Eliminamos el resto de estilos ya que el .app-container.active ya usa flex-direction: column; */
+        grid-template-columns: 1fr; 
     }
 
     .sidebar {
-        /* Hacemos que la sidebar ocupe todo el ancho */
         width: 100%; 
         border-right: none;
         border-bottom: 1px solid var(--bubble-them);
-        padding: 10px 0; /* Menos padding vertical */
-        height: 150px; /* Altura fija para el modo de lista en móvil (muestra 2-3 chats) */
+        padding: 10px 0; 
+        height: 150px; 
     }
     
     .main-content {
-        /* En móvil, la Zona Verde no se muestra en la vista principal, 
-           así que la ocultamos para que no tape el espacio. 
-           Si quieres que se vea, omite esta regla. */
         display: none; 
     }
 
-    /* Ocultamos el botón de mood en la pantalla principal (se ve en el header del chat) */
     .my-mood-btn {
-        display: none; 
+        /* Lo mantenemos visible en el header en móvil */
     }
     
     /* Chat List */
     .chat-item {
         padding: 12px;
-        /* 🔴 CAMBIO: Eliminamos el gap */
         gap: 0; 
     }
-    /* 🔴 CAMBIO CLAVE: Eliminar y ocultar el círculo/avatar en la lista de chats */
     .chat-item .avatar {
         display: none; 
     }
     .chat-item .meta { margin-right: 0; }
     .chat-item .chat-name { font-size: 1rem; }
     .chat-item .chat-last { font-size: 0.85rem; }
-    /* 🔴 Ocultamos la fecha también en móvil */
     .chat-item .chat-date { display: none; }
-}
-
-/* --- Modales --- (No cambiados) */
-.modal-backdrop.active {
-    display: flex;
 }
