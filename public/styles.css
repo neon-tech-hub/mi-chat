@@ -107,7 +107,7 @@ body {
     overflow: hidden;
 }
 
-/* 🟢 CORRECCIÓN CLAVE 1: Solo la pantalla activa se muestra y crece para llenar el espacio */
+/* 🟢 La pantalla activa se muestra y crece para llenar el espacio */
 .app-container > .screen.active {
     display: flex; 
     flex-direction: column;
@@ -116,10 +116,11 @@ body {
     height: auto; 
 }
 
-/* 🟢 CORRECCIÓN CLAVE 2: Pantalla principal ahora es vertical (no Grid de 2 columnas) */
+/* 🔴 ¡CORRECCIÓN CLAVE para el layout de mainScreen! */
+/* Por defecto, para móviles, mainScreen será una sola columna */
 #mainScreen {
-    display: flex;
-    flex-direction: column; /* Apila el sidebar y el main-content */
+    display: flex; /* Usamos flex para apilar el sidebar y el main-content */
+    flex-direction: column; 
     width: 100%;
     height: 100%; 
     flex-grow: 1; 
@@ -127,28 +128,21 @@ body {
 
 /* Sidebar (Lista de Chats) */
 .sidebar {
-    /* 🟢 CORRECCIÓN CLAVE 3: El sidebar ocupa todo el ancho y tiene una altura fija */
-    width: 100%; 
-    height: 150px; 
+    width: 100%; /* Ocupa todo el ancho */
+    height: 100%; /* Ocupa toda la altura disponible en mainScreen (en móvil) */
     padding: 10px 0;
-    border-right: none; /* Quitamos la línea vertical */
-    border-bottom: 1px solid var(--bubble-them); /* Añadimos línea horizontal */
+    border-right: none; 
+    border-bottom: none; /* No hay borde inferior en móvil, ya que ocupa todo */
     overflow-y: auto;
     display: flex; 
     flex-direction: column;
-    flex-shrink: 0; /* Asegura que no se encoja */
+    flex-shrink: 0; 
 }
 
 /* Main Content (Zona Verde) */
 .main-content {
-    /* 🟢 CORRECCIÓN CLAVE 4: Ocupa todo el resto del espacio vertical disponible */
-    flex-grow: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center; 
-    justify-content: center; 
-    padding: 20px;
-    text-align: center;
+    /* 🔴 ¡CORRECCIÓN CLAVE! Ocultar por defecto en móvil */
+    display: none; 
 }
 
 /* --- Login Screen --- */
@@ -216,7 +210,7 @@ body {
     color: var(--mood-angry);
     text-align: center;
     font-size: 0.9rem;
-    height: 20px; /* Evita que el layout salte */
+    height: 20px; 
 }
 
 
@@ -377,7 +371,7 @@ body {
     gap: 15px;
     box-shadow: var(--shadow);
     z-index: 10;
-    flex-shrink: 0; /* Asegura que el header del chat no se achique */
+    flex-shrink: 0; 
 }
 
 .chat-header .back-btn {
@@ -453,7 +447,7 @@ body {
     max-width: 70%;
     padding: 10px 15px;
     border-radius: 18px;
-    position: relative; /* 🟢 CRÍTICO: Necesario para posicionar el status absoluto */
+    position: relative; 
     cursor: pointer; 
     transition: box-shadow 0.2s;
 }
@@ -481,9 +475,8 @@ body {
     background-color: var(--bubble-me);
     color: #fff;
     align-self: flex-end;
-    /* 🟢 CORRECCIÓN: Deja espacio para el texto "Leído" */
     padding-bottom: 20px; 
-    position: relative; /* Duplicado, pero se mantiene la importancia */
+    position: relative; 
 }
 
 /* Mensaje Recibido (Pareja) */
@@ -509,11 +502,11 @@ body {
     display: block;
 }
 
-/* 🟢 CORRECCIÓN CLAVE 5: Posicionamiento del "Leído" */
+/* Posicionamiento del "Leído" */
 .read-status {
     position: absolute;
-    bottom: 3px; /* 3px desde el borde inferior de la burbuja */
-    right: 10px; /* 10px desde el borde derecho de la burbuja */
+    bottom: 3px; 
+    right: 10px; 
     font-size: 0.7rem;
     color: var(--read-status-color);
     font-weight: 500;
@@ -527,7 +520,7 @@ body {
     display: flex;
     align-items: center;
     gap: 10px;
-    flex-shrink: 0; /* Asegura que el footer no se achique */
+    flex-shrink: 0; 
 }
 
 .chat-footer textarea {
@@ -731,30 +724,27 @@ body {
 /* Media Queries (Mobile)      */
 /* --------------------------- */
 
+/* En pantallas hasta 768px (típico móvil) */
 @media (max-width: 768px) {
-    /* 🟢 CORRECCIÓN: En móvil mantenemos la estructura vertical del #mainScreen */
-    #mainScreen {
-        flex-direction: column; 
-    }
-
+    /* El #mainScreen ya es flex-direction: column por defecto arriba */
+    
+    /* El sidebar (lista de chats) en móvil ocupará toda la pantalla */
     .sidebar {
-        width: 100%; 
-        border-right: none;
-        border-bottom: 1px solid var(--bubble-them);
-        padding: 10px 0; 
-        height: 150px; 
+        height: 100%; /* Ocupa todo el espacio vertical disponible */
+        border-bottom: none; /* No queremos borde abajo */
     }
     
-    /* Mantenemos la zona verde oculta para dar espacio a los chats */
+    /* La Zona Verde (main-content) NO se muestra en el inicio en móvil */
     .main-content {
         display: none; 
     }
 
+    /* Ocultamos el botón de mood en el header para que no tape el título si es muy grande */
     .my-mood-btn {
-        /* Lo mantenemos visible en el header en móvil */
+        display: none; 
     }
     
-    /* Chat List */
+    /* Ajustes menores para la lista de chats en móvil */
     .chat-item {
         padding: 12px;
         gap: 0; 
@@ -766,4 +756,34 @@ body {
     .chat-item .chat-name { font-size: 1rem; }
     .chat-item .chat-last { font-size: 0.85rem; }
     .chat-item .chat-date { display: none; }
+}
+
+/* En pantallas GRANDES (escritorio) */
+@media (min-width: 769px) {
+    /* 🟢 ¡Activamos el diseño de GRID de dos columnas para escritorio! */
+    #mainScreen {
+        display: grid;
+        grid-template-columns: 350px 1fr; /* Sidebar de 350px y el resto para la Zona Verde */
+        flex-direction: initial; /* Deshace el flex-direction: column del móvil */
+    }
+
+    /* En escritorio, el sidebar se verá a la izquierda */
+    .sidebar {
+        width: 350px; /* Ancho fijo */
+        height: 100%; /* Ocupa toda la altura */
+        border-right: 1px solid var(--bubble-them); /* Borde vertical */
+        border-bottom: none; /* Sin borde inferior */
+        flex-shrink: 0;
+    }
+
+    /* En escritorio, la Zona Verde (main-content) SÍ se muestra */
+    .main-content {
+        display: flex; /* Vuelve a mostrarse */
+        flex-grow: 1; /* Ocupa el espacio restante */
+    }
+
+    /* El botón de mood se muestra en el header en escritorio */
+    .my-mood-btn {
+        display: flex; /* Vuelve a mostrarse */
+    }
 }
