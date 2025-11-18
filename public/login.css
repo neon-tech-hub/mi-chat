@@ -36,31 +36,30 @@ input {
     padding:12px 15px;
     border-radius:8px;
     border:1px solid #333;
-    background:#1a1a1a;
+    background:#222;
     color:#fff;
     font-size:1rem;
 }
 
-input::placeholder { color:#777; }
-
 button {
-    padding:12px;
+    padding:15px;
+    background:linear-gradient(45deg, #fa7e1e, #dd2a7b);
+    color:#fff;
     border:none;
     border-radius:8px;
+    font-size:1.1rem;
     cursor:pointer;
     font-weight:600;
-    font-size:1rem;
-    background: linear-gradient(45deg, #feda75, #fa7e1e, #d62976, #962fbf, #4f5bd5);
-    color:#fff;
-    transition:0.2s;
+    transition:opacity 0.2s;
 }
 
 button:hover {
-    opacity:0.85;
+    opacity:0.9;
 }
 
 .error {
-    color:#ff7070;
-    font-size:0.9rem;
-    text-align:center;
+    color: #ff4d4d;
+    text-align: center;
+    font-size: 0.9rem;
+    height: 1.2em;
 }

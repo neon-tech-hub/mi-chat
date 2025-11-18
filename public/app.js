@@ -48,7 +48,8 @@ if (loginBtn) {
     // CONSTANTES Y ESTADO GLOBAL
     // ----------------------------------------------------
     const currentUser = sessionStorage.getItem("currentUser") || 'Anonimo';
-    let chats = JSON.parse(localStorage.getItem("chats")) || {};
+    // 🔴 CRÍTICO: Asegurarse de cargar los chats de localStorage
+    let chats = JSON.parse(localStorage.getItem("chats")) || {}; 
     let currentChat = null;
     let replyToMessageId = null; 
 
@@ -83,6 +84,7 @@ if (loginBtn) {
     // ----------------------------------------------------
 
     function saveData() {
+        // 🔴 CRÍTICO: Guarda los chats en localStorage
         localStorage.setItem("chats", JSON.stringify(chats));
     }
     
@@ -191,12 +193,18 @@ if (loginBtn) {
         if (!chatListDiv) return;
 
         chatListDiv.innerHTML = ''; 
-        const chatKeys = Object.keys(chats).sort((a, b) => b.localeCompare(a));
+        // 🔴 CRÍTICO: Ordenar chats por clave de fecha (descendente)
+        const chatKeys = Object.keys(chats).sort((a, b) => b.localeCompare(a)); 
+
+        if (chatKeys.length === 0) {
+            chatListDiv.innerHTML = '<p style="text-align: center; color: var(--muted); margin-top: 20px;">¡No hay chats anteriores! Crea uno nuevo.</p>';
+        }
 
         chatKeys.forEach(key => {
             const chat = chats[key];
             const lastMsg = chat[chat.length - 1];
-            const dateStr = key;
+            // Formatear la clave para mostrar la fecha de forma legible
+            const dateStr = new Date(key).toLocaleDateString('es-AR', { day: 'numeric', month: 'short', year: 'numeric' });
 
             const item = document.createElement('button');
             item.className = 'chat-item';
@@ -205,7 +213,7 @@ if (loginBtn) {
 
             item.innerHTML = `
                 <div class="meta">
-                    <div class="chat-name">Chat ${dateStr}</div>
+                    <div class="chat-name">${dateStr}</div>
                     <div class="chat-last">${lastMsg ? (lastMsg.sender === currentUser ? 'Tú' : getPartnerName()) + ': ' + lastMsg.text : 'Comenzar chat...'}</div>
                 </div>
             `;
@@ -246,7 +254,9 @@ if (loginBtn) {
 
             div.setAttribute('data-id', msg.id);
             div.setAttribute('data-sender', msg.sender);
-            div.textContent = msg.text;
+            
+            // 🔴 CRÍTICO: Mostrar texto del mensaje
+            div.textContent = msg.text; 
 
             // Añadir el timestamp
             const ts = document.createElement('span');
@@ -432,7 +442,8 @@ if (loginBtn) {
     // ----------------------------------------------------
 
     document.getElementById('backToMain')?.addEventListener('click', closeChat);
-    document.getElementById('addChatBtn')?.addEventListener('click', () => openChat(formatDateKey()));
+    // 🔴 CRÍTICO: Al crear un nuevo chat, usa la fecha de hoy como clave
+    document.getElementById('addChatBtn')?.addEventListener('click', () => openChat(formatDateKey())); 
     document.getElementById('sendMessageBtn')?.addEventListener('click', sendMessage);
     document.getElementById('messageInput')?.addEventListener('keypress', (e) => {
         if (e.key === 'Enter' && !e.shiftKey) {
@@ -503,6 +514,7 @@ if (loginBtn) {
             saveData();
         }
         
+        // 🔴 CRÍTICO: Asegura que la lista de chats se renderice al inicio
         renderChatList(); 
         renderMoods();
         renderPauseButtons();
