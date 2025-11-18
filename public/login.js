@@ -5,8 +5,8 @@
 
 // Contraseñas válidas
 const PASSWORDS = {
-    Leo: "12345678",
-    Estefi: "87654321"
+    Leo: "2",
+    Estefi: "1"
 };
 
 const loginBtn = document.getElementById("loginBtn");
