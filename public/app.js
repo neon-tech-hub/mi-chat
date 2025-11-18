@@ -681,13 +681,13 @@ if (loginBtn) {
         btn.addEventListener('click', (e) => {
             // Maneja el modal de Pausa
             if (e.target.closest('#pauseTimeModal')) {
-                 pauseTimeModal.style.display = 'none';
+                pauseTimeModal.style.display = 'none';
             // Maneja el modal de Acciones de Mensaje
             } else if (e.target.closest('#messageActionsModal')) {
-                 messageActionsModal.style.display = 'none';
+                messageActionsModal.style.display = 'none';
             // Maneja el modal de Moods
             } else if (e.target.closest('#moodsContainer')) {
-                 moodsContainer.classList.remove("active");
+                moodsContainer.classList.remove("active");
             }
         });
     });
@@ -805,7 +805,7 @@ if (loginBtn) {
             alert("🌟 Mensaje marcado como importante. ¡Tu pareja recibirá una alerta si intenta salir sin responder!");
         } else {
              // Esto puede ocurrir si el usuario intenta marcar un mensaje propio, lo cual está deshabilitado en el modal.
-             alert("⚠️ Solo puedes marcar como importante un mensaje que tu pareja te envió, no uno propio.");
+            alert("⚠️ Solo puedes marcar como importante un mensaje que tu pareja te envió, no uno propio.");
         }
     });
 
