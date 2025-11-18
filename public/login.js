@@ -1,3 +1,8 @@
+// =======================================================
+// LÓGICA DE LOGIN
+// Solo maneja la autenticación y la redirección
+// =======================================================
+
 // Contraseñas válidas
 const PASSWORDS = {
     Leo: "12345678",
@@ -29,6 +34,7 @@ loginBtn.addEventListener("click", () => {
     // Guardado SOLO durante la sesión actual
     sessionStorage.setItem("currentUser", user);
 
+    // 🟢 REDIRECCIÓN CLAVE: Ahora apunta a la nueva página principal
     window.location.href = "menu.html";
 });
 
