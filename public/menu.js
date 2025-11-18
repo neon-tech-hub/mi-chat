@@ -4,16 +4,19 @@
 // =======================================================
 
 (function () {
-    // -------------------
+    // -------------------\
     // VARIABLES Y UTILIDADES
     // -------------------
     const currentUser = sessionStorage.getItem("currentUser");
+    // Asume que la pareja es el otro usuario
     const partnerName = currentUser === 'Leo' ? 'Estefi' : 'Leo';
     let chats = JSON.parse(localStorage.getItem(`chats_${currentUser}`)) || {};
     let myMood = sessionStorage.getItem("myMood") || "😴";
     let partnerMood = sessionStorage.getItem("partnerMood") || "?";
-    // El status ahora solo puede ser 'online' o 'offline'
-    let partnerStatus = 'offline'; 
+    let partnerStatus = 'offline'; // 'online', 'paused', 'offline'
+    
+    // Variables para Socket.IO (Se asume que la librería está cargada)
+    const socket = io();
 
     const MOODS = {
         '😍': { text: 'Enamorado', class: 'mood-enamorado' },
@@ -23,204 +26,185 @@
         '😔': { text: 'Triste', class: 'mood-triste' },
         '😫': { text: 'Estresado/a', class: 'mood-estresado' },
         '💬': { text: 'Quiero Hablar', class: 'mood-porhablar' },
+        '?': { text: 'Desconocido', class: 'mood-default' },
     };
 
     const getPartnerName = () => partnerName;
-    const formatDateKey = (date = new Date()) => date.toISOString().split('T')[0];
+    const formatDateKey = (date = new Date()) => date.toISOString().split('T')[0]; // YYYY-MM-DD
     const saveData = () => localStorage.setItem(`chats_${currentUser}`, JSON.stringify(chats));
+
+
+    // -------------------\
+    // MANEJADORES DE ESTADO (VISTAS)
+    // -------------------
+
+    const updatePartnerStatusDisplay = (mood, status) => {
+        partnerStatus = status; // Actualiza la variable de estado
+        const moodInfo = MOODS[mood] || MOODS['?'];
+        const moodDisplay = document.getElementById('partnerMoodDisplay');
+        const moodText = document.getElementById('partnerStatusText');
+        const emojiSpan = document.getElementById('partnerMoodEmoji');
+
+        if (!moodDisplay || !moodText || !emojiSpan) return;
+
+        // Limpia las clases de ánimo anteriores
+        Object.values(MOODS).forEach(m => {
+            moodDisplay.classList.remove(m.class);
+        });
+
+        // Aplica el nuevo ánimo y el emoji
+        moodDisplay.classList.add(moodInfo.class);
+        emojiSpan.textContent = mood;
+
+        let statusText = status === 'online' ? 'En línea' : status === 'paused' ? 'Pausado' : 'Desconectado';
+        
+        moodText.textContent = `${getPartnerName()} | ${statusText} (${moodInfo.text})`;
+    };
     
-    // Configuración de Socket.IO
-    const socket = (typeof io !== 'undefined') ? io() : { on: () => {}, emit: () => {} };
+    const updateMyMoodButton = (mood) => {
+        const btn = document.getElementById('openMoodModal');
+        if (btn) btn.textContent = mood;
+    };
+    
+    // -------------------\
+    // RENDERIZADO DE CHAT
+    // -------------------
 
-    // --- Funciones de Renderizado ---
+    const renderChatList = () => {
+        const chatList = document.getElementById('chatList');
+        if (!chatList) return;
 
-    function renderChatList() {
-        const chatListDiv = document.getElementById('chatList');
-        if (!chatListDiv) return;
-        
-        chatListDiv.innerHTML = '';
-        
-        const sortedKeys = Object.keys(chats).sort().reverse();
+        // Obtener las claves (fechas) y ordenarlas de más reciente a más antigua
+        const chatKeys = Object.keys(chats).sort((a, b) => new Date(b) - new Date(a));
 
-        sortedKeys.forEach(key => {
-            const chat = chats[key];
-            if (!chat || chat.length === 0) return;
+        chatList.innerHTML = '';
 
-            const lastMessage = chat[chat.length - 1];
-            const unreadCount = chat.filter(msg => msg.sender !== currentUser && !msg.read).length;
+        chatKeys.forEach(key => {
+            const chatArray = chats[key];
+            const lastMessage = chatArray.length > 0 ? chatArray[chatArray.length - 1] : { text: "Comenzá la conversación...", date: "" };
+            const unreadCount = chatArray.filter(msg => msg.receiver === currentUser && !msg.read).length;
+            const unreadClass = unreadCount > 0 ? 'unread' : '';
+            const displayDate = key.split('-').reverse().slice(0, 2).join('/'); // Ej: 18/11
 
             const chatItem = document.createElement('div');
-            chatItem.className = `chat-item ${unreadCount > 0 ? 'unread' : ''}`;
-            chatItem.dataset.chatKey = key;
-            
-            // Navega a la página de chat
-            chatItem.onclick = () => {
-                window.location.href = `chat.html?chatKey=${key}`;
-            };
+            chatItem.className = `chat-item ${unreadClass}`;
+            chatItem.dataset.chatDate = key;
 
-            let lastText = lastMessage.text;
-            
-            if (lastMessage.replyToText) {
-                lastText = `↩️ Respondió: ${lastMessage.text}`;
-            } else if (lastMessage.important) {
-                lastText = `🌟 Importante: ${lastMessage.text}`;
-            } else if (lastMessage.sender === currentUser) {
-                lastText = `Tú: ${lastText}`;
-            }
-
-            const date = new Date(lastMessage.timestamp);
-            const dateStr = date.toLocaleDateString('es-AR', { day: 'numeric', month: 'short' });
-
-            const metaRightDiv = document.createElement('div');
-            metaRightDiv.className = 'meta-right';
-            
-            metaRightDiv.innerHTML = `
-                <div class="chat-date">${dateStr}</div>
-                ${unreadCount > 0 ? `<div class="unread-count">${unreadCount}</div>` : ''}
-            `;
-            
             chatItem.innerHTML = `
-                <div class="avatar">${key.substring(8, 10)}/${key.substring(5, 7)}</div>
+                <div class="avatar">${getPartnerName()[0]}</div>
                 <div class="meta">
-                    <span class="chat-name">${key}</span>
-                    <span class="chat-last">${lastText}</span>
+                    <div class="chat-name">${getPartnerName()}</div>
+                    <div class="chat-last">${lastMessage.text}</div>
+                </div>
+                <div class="meta-right">
+                    <div class="chat-date">${displayDate}</div>
+                    ${unreadCount > 0 ? `<div class="unread-count">${unreadCount}</div>` : ''}
                 </div>
             `;
-            chatItem.appendChild(metaRightDiv);
-            chatListDiv.appendChild(chatItem);
+            chatList.appendChild(chatItem);
         });
-    }
 
-    function updatePartnerStatusDisplay(moodEmoji, status) {
-        partnerMood = moodEmoji;
-        partnerStatus = status;
-        
-        const partnerMoodDisplay = document.getElementById('partnerMoodEmoji'); 
-        const statusHeader = document.getElementById('statusHeader');
-        const displayContainer = document.getElementById('partnerMoodDisplay'); 
-        
-        let emojiToShow = moodEmoji;
-        let statusText = 'Desconectado';
-        let moodData = MOODS[moodEmoji] || { text: 'Ausente', class: 'mood-default' };
+        // ----------------------------------------------------------------
+        // ✅ CORRECCIÓN: Agregar manejador de click para navegar al chat.
+        // ----------------------------------------------------------------
+        const chatItems = document.querySelectorAll('.chat-item');
+        chatItems.forEach(item => {
+            item.addEventListener('click', () => {
+                const chatKey = item.dataset.chatDate;
+                sessionStorage.setItem('currentChatKey', chatKey);
+                // Redirigir a la página de conversación de chat
+                window.location.href = 'chat.html'; 
+            });
+        });
+    };
 
-        // 📌 Lógica de emojis por defecto:
-        if (status === 'offline') {
-            emojiToShow = '😴'; // Desconectado -> Dormido
-            statusText = 'Desconectado';
-            moodData = MOODS['😴']; // Usar la clase de 'Cansado' para la sombra
-        } else if (status === 'online') {
-            statusText = 'En línea';
-            if (moodEmoji === '?') {
-                emojiToShow = '❓'; // Conectado pero no eligió estado -> Pregunta
-                moodData = { text: 'Sin estado', class: 'mood-default' };
-            }
+    // -------------------\
+    // MODALES Y EVENTOS
+    // -------------------
+
+    const toggleModal = (modalId, show) => {
+        const modal = document.getElementById(modalId);
+        if (modal) {
+            modal.classList.toggle('active', show);
         }
-        
-        if (partnerMoodDisplay && displayContainer) {
-            partnerMoodDisplay.textContent = emojiToShow; 
-            
-             // 1. Remover todas las clases de mood (para eliminar la sombra anterior)
-             Object.values(MOODS).forEach(m => displayContainer.classList.remove(m.class));
-             displayContainer.classList.remove('mood-default', 'status-online', 'status-offline');
-             
-             // 2. Añadir la clase de mood y estado actual (para la sombra y el texto)
-             displayContainer.classList.add(moodData.class, `status-${status}`);
-        }
+    };
 
-        // 3. Actualizar texto de estado
-        if (statusHeader) {
-            const moodText = (moodData.text && emojiToShow !== '❓' && emojiToShow !== '😴') ? `(${moodData.text})` : '';
-            statusHeader.textContent = `${getPartnerName()} | ${statusText} ${moodText}`;
-        }
-    }
-
-    function renderMoods() {
+    const renderMoods = () => {
         const moodList = document.getElementById('moodList');
         if (!moodList) return;
+        
+        moodList.innerHTML = Object.keys(MOODS).map(emoji => {
+            if (emoji === '?') return ''; // Omitir el estado desconocido
+            const { text, class: moodClass } = MOODS[emoji];
+            const isSelected = emoji === myMood;
+            return `
+                <button 
+                    class="mood-btn ${moodClass} ${isSelected ? 'selected' : ''}" 
+                    data-mood-emoji="${emoji}"
+                    data-mood-text="${text}"
+                >${emoji}</button>
+            `;
+        }).join('');
+        
+        // Asignar el listener después de renderizar
+        moodList.querySelectorAll('.mood-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const newMood = btn.dataset.moodEmoji;
+                myMood = newMood;
+                sessionStorage.setItem("myMood", myMood);
+                
+                updateMyMoodButton(myMood);
+                renderMoods(); // Re-renderizar para actualizar el estado seleccionado
+                toggleModal('moodsContainer', false);
 
-        moodList.innerHTML = '';
-        Object.keys(MOODS).forEach(emoji => {
-            const button = document.createElement('button');
-            button.className = `mood-btn ${emoji === myMood ? 'selected' : ''}`;
-            button.textContent = emoji;
-            button.dataset.mood = emoji;
-            button.onclick = () => selectMood(emoji);
-            moodList.appendChild(button);
+                // 🌐 Emitir evento de cambio de ánimo al servidor
+                socket.emit('moodChanged', { sender: currentUser, mood: myMood });
+            });
         });
-    }
-    
-    function updateMyMoodButton(emoji) {
-        myMood = emoji;
-        sessionStorage.setItem("myMood", emoji);
-        const myMoodBtn = document.getElementById('openMoodModal');
-        if (myMoodBtn) {
-            myMoodBtn.textContent = emoji;
-        }
-        // Notificar al servidor mi mood
-        socket.emit('moodChanged', { sender: currentUser, mood: emoji });
-    }
+    };
 
-    // --- Lógica de Modales y Acciones ---
+    const renderPauseButtons = () => {
+        // Renderizado de botones de pausa (Lógica de ejemplo)
+        // ... (Tu implementación para renderizar botones de pausa aquí) ...
+    };
 
-    function openModal(modalId) {
-        document.getElementById(modalId)?.classList.add('active');
-    }
-
-    function closeModal(modalId) {
-        document.getElementById(modalId)?.classList.remove('active');
-    }
-
-    function selectMood(emoji) {
-        myMood = emoji;
-        updateMyMoodButton(emoji);
-        renderMoods(); 
-        closeModal('moodsContainer');
-    }
-    
-    // --- Configuración de Eventos ---
-
-    document.getElementById('openMoodModal')?.addEventListener('click', () => openModal('moodsContainer'));
-    
-    // Si tienes un botón para crear chat (opcional)
-    document.getElementById('addChatBtn')?.addEventListener('click', () => { 
-        const todayKey = formatDateKey();
-        window.location.href = `chat.html?chatKey=${todayKey}`;
-    });
-
-    // Eventos para cerrar modales (delegación)
-    document.querySelectorAll('.modal-backdrop').forEach(modal => {
-        modal.addEventListener('click', (e) => {
-            if (e.target.classList.contains('modal-backdrop')) {
-                closeModal(modal.id);
-            }
-        });
+    // Asignación de listeners a botones de modales
+    document.getElementById('openMoodModal').addEventListener('click', () => {
+        renderMoods();
+        toggleModal('moodsContainer', true);
     });
 
     document.querySelectorAll('.close-modal-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
-            const targetId = e.currentTarget.dataset.modalTarget || e.currentTarget.closest('.modal-backdrop')?.id;
-            if (targetId) {
-                closeModal(targetId);
-            }
+            const target = e.currentTarget.dataset.modalTarget || e.currentTarget.closest('.modal-backdrop').id;
+            toggleModal(target, false);
         });
     });
 
-    // --- Lógica de Socket.IO ---
 
-    socket.on("receiveMessage", (data) => { 
-        if (data.recipient === currentUser) {
-            const { chatKey, message } = data;
-            if (!chats[chatKey]) chats[chatKey] = [];
-            chats[chatKey].push(message);
-            saveData();
-            // Solo actualiza la lista
-            renderChatList(); 
-        }
+    // -------------------\
+    // SOCKET.IO LISTENERS
+    // -------------------
+
+    socket.on("connect", () => {
+        // Enviar la información de conexión
+        socket.emit('userConnected', { user: currentUser, mood: myMood });
+        // Pedir el estado real de la pareja después de la conexión
+        socket.emit('requestPartnerStatus', { targetUser: getPartnerName() });
     });
 
+    socket.on("partnerStatus", (data) => {
+        // Recibe el estado inicial al conectarse
+        if (data.user === getPartnerName()) {
+            sessionStorage.setItem("partnerMood", data.mood);
+            updatePartnerStatusDisplay(data.mood, data.status);
+        }
+    });
+    
     socket.on("moodChanged", (data) => { 
         if (data.sender === getPartnerName()) {
             sessionStorage.setItem("partnerMood", data.mood); 
+            // Usar partnerStatus que puede ser 'online', 'paused', 'offline'
             updatePartnerStatusDisplay(data.mood, partnerStatus); 
         }
     });
@@ -232,8 +216,17 @@
         }
     });
 
+    socket.on("chatPaused", (data) => {
+        if (data.sender === getPartnerName()) {
+            // Nota: El servidor debería manejar el tiempo de pausa y el 'unpause'
+            // Aquí solo actualizamos el estado visual
+            updatePartnerStatusDisplay(partnerMood, 'paused');
+        }
+    });
+
+
     // =======================================================
-    // INICIALIZACIÓN DE menu.html
+    // INICIALIZACIÓN DE menu.html / index.html
     // =======================================================
 
     // 1. Asegurarse de que el chat de hoy exista 
@@ -246,13 +239,21 @@
     // 2. Renderizar la lista de chats y los modales
     renderChatList(); 
     renderMoods();
+    renderPauseButtons(); // Asume que esta función existe o se implementará
     updateMyMoodButton(myMood);
     
     // 3. Inicializar el estado de la pareja
     partnerMood = sessionStorage.getItem("partnerMood") || "?";
     updatePartnerStatusDisplay(partnerMood, 'offline'); 
     
-    // 4. Pedir al servidor el estado de ánimo y conexión real de la pareja
-    socket.emit('requestPartnerStatus'); 
+    // 4. Pedir al servidor el estado de ánimo y conexión real de la pareja al cargar
+    if (socket.connected) {
+        socket.emit('requestPartnerStatus', { targetUser: getPartnerName() });
+    } else {
+        socket.on('connect', () => {
+            socket.emit('requestPartnerStatus', { targetUser: getPartnerName() });
+        });
+    }
     
+
 })();
