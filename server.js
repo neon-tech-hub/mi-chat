@@ -9,36 +9,39 @@ const io = require('socket.io')(http, {
 const path = require('path');
 
 // =======================================================
-// Almacenamiento de estado completo de usuarios
+// VARIABLES Y ESTADO DEL SERVIDOR
 // =======================================================
-const userStates = {}; 
+const userStates = {}; // Almacena { socketId, mood, status }
 const getPartnerName = (userName) => (userName === "Leo" ? "Estefi" : "Leo");
 
 // ------------------------------------------------------------------
-// ✅ CORRECCIÓN DE RUTAS: Servir todos los archivos estáticos desde la raíz
-// Esto es vital para que cargue menu.js, styles.css, etc.
+// ✅ CORRECCIÓN DE RUTAS 1: Servir archivos estáticos (CSS, JS, etc.) desde la carpeta 'public'.
+// Esto hace que el navegador pueda cargar /menu.js, /styles.css, etc., que están dentro de public.
 // ------------------------------------------------------------------
-app.use(express.static(__dirname)); 
+app.use(express.static("public")); 
 
-// 1. RUTA RAÍZ (Página de Login) - http://localhost:3000/
+// 1. RUTA RAÍZ (Página de Login)
 app.get("/", (req, res) => {
-    res.sendFile(path.join(__dirname, 'login.html')); 
+    // ✅ Se especifica la ruta completa: public/login.html
+    res.sendFile(path.join(__dirname, 'public', 'login.html')); 
 });
 
-// 2. ✅ RUTA DEL MENÚ (CORREGIDA: Carga el archivo menu.html)
-// Si el cliente redirige a '/menu.html', cargamos el archivo 'menu.html'.
+// 2. ✅ RUTA DEL MENÚ (Carga el archivo menu.html dentro de 'public')
 app.get("/menu.html", (req, res) => {
-    res.sendFile(path.join(__dirname, 'menu.html')); 
+    // ✅ Se especifica la ruta completa: public/menu.html
+    res.sendFile(path.join(__dirname, 'public', 'menu.html')); 
 });
 
 // 3. RUTA DE LA CONVERSACIÓN
-// Si el cliente redirige a '/chat.html', cargamos el archivo 'chat.html'.
 app.get("/chat.html", (req, res) => {
-    res.sendFile(path.join(__dirname, 'chat.html'));
+    // ✅ Se especifica la ruta completa: public/chat.html
+    res.sendFile(path.join(__dirname, 'public', 'chat.html'));
 });
 
 
-// Conexión de clientes (Lógica de Socket.io)
+// =======================================================
+// LÓGICA DE SOCKET.IO (Sincronización de Estados y Chat)
+// =======================================================
 io.on('connection', socket => {
     console.log("Usuario conectado:", socket.id);
 
@@ -70,7 +73,7 @@ io.on('connection', socket => {
     });
 
     // ----------------------------------------------------
-    // 2. MANEJO DEL CAMBIO DE ÁNIMO
+    // 2. ✅ MANEJO DEL CAMBIO DE ÁNIMO (FIX PREVIO)
     // ----------------------------------------------------
     socket.on('moodChanged', data => {
         const { sender, mood } = data;
@@ -136,7 +139,7 @@ io.on('connection', socket => {
 
 
     // ----------------------------------------------------
-    // 5. MANEJO DE MENSAJES EN GENERAL (Se mantiene la lógica anterior)
+    // 5. MANEJO DE MENSAJES EN GENERAL
     // ----------------------------------------------------
     socket.on("messageSent", (data) => {
         const receiverName = getPartnerName(data.sender);
@@ -202,8 +205,6 @@ io.on('connection', socket => {
             delete userStates[userName].socketId; 
             
             console.log(`Usuario desconectado: ${userName}`);
-        } else {
-            console.log("Usuario desconectado (no registrado):", socket.id);
         }
     });
     // ----------------------------------------------------
