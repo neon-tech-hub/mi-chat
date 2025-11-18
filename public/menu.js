@@ -8,7 +8,6 @@
     // VARIABLES Y UTILIDADES
     // -------------------
     const currentUser = sessionStorage.getItem("currentUser");
-    // Asume que la pareja es el otro usuario
     const partnerName = currentUser === 'Leo' ? 'Estefi' : 'Leo';
     let chats = JSON.parse(localStorage.getItem(`chats_${currentUser}`)) || {};
     let myMood = sessionStorage.getItem("myMood") || "😴";
@@ -39,7 +38,8 @@
     // -------------------
 
     const updatePartnerStatusDisplay = (mood, status) => {
-        partnerStatus = status; // Actualiza la variable de estado
+        // ✅ Esta línea YA actualiza la variable global partnerStatus, ¡es correcto!
+        partnerStatus = status; 
         const moodInfo = MOODS[mood] || MOODS['?'];
         const moodDisplay = document.getElementById('partnerMoodDisplay');
         const moodText = document.getElementById('partnerStatusText');
@@ -104,15 +104,12 @@
             chatList.appendChild(chatItem);
         });
 
-        // ----------------------------------------------------------------
-        // ✅ CORRECCIÓN: Agregar manejador de click para navegar al chat.
-        // ----------------------------------------------------------------
+        // Agregar manejador de click para navegar al chat.
         const chatItems = document.querySelectorAll('.chat-item');
         chatItems.forEach(item => {
             item.addEventListener('click', () => {
                 const chatKey = item.dataset.chatDate;
                 sessionStorage.setItem('currentChatKey', chatKey);
-                // Redirigir a la página de conversación de chat
                 window.location.href = 'chat.html'; 
             });
         });
@@ -204,7 +201,7 @@
     socket.on("moodChanged", (data) => { 
         if (data.sender === getPartnerName()) {
             sessionStorage.setItem("partnerMood", data.mood); 
-            // Usar partnerStatus que puede ser 'online', 'paused', 'offline'
+            // Usar partnerStatus que DEBE estar actualizado por statusChanged o partnerStatus
             updatePartnerStatusDisplay(data.mood, partnerStatus); 
         }
     });
@@ -218,15 +215,13 @@
 
     socket.on("chatPaused", (data) => {
         if (data.sender === getPartnerName()) {
-            // Nota: El servidor debería manejar el tiempo de pausa y el 'unpause'
-            // Aquí solo actualizamos el estado visual
             updatePartnerStatusDisplay(partnerMood, 'paused');
         }
     });
 
 
     // =======================================================
-    // INICIALIZACIÓN DE menu.html / index.html
+    // INICIALIZACIÓN DE menu.html
     // =======================================================
 
     // 1. Asegurarse de que el chat de hoy exista 
@@ -239,21 +234,17 @@
     // 2. Renderizar la lista de chats y los modales
     renderChatList(); 
     renderMoods();
-    renderPauseButtons(); // Asume que esta función existe o se implementará
+    renderPauseButtons();
     updateMyMoodButton(myMood);
     
-    // 3. Inicializar el estado de la pareja
+    // 3. Inicializar el estado de la pareja (asumir offline hasta la conexión)
     partnerMood = sessionStorage.getItem("partnerMood") || "?";
     updatePartnerStatusDisplay(partnerMood, 'offline'); 
     
-    // 4. Pedir al servidor el estado de ánimo y conexión real de la pareja al cargar
-    if (socket.connected) {
-        socket.emit('requestPartnerStatus', { targetUser: getPartnerName() });
-    } else {
-        socket.on('connect', () => {
-            socket.emit('requestPartnerStatus', { targetUser: getPartnerName() });
-        });
-    }
+    // 4. ✅ ESTE BLOQUE REDUNDANTE FUE ELIMINADO.
+    // La lógica de conexión se maneja solo en socket.on("connect", ...)
+    // lo que asegura que userConnected y requestPartnerStatus se envíen
+    // correctamente al servidor.
     
 
 })();
