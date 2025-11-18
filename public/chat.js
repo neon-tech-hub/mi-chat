@@ -14,6 +14,11 @@
     let partnerMood = sessionStorage.getItem("partnerMood") || "?";
     let partnerStatus = 'offline'; 
     let replyingToId = null; 
+    let currentMessages = chats[currentChat] || [];
+    
+    // Variables para Socket.IO 🟢 CORRECCIÓN: Usar la URL de Render
+    const SERVER_URL = 'https://mi-chat-omr7.onrender.com';
+    const socket = io(SERVER_URL); 
 
     // Mapeo de estados y colores (debe coincidir con CSS y menu.js)
     const MOODS = {
@@ -27,314 +32,346 @@
     };
 
     const getPartnerName = () => partnerName;
-    const saveData = () => localStorage.setItem(`chats_${currentUser}`, JSON.stringify(chats));
+    const saveData = () => {
+        localStorage.setItem(`chats_${currentUser}`, JSON.stringify(chats));
+    };
+
+    // Elementos del DOM
+    const messageContainer = document.getElementById("messageContainer");
+    const messageInput = document.getElementById("messageInput");
+    const sendMessageBtn = document.getElementById("sendMessageBtn");
+    const partnerNameDisplay = document.getElementById("partnerName");
+    const partnerStatusDisplay = document.getElementById("partnerStatus");
+    const backToMainBtn = document.getElementById("backToMain");
+    const replyingToContainer = document.getElementById("replyingToContainer");
+    const replyingToText = document.getElementById("replyingToText");
+    const cancelReplyBtn = document.getElementById("cancelReplyBtn");
+
+    // =======================================================
+    // B. FUNCIONES DE UI Y RENDERIZADO
+    // =======================================================
+
+    // Actualiza la visualización del estado de la pareja
+    const updatePartnerStatusDisplay = (mood, status) => {
+        partnerStatus = status; // Actualiza el estado local
+        let text = "";
+        
+        if (status === 'paused') {
+            text = `⏸️ Chat Pausado por ${getPartnerName()}`;
+            partnerStatusDisplay.className = `partner-status status-paused`;
+        } else if (status === 'online') {
+            text = `${mood} ${MOODS[mood]?.text || "En línea"}`;
+            partnerStatusDisplay.className = `partner-status status-online`;
+        } else { // 'offline'
+            text = "Desconectado/a 😴";
+            partnerStatusDisplay.className = `partner-status status-offline`;
+        }
+        partnerStatusDisplay.textContent = text;
+        
+        // Habilitar/deshabilitar el área de input si la pareja pausó
+        if (messageInput) {
+            messageInput.disabled = status === 'paused';
+            sendMessageBtn.disabled = status === 'paused' || messageInput.value.trim().length === 0;
+            messageInput.placeholder = status === 'paused' ? "El chat está pausado..." : "Escribí un mensaje...";
+        }
+    };
     
-    // Configuración de Socket.IO
-    const socket = (typeof io !== 'undefined') ? io() : { on: () => {}, emit: () => {} };
-    
-    // Si no hay chatKey en la URL, redirige al menú (ERROR DE NAVEGACIÓN)
-    if (!currentChat) {
-        window.location.href = "menu.html";
-        return; 
-    }
-
-    // --- Funciones de Renderizado ---
-
-    function renderMessages(messages) {
-        const container = document.getElementById('messageContainer');
-        if (!container) return;
-
-        container.innerHTML = '';
-
+    // Renderiza el contenido del chat
+    const renderMessages = (messages) => {
+        messageContainer.innerHTML = '';
+        currentMessages = messages;
+        
         messages.forEach(msg => {
-            const isMe = msg.sender === currentUser;
-            const messageDiv = document.createElement('div');
-            messageDiv.className = `chat-message ${isMe ? 'me' : 'them'} ${msg.important ? 'important' : ''} ${msg.replyToText ? 'reply' : ''}`;
-            messageDiv.dataset.messageId = msg.id;
+            const messageElement = document.createElement("div");
+            messageElement.className = `chat-message ${msg.sender === currentUser ? 'me' : 'them'} ${msg.important ? 'important' : ''}`;
+            messageElement.dataset.messageId = msg.id;
             
-            // Solo se pueden hacer acciones en mis propios mensajes
-            if (isMe) {
-                 messageDiv.onclick = () => openMessageActionsModal(msg);
-            }
+            let htmlContent = `<div class="text-content">${msg.text}</div>`;
             
-            let replyHtml = '';
-            if (msg.replyToText) {
-                replyHtml = `
+            // Si es una respuesta, agregar la caja de respuesta
+            if (msg.replyTo) {
+                const originalMsg = messages.find(m => m.id === msg.replyTo);
+                const replyText = originalMsg ? originalMsg.text : 'Mensaje original...';
+                
+                htmlContent = `
                     <div class="reply-box">
-                        ${msg.replyToText}
+                        <div class="reply-header">Respondiendo a:</div>
+                        <div class="reply-text">${replyText}</div>
+                    </div>
+                    ${htmlContent}`;
+            }
+
+            // Información de estado (Solo para mis mensajes)
+            let statusHtml = '';
+            if (msg.sender === currentUser) {
+                statusHtml = `
+                    <div class="meta-info">
+                        <span class="timestamp">${msg.time}</span>
+                        <span class="status-icon ${msg.read ? 'read' : ''}" title="${msg.read ? 'Leído' : 'Enviado'}">✓</span>
                     </div>
                 `;
+            } else {
+                statusHtml = `<div class="meta-info"><span class="timestamp">${msg.time}</span></div>`;
             }
             
-            let statusIcon = '';
-            if (isMe) {
-                statusIcon = msg.read 
-                    ? '<span class="status-icon read">✓✓</span>'
-                    : '<span class="status-icon">✓</span>';
-            }
+            messageElement.innerHTML = htmlContent + statusHtml;
 
-            messageDiv.innerHTML = `
-                ${replyHtml}
-                <div class="message-content">${msg.text}</div>
-                <div class="meta-info">
-                    ${new Date(msg.timestamp).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}
-                    ${statusIcon}
-                </div>
-            `;
-            container.appendChild(messageDiv);
+            // Evento para seleccionar el mensaje (para responder/marcar)
+            messageElement.addEventListener('click', () => {
+                if (msg.sender === currentUser) {
+                    showActionsModal(msg);
+                } else {
+                    // Opcional: mostrar modal de solo visualización para mensajes de la pareja
+                }
+            });
+
+            messageContainer.appendChild(messageElement);
         });
-        container.scrollTop = container.scrollHeight;
-    }
-
-    function updatePartnerStatusDisplay(moodEmoji, status) {
-        partnerMood = moodEmoji;
-        partnerStatus = status;
         
-        const chatHeaderStatus = document.getElementById('partnerStatus');
-        const input = document.getElementById('messageInput');
-        const sendBtn = document.getElementById('sendMessageBtn');
-        
-        // Actualizar el estado en el header del chat
-        if (chatHeaderStatus) {
-            chatHeaderStatus.textContent = status === 'online' ? 'En línea' : (status === 'paused' ? 'Pausado' : 'Última vez hace mucho...');
-        }
-
-        // Habilitar/deshabilitar input de chat
-        const myMood = sessionStorage.getItem("myMood") || "😴";
-        const canChat = myMood !== '😴' && status !== 'paused';
-
-        if (input) {
-            input.disabled = !canChat;
-            input.placeholder = canChat 
-                ? 'Escribe un mensaje...' 
-                : (myMood === '😴' ? 'Selecciona tu estado para chatear.' : 'El chat está pausado o tu pareja no está.');
-        }
-        if (sendBtn) {
-            sendBtn.disabled = !canChat || input.value.trim() === ''; // También depende de si hay texto
-        }
-    }
+        // Scroll al final
+        messageContainer.scrollTop = messageContainer.scrollHeight;
+    };
     
-    // --- Lógica de Modales y Acciones de Mensaje ---
-
-    function openModal(modalId) {
-        document.getElementById(modalId)?.classList.add('active');
-    }
-
-    function closeModal(modalId) {
-        document.getElementById(modalId)?.classList.remove('active');
-    }
-
-    function openMessageActionsModal(message) {
-        if (message.sender !== currentUser) return; 
+    // Muestra el modal de acciones del mensaje
+    const showActionsModal = (msg) => {
+        document.getElementById('selectedMessageText').textContent = msg.text;
+        document.getElementById('messageActionsModal').classList.add('active');
         
-        const modal = document.getElementById('messageActionsModal');
-        const selectedMessageText = document.getElementById('selectedMessageText');
-        const markImportantBtn = document.getElementById('markImportantBtn');
-        const replyMessageBtn = document.getElementById('replyMessageBtn');
-
-        if (!modal || !selectedMessageText || !markImportantBtn || !replyMessageBtn) return;
+        // Eliminar listeners previos y añadir nuevos
+        const replyBtn = document.getElementById('replyMessageBtn');
+        const importantBtn = document.getElementById('markImportantBtn');
         
-        modal.dataset.messageId = message.id;
-        selectedMessageText.textContent = message.text;
-
-        if (message.important) {
-            markImportantBtn.textContent = '✅ Marcado como importante';
-            markImportantBtn.disabled = true;
-        } else {
-            markImportantBtn.textContent = '🌟 Marcar como importante';
-            markImportantBtn.disabled = false;
-        }
-
-        markImportantBtn.onclick = () => markMessageImportant(message.id);
-        replyMessageBtn.onclick = () => {
-            setReplyContext(message.text, message.id);
-            closeModal('messageActionsModal');
+        replyBtn.onclick = () => {
+            setReplyingTo(msg);
+            document.getElementById('messageActionsModal').classList.remove('active');
         };
 
-        openModal('messageActionsModal');
-    }
-    
-    function markMessageImportant(messageId) {
-        const chat = chats[currentChat];
-        if (!chat) return;
+        importantBtn.onclick = () => {
+            markMessageImportant(msg);
+            document.getElementById('messageActionsModal').classList.remove('active');
+        };
+    };
 
-        const message = chat.find(m => m.id === messageId);
-        if (message && message.sender === currentUser) {
-            message.important = true;
+    // Marca un mensaje como importante
+    const markMessageImportant = (msg) => {
+        const messageIndex = currentMessages.findIndex(m => m.id === msg.id);
+        if (messageIndex !== -1) {
+            currentMessages[messageIndex].important = true;
+            chats[currentChat] = currentMessages;
             saveData();
-            renderMessages(chat);
-            closeModal('messageActionsModal');
-            // Nota: Podrías emitir un socket aquí si quieres que la pareja se entere
+            renderMessages(currentMessages);
+            
+            // 🟢 Notificar al servidor que el mensaje fue marcado como importante
+            socket.emit('markImportant', {
+                chatId: currentChat, 
+                messageId: msg.id, 
+                marker: currentUser
+            });
         }
-    }
+    };
     
-    function setReplyContext(text, id) {
-        replyingToId = id;
-        const replyingToContainer = document.getElementById('replyingToContainer');
-        const replyingToText = document.getElementById('replyingToText');
-        
-        if (replyingToContainer && replyingToText) {
-            replyingToText.textContent = `Respondiendo a: "${text}"`;
-            replyingToContainer.style.display = 'flex';
-        }
-    }
+    // Configura el estado de respuesta
+    const setReplyingTo = (msg) => {
+        replyingToId = msg.id;
+        replyingToText.textContent = `Respondiendo a: ${msg.text.substring(0, 30)}...`;
+        replyingToContainer.classList.add('active');
+        messageInput.focus();
+    };
 
-    function cancelReplyContext() {
+    // Cancela el estado de respuesta
+    const cancelReplyingTo = () => {
         replyingToId = null;
-        const replyingToContainer = document.getElementById('replyingToContainer');
-        if (replyingToContainer) {
-            replyingToContainer.style.display = 'none';
-        }
-    }
+        replyingToText.textContent = '';
+        replyingToContainer.classList.remove('active');
+    };
+    
+    // =======================================================
+    // C. MANEJO DE ENVÍO DE MENSAJES
+    // =======================================================
 
-    // --- Lógica de Enviar Mensaje ---
-    function sendMessage() {
-        const input = document.getElementById('messageInput');
-        const text = input.value.trim();
-        
-        if (!text || !currentChat) return;
+    const sendMessage = () => {
+        const text = messageInput.value.trim();
+        if (text === "") return;
 
         const newMessage = {
-            id: Date.now().toString(),
+            id: Date.now().toString(), // ID único
             sender: currentUser,
             text: text,
-            timestamp: new Date().toISOString(),
-            read: false,
+            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            read: false, // Por defecto, no leído por el otro
+            replyTo: replyingToId,
             important: false,
-            replyToId: replyingToId,
-            replyToText: null 
         };
-        
-        if (replyingToId) {
-            const originalMessage = chats[currentChat].find(m => m.id === replyingToId);
-            if (originalMessage) {
-                newMessage.replyToText = originalMessage.text;
-            }
-        }
 
-        if (!chats[currentChat]) {
-            chats[currentChat] = [];
-        }
-        chats[currentChat].push(newMessage);
+        // 1. Guardar localmente
+        currentMessages.push(newMessage);
+        chats[currentChat] = currentMessages;
         saveData();
-        renderMessages(chats[currentChat]);
+
+        // 2. Renderizar
+        renderMessages(currentMessages);
         
-        // Enviar por socket
-        socket.emit('sendMessage', { 
-            chatKey: currentChat, 
+        // 3. 🟢 Emitir al servidor
+        socket.emit('sendMessage', {
+            chatKey: currentChat,
             message: newMessage,
-            recipient: partnerName 
+            receiver: getPartnerName(),
         });
+        
+        // 4. Limpiar y resetear
+        messageInput.value = '';
+        cancelReplyingTo();
+        messageInput.style.height = 'auto'; // Resetear altura del textarea
+        sendMessageBtn.disabled = true;
+    };
 
-        // Limpiar
-        input.value = '';
-        cancelReplyContext();
-        updatePartnerStatusDisplay(partnerMood, partnerStatus); // Para actualizar el estado del botón Enviar
-    }
-    
-    // --- Configuración de Eventos ---
 
-    document.getElementById('sendMessageBtn')?.addEventListener('click', sendMessage);
-    document.getElementById('messageInput')?.addEventListener('keypress', (e) => {
+    // =======================================================
+    // D. EVENT LISTENERS
+    // =======================================================
+
+    // Inicialización de la visualización
+    partnerNameDisplay.textContent = getPartnerName();
+    cancelReplyBtn.addEventListener('click', cancelReplyingTo);
+    backToMainBtn.addEventListener('click', () => {
+        window.location.href = "menu.html";
+    });
+
+    // Envío de mensaje
+    sendMessageBtn.addEventListener('click', sendMessage);
+    messageInput.addEventListener('keypress', (e) => {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
             sendMessage();
         }
     });
     
-    document.getElementById('messageInput')?.addEventListener('input', () => {
-        // Asegurar que el botón de enviar se habilite/deshabilite correctamente
-        updatePartnerStatusDisplay(partnerMood, partnerStatus); 
-    });
-    
-    document.getElementById('backToMain')?.addEventListener('click', () => {
-        // 🔴 NUEVA LÓGICA: Redirige de vuelta al menú
-        window.location.href = 'menu.html';
-    });
-    
-    document.getElementById('cancelReplyBtn')?.addEventListener('click', cancelReplyContext);
-
-    // Eventos para cerrar modales (delegación)
-    document.querySelectorAll('.modal-backdrop').forEach(modal => {
-        modal.addEventListener('click', (e) => {
-            if (e.target.classList.contains('modal-backdrop')) {
-                closeModal(modal.id);
-            }
-        });
-    });
-
-    document.querySelectorAll('.close-modal-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            const targetId = e.currentTarget.dataset.modalTarget || e.currentTarget.closest('.modal-backdrop')?.id;
-            if (targetId) {
-                closeModal(targetId);
-            }
-        });
-    });
-
-    // --- Lógica de Socket.IO ---
-
-    socket.on("receiveMessage", (data) => { 
-        if (data.recipient === currentUser && data.chatKey === currentChat) {
-            const { chatKey, message } = data;
-
-            if (!chats[chatKey]) chats[chatKey] = [];
-            chats[chatKey].push(message);
-            saveData();
-
-            // Si el mensaje es para este chat, lo renderizamos y lo marcamos como leído
-            renderMessages(chats[currentChat]);
-            socket.emit('readChat', { chatKey, reader: currentUser });
-        }
-    });
-
-    socket.on("chatRead", (data) => {
-        if (data.reader === currentUser) return; 
-
-        const { chatKey } = data;
+    // Habilitar/Deshabilitar botón de enviar y auto-ajuste de textarea
+    messageInput.addEventListener('input', () => {
+        // Habilitar/Deshabilitar
+        sendMessageBtn.disabled = messageInput.value.trim().length === 0 || partnerStatus === 'paused';
         
-        if (chatKey === currentChat && chats[chatKey]) {
-            chats[chatKey].forEach(msg => {
-                if (msg.sender !== data.reader) { 
-                     msg.read = true;
-                }
-            });
-            saveData();
-            renderMessages(chats[currentChat]); 
-        }
+        // Auto-ajuste de altura
+        messageInput.style.height = 'auto';
+        messageInput.style.height = (messageInput.scrollHeight) + 'px';
+    });
+    
+    // Modales
+    document.querySelectorAll('.close-modal-btn').forEach(button => {
+        button.addEventListener('click', (e) => {
+            const targetId = e.target.dataset.modalTarget;
+            document.getElementById(targetId).classList.remove('active');
+        });
     });
 
-    // Lógica de RECEPCIÓN DE ESTADO DE ÁNIMO
+
+    // =======================================================
+    // E. LÓGICA DE SOCKET.IO
+    // =======================================================
+
+    // 1. Conexión Establecida
+    socket.on('connect', () => {
+        console.log("Socket.IO conectado en Chat:", socket.id);
+        
+        // 🟢 REGISTRO CRÍTICO: Al conectarse, enviamos nuestro nombre de usuario y mood
+        // Usamos el mood almacenado, aunque no es la función principal de esta pantalla.
+        socket.emit('userConnected', { 
+            user: currentUser, 
+            mood: sessionStorage.getItem("myMood") || "😴",
+        });
+
+        // 🟢 SOLICITAR ESTADO: Pedimos el estado actual de la pareja
+        socket.emit('requestPartnerStatus'); 
+    });
+
+    // 2. Recepción de MENSAJE NUEVO
+    socket.on("newMessage", (data) => {
+        // Ignorar mensajes que no son de la pareja
+        if (data.sender !== getPartnerName()) return; 
+        
+        // Añadir el mensaje al chat local
+        currentMessages.push({ ...data.message, read: false });
+        chats[currentChat] = currentMessages;
+        saveData();
+        
+        // Renderizar y hacer scroll al final
+        renderMessages(currentMessages);
+        
+        // Notificar al servidor que se ha leído el chat al recibir un mensaje
+        socket.emit('readChat', { chatKey: currentChat, reader: currentUser });
+    });
+
+    // 3. Recepción de ESTADO DE ÁNIMO
     socket.on("moodChanged", (data) => { 
         if (data.sender === getPartnerName()) {
             sessionStorage.setItem("partnerMood", data.mood); 
+            // Usamos el status local (online/offline/paused)
             updatePartnerStatusDisplay(data.mood, partnerStatus); 
         }
     });
 
-    // Lógica de RECEPCIÓN DE ESTADO DE CONEXIÓN Y PAUSA
+    // 4. Lógica de RECEPCIÓN DE ESTADO DE CONEXIÓN Y PAUSA
     socket.on("statusChanged", (data) => { 
         if (data.sender === getPartnerName()) {
             const currentPartnerMood = sessionStorage.getItem("partnerMood") || "?";
+            // Actualizamos la visualización con el nuevo status (online/offline)
             updatePartnerStatusDisplay(currentPartnerMood, data.status);
         }
     });
     
     socket.on("chatPaused", (data) => {
         if (data.sender === getPartnerName()) {
+            // Si la pareja pausó, actualizamos el estado visual
             updatePartnerStatusDisplay(partnerMood, 'paused');
+        }
+    });
+    
+    // 5. Recepción de Confirmación de LECTURA
+    socket.on("chatRead", (data) => {
+        if (data.reader === getPartnerName() && data.chatKey === currentChat) {
+            // Marcar todos los mensajes míos en este chat como leídos
+            let changed = false;
+            currentMessages = currentMessages.map(msg => {
+                if (msg.sender === currentUser && !msg.read) {
+                    msg.read = true;
+                    changed = true;
+                }
+                return msg;
+            });
+            
+            if (changed) {
+                chats[currentChat] = currentMessages;
+                saveData();
+                renderMessages(currentMessages); // Volver a renderizar para ver el check
+            }
+        }
+    });
+    
+    // 6. Recepción de Mensaje Marcado como Importante
+    socket.on("messageMarked", (data) => {
+        // Si la pareja marcó un mensaje en este chat como importante
+        if (data.sender === getPartnerName() && data.chatId === currentChat) {
+            const messageIndex = currentMessages.findIndex(m => m.id === data.messageId);
+            if (messageIndex !== -1) {
+                currentMessages[messageIndex].important = true;
+                chats[currentChat] = currentMessages;
+                saveData();
+                 renderMessages(currentMessages); // Volver a renderizar
+                 // Opcional: Mostrar una alerta o notificación
+            }
         }
     });
 
 
     // =======================================================
-    // INICIALIZACIÓN DE chat.html
+    // F. INICIALIZACIÓN DE chat.html
     // =======================================================
 
     // 1. Renderiza los mensajes del chat actual
     if (chats[currentChat]) {
         renderMessages(chats[currentChat]);
         // Notificar al servidor que este chat se ha abierto y se ha leído
+        // Hacemos esto DESPUÉS de renderizar, solo si estamos seguros que se cargó
         socket.emit('readChat', { chatKey: currentChat, reader: currentUser });
     }
     
@@ -343,9 +380,6 @@
     updatePartnerStatusDisplay(partnerMood, 'offline'); 
     
     // 3. Pedir al servidor el estado de ánimo y conexión real de la pareja
-    socket.emit('requestPartnerStatus'); 
-    
-    // 4. Establecer el nombre de la pareja en el header
-    document.getElementById('partnerName').textContent = getPartnerName();
-    
-})();
+    // (Esto ocurre en 'socket.on("connect", ...)')
+
+})(); // Fin del IIFE
