@@ -1,6 +1,6 @@
 /* ======================================================= */
 /* menu-principal.css (COMPLETO Y CORREGIDO) */
-/* Estilos para la estructura principal y la vista del menú (Estilo Instagram Dark) */
+/* Estilos para la estructura principal y la vista del menú (Estilo Dark) */
 /* ======================================================= */
 
 /* --------------------------- */
@@ -20,7 +20,7 @@
     --bg: #0d0d0f; 
     --panel: #141416; 
     --muted: #a8a8a8; 
-    --primary: #0095f6; /* Azul Instagram */
+    --primary: #0095f6; /* Azul */
     --accent-gradient: linear-gradient(45deg, #f58529, #dd2a7b, #8134af); /* Degradado llamativo */
     --bubble-them: #262626; 
     --important: #ffcc00; 
@@ -33,6 +33,7 @@
     --mood-enojado: #cc0000; 
     --mood-triste: #0056b3; 
     --mood-estresado: #ff6600;
+    --mood-porhablar: #00bcd4;
 
     --status-online: #2ecc71;
     --status-paused: #e74c3c;
@@ -46,7 +47,7 @@ html, body {
     padding: 0;
     background-color: var(--bg);
     color: #fff;
-    overflow: hidden; /* Evita el scroll global */
+    overflow: hidden; 
 }
 
 /* --------------------------- */
@@ -98,9 +99,9 @@ html, body {
 /* Main Content */
 .screen {
     flex-grow: 1;
-    overflow-y: auto; /* Permite el scroll del contenido principal (lista de chats) */
+    overflow-y: auto; 
     display: none;
-    padding-bottom: 20px; /* Espacio inferior para el scroll */
+    background-color: var(--bg);
 }
 .screen.active {
     display: block;
@@ -115,7 +116,11 @@ html, body {
     align-items: center;
     gap: 10px;
     padding: 15px 20px 10px;
+    background-color: var(--panel);
     border-bottom: 1px solid #262626;
+    position: sticky; /* Fija el header de estado */
+    top: 0;
+    z-index: 10;
 }
 .partner-mood-display {
     width: 40px;
@@ -125,7 +130,7 @@ html, body {
     justify-content: center;
     align-items: center;
     font-size: 1.2rem;
-    border: 3px solid var(--status-offline); /* Estado base */
+    border: 3px solid var(--status-offline); 
     transition: border-color 0.3s;
 }
 
@@ -133,7 +138,10 @@ html, body {
 .partner-mood-display.mood-enamorado { border-color: var(--mood-enamorado); }
 .partner-mood-display.mood-happy { border-color: var(--mood-happy); }
 .partner-mood-display.mood-cansado { border-color: var(--mood-cansado); }
-/* ... [Otros moods] */
+.partner-mood-display.mood-enojado { border-color: var(--mood-enojado); }
+.partner-mood-display.mood-triste { border-color: var(--mood-triste); }
+.partner-mood-display.mood-estresado { border-color: var(--mood-estresado); }
+.partner-mood-display.mood-porhablar { border-color: var(--mood-porhablar); }
 
 .partner-status-text {
     font-weight: 600;
@@ -154,6 +162,7 @@ html, body {
     font-size: 0.9rem;
     text-align: center;
     border-bottom: 1px solid #262626;
+    background-color: var(--panel);
 }
 
 /* --------------------------- */
@@ -161,116 +170,138 @@ html, body {
 /* --------------------------- */
 
 .chat-list-section {
-    margin-top: 15px;
+    flex-grow: 1;
+    overflow-y: auto; 
+    background-color: var(--bg);
 }
 
 .chat-list-header {
     font-size: 1.1rem;
-    font-weight: 700;
-    padding: 0 20px 10px;
-    color: var(--primary);
+    font-weight: 600;
+    padding: 15px;
+    background-color: var(--bg); 
+    position: sticky;
+    top: 50px; /* Ajustado para quedar debajo del status header si éste es sticky */
+    z-index: 5;
+    border-bottom: 1px solid var(--bubble-them);
 }
 
-.chat-list {
-    display: flex;
-    flex-direction: column;
+#chatList {
+    width: 100%;
+    padding: 0;
 }
 
-/* 🟢 ESTILO DEL ÍTEM DE CHAT COMPLETO */
+/* Contenedor del ítem */
 .chat-item {
     display: flex;
     align-items: center;
-    padding: 10px 20px;
-    border-bottom: 1px solid #1a1a1c;
+    padding: 12px 15px;
+    gap: 15px;
+    border-bottom: 1px solid var(--panel); 
     cursor: pointer;
-    transition: background-color 0.2s;
+    transition: background-color 0.1s;
 }
-
 .chat-item:hover {
-    background-color: #1a1a1c;
+    background-color: var(--bubble-them);
 }
 
-/* 🟢 CÍRCULO CON LA INICIAL */
-.chat-avatar-circle {
+/* AVATAR (Círculo con inicial) */
+.chat-avatar {
     width: 50px;
     height: 50px;
     border-radius: 50%;
-    background: var(--accent-gradient);
+    background-color: var(--bubble-them); 
     display: flex;
     justify-content: center;
     align-items: center;
-    font-size: 1.4rem;
-    font-weight: 700;
-    color: #fff;
-    flex-shrink: 0; /* Evita que se encoja */
-    margin-right: 15px;
+    font-weight: 600;
+    font-size: 1.1rem; 
+    flex-shrink: 0;
+    color: #fff; 
+    border: 1px solid var(--primary); 
 }
 
-/* 🟢 CONTENIDO DE LA INFORMACIÓN (Nombre y Mensaje) */
-.chat-info-content {
+/* META (Información principal: Nombre, Mensaje) */
+.chat-item .meta {
     flex-grow: 1;
-    overflow: hidden; /* Esconde el contenido que se desborda */
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
 }
 
-.chat-title-line {
+/* LÍNEA DE NOMBRE Y HORA/FECHA */
+.chat-item .chat-name-line {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    width: 100%;
     margin-bottom: 2px;
 }
 
-.chat-contact-name {
+.chat-item .chat-name {
     font-weight: 600;
     font-size: 1rem;
     color: #fff;
+    /* Para que el nombre no empuje la hora a otra línea */
+    white-space: nowrap; 
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding-right: 10px; 
 }
 
-.chat-date {
+.chat-item .chat-meta-info { /* Reemplaza .chat-date */
     font-size: 0.75rem;
     color: var(--muted);
     font-weight: 400;
+    flex-shrink: 0; 
 }
 
-/* Último Mensaje */
-.last-message {
+/* Último mensaje */
+.chat-item .chat-last {
     font-size: 0.9rem;
     color: var(--muted);
     white-space: nowrap;
     overflow: hidden;
-    text-overflow: ellipsis; /* Puntos suspensivos al final */
+    text-overflow: ellipsis;
     max-width: 100%;
 }
 
-.last-message .sender-prefix {
+/* PREFIJO DEL REMITENTE */
+.chat-item .chat-last .sender-prefix {
     font-weight: 600;
-    margin-right: 5px;
+    margin-right: 4px;
+    color: var(--muted); 
 }
 
-/* 🟢 METADATOS (Hora y No Leídos) */
-.chat-meta {
+/* CONTADOR NO LEÍDO */
+.chat-item .status-info { 
     display: flex;
     flex-direction: column;
     align-items: flex-end;
+    justify-content: center;
     margin-left: 10px;
     flex-shrink: 0;
 }
-
-.chat-time {
-    font-size: 0.7rem;
-    color: var(--muted);
-    margin-bottom: 4px;
-}
-
-.unread-badge {
+.chat-item .unread-count {
     background-color: var(--primary);
-    color: #fff;
+    color: white;
+    font-size: 0.75rem;
+    font-weight: 600;
     border-radius: 10px;
     padding: 2px 7px;
-    font-size: 0.7rem;
-    font-weight: 700;
     min-width: 20px;
     text-align: center;
+    height: auto;
 }
+/* Estilo para items con mensajes no leídos */
+.chat-item.unread .chat-last {
+    color: white; 
+    font-weight: 600;
+}
+.chat-item.unread .chat-last .sender-prefix {
+    color: white;
+}
+
 
 .no-chats {
     padding: 20px;
@@ -290,7 +321,18 @@ html, body {
     border: none;
     transition: opacity 0.2s;
 }
-/* ... (El resto de estilos de botones y modales se mantienen igual) ... */
+.btn.primary {
+    background-color: var(--primary);
+    color: #fff;
+}
+.btn.secondary {
+    background-color: var(--bubble-them);
+    color: #fff;
+}
+.btn.small {
+    padding: 5px 10px;
+    font-size: 0.85rem;
+}
 
 .modal-backdrop {
     position: fixed;
@@ -327,14 +369,19 @@ html, body {
     font-size: 1.2rem;
     cursor: pointer;
 }
-.mood-options {
+
+/* Modal de Mood */
+.mood-modal h3, .mood-modal p {
+    margin-bottom: 10px;
+}
+.mood-options { /* Contenedor de botones de moods (Antiguo) */
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
     gap: 10px;
     margin-top: 15px;
 }
-.mood-option-btn {
+.mood-option-btn { /* Botones grandes (Antiguo) */
     background: var(--bubble-them);
     color: #fff;
     border: none;
@@ -347,7 +394,7 @@ html, body {
     gap: 5px;
     cursor: pointer;
     transition: background-color 0.2s;
-    width: calc(50% - 5px); /* Dos por fila */
+    width: calc(50% - 5px); 
 }
 .mood-option-btn .mood-text {
     font-size: 0.7rem;
@@ -356,3 +403,31 @@ html, body {
 .mood-option-btn:hover {
     background-color: #333;
 }
+
+/* Nuevo contenedor de botones de mood para el modal actualizado */
+#moodList {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+}
+.mood-btn {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    font-size: 2rem;
+    background-color: var(--bubble-them);
+    border: 3px solid transparent;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.mood-btn:hover {
+    transform: scale(1.05);
+}
+.mood-btn.mood-enamorado { border-color: var(--mood-enamorado); }
+.mood-btn.mood-happy { border-color: var(--mood-happy); }
+.mood-btn.mood-cansado { border-color: var(--mood-cansado); }
+.mood-btn.mood-enojado { border-color: var(--mood-enojado); }
+.mood-btn.mood-triste { border-color: var(--mood-triste); }
+.mood-btn.mood-estresado { border-color: var(--mood-estresado); }
+.mood-btn.mood-porhablar { border-color: var(--mood-porhablar); }
