@@ -1,6 +1,5 @@
 // =======================================================
-// menu.js
-// Lógica para la PÁGINA PRINCIPAL / LISTA DE CHATS
+// menu.js (COMPLETO Y CORREGIDO)
 // =======================================================
 
 (function () {
@@ -11,6 +10,7 @@
     if (!currentUser) return; // Si no hay usuario, la redirección en menu.html lo maneja
     
     const partnerName = currentUser === 'Leo' ? 'Estefi' : 'Leo';
+    const partnerInitial = partnerName.charAt(0).toUpperCase(); // Obtener la inicial
     let chats = JSON.parse(localStorage.getItem(`chats_${currentUser}`)) || {};
     let myMood = sessionStorage.getItem("myMood") || "😴";
     let partnerMood = sessionStorage.getItem("partnerMood") || "?";
@@ -26,7 +26,7 @@
         '😴': { text: 'Cansado/a', class: 'mood-cansado' },
         '😡': { text: 'Enojado/a', class: 'mood-enojado' },
         '😔': { text: 'Triste', class: 'mood-triste' },
-        '😫': { text: 'Estresado/a', class: 'mood-estresado' }
+        '😫': { text: 'Estresado/a' }
     };
 
     // Elementos del DOM
@@ -115,13 +115,16 @@
 
     const renderChatList = () => {
         chatListContainer.innerHTML = '';
-        const sortedKeys = Object.keys(chats).sort().reverse(); 
+        // Obtenemos todas las claves (fechas) y las ordenamos por más reciente primero
+        const allDateKeys = Object.keys(chats);
+        const sortedKeys = allDateKeys.sort().reverse(); 
 
         if (sortedKeys.length === 0) {
             chatListContainer.innerHTML = '<p class="no-chats">¡Aún no hay chats! Selecciona tu estado para empezar.</p>';
             return;
         }
 
+        // 🟢 MODIFICACIÓN CLAVE: Iterar sobre todas las fechas para mostrar cada chat diario
         sortedKeys.forEach(dateKey => {
             const chatDay = chats[dateKey];
             const lastMessage = chatDay[chatDay.length - 1];
@@ -133,24 +136,35 @@
             const unreadBadge = unreadCount > 0 ? `<span class="unread-badge">${unreadCount}</span>` : '';
             
             // Determinar si el último mensaje fue mío o de la pareja
-            const senderPrefix = lastMessage.sender === currentUser ? 'Tú: ' : '';
+            const senderPrefix = lastMessage.sender === currentUser ? 'Tú: ' : `${partnerName}: `;
             
             // Formatear fecha
             const displayDate = dateKey === formatDateKey() 
-                ? 'HOY' 
+                ? 'Hoy' 
                 : new Date(dateKey).toLocaleDateString('es-AR', { day: 'numeric', month: 'short' });
 
+            // Truncar el mensaje
+            const truncatedText = lastMessage.text.substring(0, 40) + (lastMessage.text.length > 40 ? '...' : '');
+
+            // 🟢 ESTRUCTURA HTML DEL CHAT ITEM (NUEVO DISEÑO)
             const chatItemHTML = `
-                <div class="chat-item" data-date-key="${dateKey}" data-has-unread="${unreadCount > 0}">
-                    <div class="chat-info">
-                        <div class="chat-title">
-                            ${displayDate}
-                            <span class="chat-title-detail">con ${partnerName}</span>
+                <div class="chat-item" data-date-key="${dateKey}">
+                    
+                    <div class="chat-avatar-circle">${partnerInitial}</div>
+                    
+                    <div class="chat-info-content">
+                        <div class="chat-title-line">
+                            <span class="chat-contact-name">${partnerName}</span>
+                            <span class="chat-date">${displayDate}</span>
                         </div>
-                        <p class="last-message">${senderPrefix}${lastMessage.text.substring(0, 40)}...</p>
+                        <p class="last-message">
+                            <span class="sender-prefix">${senderPrefix}</span>
+                            <span class="message-text">${truncatedText}</span>
+                        </p>
                     </div>
+
                     <div class="chat-meta">
-                        <div class="chat-date">${formatTime(lastMessage.timestamp)}</div>
+                        <div class="chat-time">${formatTime(lastMessage.timestamp)}</div>
                         ${unreadBadge}
                     </div>
                 </div>
@@ -214,7 +228,6 @@
     
     // 4. Recepción de pausa de chat
     socket.on("chatPaused", (data) => {
-        // 🔴 CORRECCIÓN CLAVE: Usar la variable 'partnerName' en lugar de 'getPartnerName()'
         if (data.sender === partnerName) {
             updatePartnerStatusDisplay(partnerMood, 'paused');
             alert(`El chat fue pausado por ${partnerName} por ${data.duration} minutos.`);
@@ -237,10 +250,9 @@
         // Actualizar la lista para mostrar el nuevo mensaje y el badge de no leídos
         renderChatList();
         
-        // Notificación básica de nuevo mensaje (opcional)
-        // alert(`Nuevo mensaje de ${partnerName}: ${data.message.text.substring(0, 30)}...`);
+        // (Opcional) Puedes añadir una vibración o sonido aquí.
     });
-
+    
     // -------------------
     // D. INICIALIZACIÓN
     // -------------------
@@ -262,7 +274,7 @@
         // Usar el último estado conocido si existe
         updatePartnerStatusDisplay(partnerMood, sessionStorage.getItem("partnerStatus"));
     } else {
-        // Si no hay estado previo, solicitarlo al servidor (se hace en 'connect')
+        // Se solicitará en 'connect'
     }
 
 })();
