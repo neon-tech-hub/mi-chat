@@ -19,6 +19,10 @@
     if (!currentUser) {
         window.location.href = "login.html"; 
     }
+    // Lógica para asegurar que hay un chat seleccionado
+    if (!sessionStorage.getItem('currentChatDate')) {
+        window.location.href = "menu.html"; 
+    }
 </script>
 
 
@@ -30,7 +34,7 @@
             <button id="backToMain" class="back-btn" aria-label="Volver al menú">←</button>
             <div class="partner-info">
                 <div id="partnerName" class="partner-name">Nombre del Chat</div>
-                <div id="partnerStatus" class="partner-status">En línea</div>
+                <div id="partnerStatus" class="partner-status">Estado...</div>
             </div>
             <button id="openMoodModalChat" class="my-mood-btn" aria-label="Cambiar estado emocional">😴</button> 
         </div>
@@ -52,20 +56,21 @@
         
     </section>
     
-</div>
-
-<div id="messageActionsModal" class="modal-backdrop">
-    <div class="modal-content">
-        <button class="close-modal-btn" data-modal-target="messageActionsModal" aria-label="Cerrar modal">X</button>
-        <h3>Mensaje Seleccionado</h3>
-        <p id="selectedMessageText">Texto del mensaje...</p>
-        <div class="action-buttons">
-            <button id="replyMessageBtn" class="btn">↩️ Responder</button>
-            <button id="markImportantBtn" class="btn">🌟 Marcar como importante</button>
+    <div id="messageActionsModal" class="modal-backdrop">
+        <div class="modal-content">
+            <button class="close-modal-btn" data-modal-target="messageActionsModal" aria-label="Cerrar modal">X</button>
+            <h3>Mensaje Seleccionado</h3>
+            <p id="selectedMessageText">Texto del mensaje...</p>
+            <div class="action-buttons">
+                <button id="replyMessageBtn" class="btn">↩️ Responder</button>
+                <button id="markImportantBtn" class="btn">🌟 Marcar como importante</button>
+            </div>
+            <button class="btn secondary close-modal-btn" data-modal-target="messageActionsModal">Cerrar</button>
         </div>
-        <button class="btn small primary close-modal-btn" data-modal-target="messageActionsModal">Cerrar</button>
     </div>
+    
 </div>
 
-<script src="chat.js"></script> </body>
+<script src="chat.js"></script>
+</body>
 </html>
