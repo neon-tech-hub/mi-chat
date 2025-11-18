@@ -12,6 +12,7 @@
     let chats = JSON.parse(localStorage.getItem(`chats_${currentUser}`)) || {};
     let myMood = sessionStorage.getItem("myMood") || "😴";
     let partnerMood = sessionStorage.getItem("partnerMood") || "?";
+    // El status ahora solo puede ser 'online' o 'offline'
     let partnerStatus = 'offline'; 
 
     const MOODS = {
@@ -52,7 +53,7 @@
             chatItem.className = `chat-item ${unreadCount > 0 ? 'unread' : ''}`;
             chatItem.dataset.chatKey = key;
             
-            // 🟢 REDIRECCIÓN CLAVE: Navega a la página de chat
+            // Navega a la página de chat
             chatItem.onclick = () => {
                 window.location.href = `chat.html?chatKey=${key}`;
             };
@@ -94,18 +95,19 @@
         partnerMood = moodEmoji;
         partnerStatus = status;
         
-        const partnerMoodDisplay = document.getElementById('partnerMoodEmoji'); // 👈 Nuevo ID para el emoji grande
+        const partnerMoodDisplay = document.getElementById('partnerMoodEmoji'); 
         const statusHeader = document.getElementById('statusHeader');
-        const displayContainer = document.getElementById('partnerMoodDisplay'); // Contenedor del emoji
+        const displayContainer = document.getElementById('partnerMoodDisplay'); 
         
         let emojiToShow = moodEmoji;
         let statusText = 'Desconectado';
         let moodData = MOODS[moodEmoji] || { text: 'Ausente', class: 'mood-default' };
 
-        // 📌 Lógica de emojis por defecto solicitada:
-        if (status === 'offline' || status === 'paused') {
-            emojiToShow = '😴'; // Desconectado o pausado -> Dormido
-            statusText = status === 'paused' ? 'En Pausa' : 'Desconectado';
+        // 📌 Lógica de emojis por defecto:
+        if (status === 'offline') {
+            emojiToShow = '😴'; // Desconectado -> Dormido
+            statusText = 'Desconectado';
+            moodData = MOODS['😴']; // Usar la clase de 'Cansado' para la sombra
         } else if (status === 'online') {
             statusText = 'En línea';
             if (moodEmoji === '?') {
@@ -115,13 +117,13 @@
         }
         
         if (partnerMoodDisplay && displayContainer) {
-            partnerMoodDisplay.textContent = emojiToShow; // Inyectar el emoji
+            partnerMoodDisplay.textContent = emojiToShow; 
             
-             // 1. Remover todas las clases de mood y estado
+             // 1. Remover todas las clases de mood (para eliminar la sombra anterior)
              Object.values(MOODS).forEach(m => displayContainer.classList.remove(m.class));
-             displayContainer.classList.remove('mood-default', 'status-online', 'status-offline', 'status-paused');
+             displayContainer.classList.remove('mood-default', 'status-online', 'status-offline');
              
-             // 2. Añadir la clase de mood y estado actual (para posibles colores/efectos)
+             // 2. Añadir la clase de mood y estado actual (para la sombra y el texto)
              displayContainer.classList.add(moodData.class, `status-${status}`);
         }
 
@@ -175,47 +177,11 @@
         closeModal('moodsContainer');
     }
     
-    function renderPauseButtons() {
-        const buttonsContainer = document.getElementById('pauseTimeButtons');
-        if (!buttonsContainer) return;
-
-        buttonsContainer.innerHTML = '';
-        const pauseTimes = [5, 15, 30, 60]; // Minutos
-
-        pauseTimes.forEach(time => {
-            const button = document.createElement('button');
-            button.className = 'mood-btn';
-            button.textContent = `${time} Min`;
-            button.onclick = () => pauseChat(time);
-            buttonsContainer.appendChild(button);
-        });
-    }
-    
-    function pauseChat(minutes) {
-        const now = Date.now();
-        const lastPause = parseInt(sessionStorage.getItem('lastPauseTime') || '0', 10);
-        
-        if (now - lastPause < 3600000) { // 1 hora
-            alert('Solo puedes pausar el chat una vez por hora.');
-            closeModal('pauseTimeModal');
-            return;
-        }
-
-        sessionStorage.setItem('lastPauseTime', now);
-        
-        socket.emit('chatPaused', { sender: currentUser, duration: minutes });
-        
-        updatePartnerStatusDisplay(partnerMood, 'paused');
-        
-        closeModal('pauseTimeModal');
-    }
-
-
     // --- Configuración de Eventos ---
 
     document.getElementById('openMoodModal')?.addEventListener('click', () => openModal('moodsContainer'));
-    document.getElementById('openPauseTimeModal')?.addEventListener('click', () => openModal('pauseTimeModal')); 
-    // 🔴 LÓGICA DE REDIRECCIÓN A CHAT DE HOY
+    
+    // Si tienes un botón para crear chat (opcional)
     document.getElementById('addChatBtn')?.addEventListener('click', () => { 
         const todayKey = formatDateKey();
         window.location.href = `chat.html?chatKey=${todayKey}`;
@@ -247,7 +213,7 @@
             if (!chats[chatKey]) chats[chatKey] = [];
             chats[chatKey].push(message);
             saveData();
-            // Solo actualiza la lista, no renderiza mensajes
+            // Solo actualiza la lista
             renderChatList(); 
         }
     });
@@ -266,12 +232,6 @@
         }
     });
 
-    socket.on("chatPaused", (data) => {
-        if (data.sender === getPartnerName()) {
-            updatePartnerStatusDisplay(partnerMood, 'paused');
-        }
-    });
-
     // =======================================================
     // INICIALIZACIÓN DE menu.html
     // =======================================================
@@ -286,7 +246,6 @@
     // 2. Renderizar la lista de chats y los modales
     renderChatList(); 
     renderMoods();
-    renderPauseButtons();
     updateMyMoodButton(myMood);
     
     // 3. Inicializar el estado de la pareja
