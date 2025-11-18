@@ -1,8 +1,7 @@
 // =======================================================
-// A. PARTE DE LOGIN 
+// A. PARTE DE LOGIN (Se mantiene)
 // =======================================================
 
-// Contraseñas válidas
 const PASSWORDS = {
     Leo: "47966714",
     Estefi: "abigail08"
@@ -14,11 +13,9 @@ const loginPassword = document.getElementById("loginPassword");
 const loginError = document.getElementById("loginError");
 
 if (loginBtn) {
-    // Evento login (solo se ejecuta si estamos en la pantalla de login)
     loginBtn.addEventListener("click", () => {
         const user = loginUser.value.trim();
         const pass = loginPassword.value.trim();
-
         loginError.textContent = "";
 
         if (!user || !pass) {
@@ -31,13 +28,10 @@ if (loginBtn) {
             return;
         }
 
-        // Guardado SOLO durante la sesión actual
         sessionStorage.setItem("currentUser", user);
-
         window.location.href = "index.html";
     });
 
-    // Permitir Enter
     [loginUser, loginPassword].forEach(input => {
         input.addEventListener("keypress", e => {
             if (e.key === "Enter") loginBtn.click();
@@ -46,827 +40,452 @@ if (loginBtn) {
 }
 
 // =======================================================
-// B. PARTE DE CHAT/INTERFAZ (Completada y Revisada)
+// B. LÓGICA DE CHAT (Implementación completa)
 // =======================================================
 
-(() => {
-    "use strict";
-    
-    // Si no tenemos socket.io cargado, salimos.
-    if (typeof io === 'undefined') return;
-
-    const socket = io();
-    const currentUser = sessionStorage.getItem("currentUser");
-    // Determinar el nombre de la pareja
-    const partnerName = currentUser === "Leo" ? "Estefi" : "Leo"; 
-
-    
-    if (!currentUser && window.location.pathname.endsWith('index.html')) {
-        window.location.href = "login.html";
-        return;
-    }
-
-    // Si estamos en login, la lógica de abajo no se ejecuta.
-    if (window.location.pathname.endsWith('login.html')) return; 
-
-    // CRUCIAL: Notificar al servidor quién eres para el manejo de estados de conexión (online/offline)
-    socket.emit('registerUser', currentUser); 
-
-    // --- Variables de Estado y Control ---
-    const AVAILABLE_MOODS = ["❤️", "😊", "😴", "😢", "😠", "😅", "✨", "⏳"];
-    
-    // Mapeo de Emojis a Clases CSS (para la sombra de la Zona Verde)
-    const MOOD_CLASSES = {
-        "❤️": "enamorado", 
-        "😊": "happy",
-        "😴": "cansado",
-        "😢": "sad",
-        "😠": "angry",
-        "😅": "ansioso",
-        "✨": "inspirado",
-        "⏳": "ocupado",
-        "?": "default" 
-    };
-
-    // Mapeo de Emojis a Nombres en español
-    const MOOD_NAMES = {
-        "❤️": "enamorado",
-        "😊": "feliz",
-        "😴": "cansado",
-        "😢": "triste",
-        "😠": "enojado",
-        "😅": "ansioso",
-        "✨": "inspirado",
-        "⏳": "ocupado",
-        "?": "indefinido" 
-    };
-    
-    // Opciones de pausa predefinidas en minutos
-    const PAUSE_OPTIONS = [2, 5, 8, 10, 12, 15]; 
-    // 1 hora en milisegundos
-    const PAUSE_COOLDOWN = 60 * 60 * 1000; 
-
-    // Control de la última pausa (para la restricción de 1 vez por hora)
-    let lastPauseTime = localStorage.getItem("lastPauseTime") ? parseInt(localStorage.getItem("lastPauseTime")) : 0;
-    
-    // Variables para la funcionalidad de Responder
-    let messageToReplyId = null; 
-    let messageToReplyText = null; 
-
-    // Lista de palabras ofensivas para la detección de insultos
-    const PROHIBITED_WORDS = [
-        "mierda", "carajo", "caca", "bruto", "imbecil", "idiota", "tarado",
-        "estupido", "estupida", "boludo", "boluda", "pelotudo", "pelotuda",
-        "pendejo", "pendeja", "tonto", "tonta", "cretino", "cretina", 
-        "choto", "chota", "mogolico", "mogolica", "subnormal", "gil", 
-        "tarambana", "zotana", "forro", "forra", "naba", "nabo", "berreta",
-        "orto", "culo", "pito", "concha", "vagina", "pija", "ortiva",
-        
-        // --- Derivados de "Put*" y "Conch*" ---
-        "puto", "puta", "putito", "putita", "putazo", "putaza", "conchudo",
-        "conchuda", "conchita", "conchita", "conchita de su madre", "reputo",
-
-        // --- Insultos Compuestos y Adicionales ---
-        "cabeza de chorlito", "papanatas", "patán", "mentecato", "majadero",
-        "hijo de puta", "hija de puta", "rompebolas", "rompehuevos",
-        "chupapijas", "chupapija", "comegato", "tragamierda", "trol*", 
-        "trolos", "trola", 
-
-        // --- Groserías y Jerga Ofensiva ---
-        "verga", "chinga", "chupar", "garka", "garca", "tilinga", "tilingo", 
-        "pichula", "pichulita", "turro", "turra", "muerto de hambre", 
-        "vendehumo", "rastrero", "rastrera",
-    ];
-    let chats = {};
+(function () {
+    // ----------------------------------------------------
+    // CONSTANTES Y ESTADO GLOBAL
+    // ----------------------------------------------------
+    const currentUser = sessionStorage.getItem("currentUser") || 'Anonimo';
+    let chats = JSON.parse(localStorage.getItem("chats")) || {};
     let currentChat = null;
-    
-    // Almacenamiento del estado de la pareja
-    let partnerMood = sessionStorage.getItem("partnerMood") || "?"; 
-    // Estado de ánimo del usuario actual
-    let myMood = sessionStorage.getItem("myMood") || "?"; 
+    let replyToMessageId = null; // Para la funcionalidad de respuesta
 
-    // Referencias al DOM (TODAS las necesarias)
-    const chatListDiv = document.getElementById("chatList");
-    const mainScreen = document.getElementById("mainScreen");
-    const chatScreen = document.getElementById("chatScreen");
-    const chatPartner = document.getElementById("chatPartner"); 
-    const partnerStatus = document.getElementById("partnerStatus"); 
-    // Referencia al estado emocional en texto
-    const partnerMoodText = document.getElementById("partnerMoodText"); 
-    const messagesContainer = document.getElementById("messages");
-    const messageInput = document.getElementById("messageInput");
-    
-    // NUEVAS REFERENCIAS para el diseño actualizado
-    const sendBtnIcon = document.getElementById("sendBtnIcon"); 
-    const pauseChatBtn = document.getElementById("pauseChatBtn"); 
-    const backBtn = document.getElementById("backBtn");
-    
-    // Elementos del estado emocional
-    const emojiCircle = document.getElementById("emojiCircle"); 
-    const openStateModal = document.getElementById("openStateModal"); 
-    const moodsContainer = document.getElementById("moodsContainer");
-    const moodList = document.getElementById("moodList");
+    // Asumimos que la conexión al servidor de sockets está disponible
+    const socket = (typeof io !== 'undefined') ? io() : { on: () => {}, emit: () => {} }; 
 
-    // NUEVAS REFERENCIAS para Modales de Interacción y Pausa
-    const pauseTimeModal = document.getElementById("pauseTimeModal");
-    const pauseTimeButtons = document.getElementById("pauseTimeButtons");
-    const messageActionsModal = document.getElementById("messageActionsModal");
-    const selectedMessageText = document.getElementById("selectedMessageText");
-    const replyMessageBtn = document.getElementById("replyMessageBtn");
-    const markImportantBtn = document.getElementById("markImportantBtn");
-    
-    // --- Funciones de Utilidad y Almacenamiento ---
+    let myMood = sessionStorage.getItem("myMood") || '😴'; 
+    let partnerMood = sessionStorage.getItem("partnerMood") || '?'; 
+    let partnerStatus = 'offline'; 
 
-    function saveData() { localStorage.setItem("chatData", JSON.stringify({ chats })); }
+    const moodMap = {
+        '❤️': { text: 'Enamorado/a', class: 'enamorado' },
+        '😊': { text: 'Feliz', class: 'happy' },
+        '😴': { text: 'Cansado/a', class: 'cansado' },
+        '😔': { text: 'Triste', class: 'sad' },
+        '😠': { text: 'Enojado/a', class: 'angry' },
+        '😟': { text: 'Ansioso/a', class: 'ansioso' },
+        '💡': { text: 'Inspirado/a', class: 'inspirado' },
+        '💼': { text: 'Ocupado/a', class: 'ocupado' },
+        '?': { text: 'Ausente', class: 'default' }
+    };
     
-    function loadData() {
-        try {
-            const saved = localStorage.getItem("chatData");
-            if (saved) {
-                const data = JSON.parse(saved);
-                chats = data.chats || {};
-            }
-        } catch (e) {
-            console.warn("Error cargando chats:", e);
-        }
+    const PAUSE_TIMES = [
+        { label: '30 min', duration: 30 * 60 * 1000 },
+        { label: '1 hora', duration: 60 * 60 * 1000 },
+        { label: '2 horas', duration: 2 * 60 * 60 * 1000 },
+        { label: '4 horas', duration: 4 * 60 * 60 * 1000 },
+    ];
+
+    // ----------------------------------------------------
+    // FUNCIONES AUXILIARES
+    // ----------------------------------------------------
+
+    function saveData() {
+        localStorage.setItem("chats", JSON.stringify(chats));
     }
-    // Carga inicial de datos al principio del IIFE
-    loadData();
+    
+    function generateMessageId() {
+        return Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+    }
 
     function formatDateKey(date = new Date()) {
-        const d = String(date.getDate()).padStart(2, "0");
-        const m = String(date.getMonth() + 1).padStart(2, "0");
-        return `${d}-${m}`;
-    }
-
-    // Verifica si el texto contiene palabras prohibidas
-    function containsInsult(text) {
-        const lowerCaseText = text.toLowerCase();
-        
-        const foundInsult = PROHIBITED_WORDS.some(word => lowerCaseText.includes(word));
-        
-        return foundInsult;
+        return date.toISOString().split('T')[0];
     }
     
-    // FUNCIÓN: Control de la Sombra Emocional (Zona Verde)
-    function updateEmotionalCircle(moodEmoji) {
-        const emojiCircle = document.getElementById('emojiCircle');
-        const moodClass = MOOD_CLASSES[moodEmoji]; 
+    function getPartnerName() {
+        return currentUser === 'Leo' ? 'Estefi' : 'Leo';
+    }
 
+    function toggleModal(modalId, show) {
+        const modal = document.getElementById(modalId);
+        if (modal) {
+            modal.classList.toggle('active', show);
+        }
+    }
+
+    // Actualiza el estado GRANDE en MainScreen y el PEQUEÑO en ChatHeader
+    function updatePartnerStatusDisplay(moodEmoji, statusText) {
+        const emojiCircle = document.getElementById('emojiCircle'); 
+        const partnerStatusDisplay = document.getElementById('partnerStatus'); 
+        const partnerMoodEmojiDisplay = document.getElementById('partnerMoodEmoji'); 
+        const partnerMoodTextDisplay = document.getElementById('partnerMoodText'); 
+        
+        partnerMood = moodEmoji;
+        partnerStatus = statusText;
+
+        // a) Actualizar MainScreen (Círculo Grande de Pareja)
         if (emojiCircle) {
-            // 1. Limpiar todas las clases de estado previas (mood-*)
-            emojiCircle.className = 'emoji-circle'; 
+            emojiCircle.textContent = moodEmoji;
+            const moodData = moodMap[moodEmoji] || moodMap['?'];
             
-            // 2. Aplicar la nueva clase de sombra (ej: mood-enojado)
-            if (moodClass && moodClass !== 'default') {
-                 // Añade 'mood-' + nombre de la clase
-                    emojiCircle.classList.add(`mood-${moodClass}`);
+            emojiCircle.className = 'emoji-circle';
+            Object.values(moodMap).forEach(m => emojiCircle.classList.remove(`mood-${m.class}`));
+            emojiCircle.classList.add(`mood-${moodData.class}`);
+        }
+
+        // b) Actualizar Chat Header (si el chat está abierto)
+        if (partnerStatusDisplay) {
+            partnerStatusDisplay.textContent = statusText.toUpperCase();
+            partnerStatusDisplay.style.color = statusText === 'online' ? 'var(--primary)' : 'var(--muted)';
+        }
+        if (partnerMoodEmojiDisplay) {
+            const moodData = moodMap[moodEmoji] || moodMap['?'];
+            partnerMoodEmojiDisplay.textContent = moodEmoji; 
+            if (partnerMoodTextDisplay) {
+                 partnerMoodTextDisplay.textContent = `(${moodData.text})`;
             }
+        }
+    }
+
+    function updateMyMoodButton(mood) {
+        const btn = document.getElementById('openMoodModal');
+        if (btn) {
+            btn.textContent = mood;
         }
     }
     
-    // FUNCIÓN: Actualiza el botón de estado en el header (Zona Roja)
-    function updateMyMoodButton(moodEmoji) {
-        // Muestra '😴' si el mood es '?' (indefinido) para tener un ícono por defecto
-        const defaultEmoji = moodEmoji === '?' ? '😴' : moodEmoji;
-        openStateModal.textContent = defaultEmoji;
-    }
+    // Función para renderizar los botones del modal de estados de ánimo
+    function renderMoods() {
+        const moodListDiv = document.getElementById('moodList');
+        if (!moodListDiv) return;
 
-
-    // FUNCIÓN CRUCIAL: Gestiona el estado de Conexión y Emocional de la pareja
-    function updatePartnerStatusDisplay(moodEmoji, currentStatus) {
-        const isOnline = currentStatus === 'online'; 
-        
-        // 1. Estado de Conexión (partnerStatus): Siempre muestra Activo/Ausente.
-        partnerStatus.textContent = isOnline ? 'Activo' : 'Ausente';
-        
-        // 2. Lógica del Estado Emocional (partnerMoodText y emojiCircle)
-        if (moodEmoji && moodEmoji !== "?" && MOOD_NAMES[moodEmoji]) {
-            // Caso A: Hay un estado de ánimo seleccionado.
-            
-            // a) Círculo (Pantalla Principal): Debe mostrar el EMOJI.
-            emojiCircle.textContent = moodEmoji; 
-
-            // b) Texto en Chat (partnerMoodText):
-            if (isOnline) {
-                // Si está ACTIVO, muestra el estado emocional al lado: "Activo — enojado"
-                partnerMoodText.textContent = `— ${MOOD_NAMES[moodEmoji]}`; 
-            } else {
-                // Si está AUSENTE, no debe aparecer nada al lado.
-                partnerMoodText.textContent = '';
-            }
-
-        } else {
-            // Caso B: NO hay estado de ánimo seleccionado ('?').
-            
-            // a) Círculo (Pantalla Principal): Muestra el emoji por defecto (❓ o 😴)
-            const defaultEmoji = isOnline ? '❓' : '😴';
-            emojiCircle.textContent = defaultEmoji;
-
-            // b) Texto en Chat (partnerMoodText): No debe aparecer nada.
-            partnerMoodText.textContent = '';
-        }
-        
-        // LLAMADA A LA FUNCIÓN DE CONTROL VISUAL para aplicar la sombra
-        updateEmotionalCircle(moodEmoji);
-    }
-    
-    // Scroll al último mensaje (para la barra fija)
-    function scrollToBottom() {
-        // Pequeño timeout para dar tiempo a que la burbuja se renderice
-        setTimeout(() => {
-            if (messagesContainer) {
-                messagesContainer.scrollTop = messagesContainer.scrollHeight;
-            }
-        }, 150); 
-    }
-
-    // Lógica de Pausa con Lista de Opciones
-    function openPauseModal() {
-        const now = new Date().getTime();
-
-        if (now - lastPauseTime < PAUSE_COOLDOWN) {
-            const remainingTimeSeconds = Math.ceil((PAUSE_COOLDOWN - (now - lastPauseTime)) / 1000);
-            const remainingMinutes = Math.ceil(remainingTimeSeconds / 60);
-            alert(`❌ Debes esperar ${remainingMinutes} minutos más para volver a pausar el chat (1 pausa por hora).`);
-            return;
-        }
-
-        // Generar botones de tiempo dinámicamente
-        pauseTimeButtons.innerHTML = PAUSE_OPTIONS.map(min => 
-            `<button class="btn primary small pause-option" data-minutes="${min}">${min} min</button>`
-        ).join('');
-
-        pauseTimeModal.style.display = 'flex';
-    }
-
-    function applyPause(durationMinutes) {
-        // 1. Aplicar la pausa (deshabilitar entrada de texto y botones)
-        messageInput.disabled = true;
-        sendBtnIcon.disabled = true;
-        pauseChatBtn.disabled = true;
-        messageInput.placeholder = `Chat pausado por ${durationMinutes} minutos...`;
-        
-        // 2. Iniciar el temporizador para reactivar
-        setTimeout(() => {
-            messageInput.disabled = false;
-            sendBtnIcon.disabled = false;
-            pauseChatBtn.disabled = false;
-            messageInput.placeholder = "Escribe tu mensaje...";
-            alert("✅ La pausa del chat ha terminado.");
-        }, durationMinutes * 60 * 1000);
-
-        // 3. Registrar el tiempo de enfriamiento (cooldown)
-        lastPauseTime = new Date().getTime();
-        localStorage.setItem("lastPauseTime", lastPauseTime);
-        
-        alert(`⏳ Chat pausado exitosamente por ${durationMinutes} minutos. ¡Desconectá un rato!`);
-        pauseTimeModal.style.display = 'none';
-    }
-
-
-    // 🔴 FUNCIÓN CRÍTICA: Marca todos los mensajes RECIBIDOS no leídos como leídos.
-    function markAllReceivedMessagesAsRead(chatId) {
-        if (!chats[chatId]) return;
-
-        let messagesToMark = [];
-        let messagesChanged = false;
-
-        // 1. Identificar y marcar localmente los mensajes RECIBIDOS no leídos
-        chats[chatId].forEach(msg => {
-            if (msg.sender !== currentUser && !msg.read) {
-                msg.read = true; // Marcar localmente
-                messagesToMark.push(msg.id);
-                messagesChanged = true;
-            }
+        moodListDiv.innerHTML = '';
+        Object.keys(moodMap).filter(key => key !== '?').forEach(emoji => {
+            const btn = document.createElement('button');
+            btn.className = 'mood-btn';
+            btn.textContent = emoji;
+            btn.setAttribute('data-mood', emoji);
+            btn.onclick = () => selectMood(emoji);
+            moodListDiv.appendChild(btn);
         });
-        
-        // 2. Si hubo cambios, guardar y notificar al servidor
-        if (messagesChanged) {
-            saveData();
-            // Notificar al servidor que ESTOS mensajes fueron leídos
-            socket.emit("messagesRead", { chatId: chatId, messageIds: messagesToMark });
-        }
-        
-        // 3. Ya que se actualizó el estado de lectura, necesitamos re-renderizar la lista
-        // para que el contador de mensajes nuevos desaparezca.
-        renderChatList(); 
+
+        // Evento para abrir el modal de estados de ánimo
+        document.getElementById('openMoodModal')?.addEventListener('click', () => toggleModal('moodsContainer', true));
+
+        // Eventos para cerrar modales
+        document.querySelectorAll('.close-modal-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const modalId = e.currentTarget.getAttribute('data-modal-target');
+                if (modalId) {
+                    toggleModal(modalId, false);
+                } else {
+                    // Cierra el modal padre si no tiene target específico (fallback)
+                    e.currentTarget.closest('.modal-backdrop').classList.remove('active');
+                }
+            });
+        });
     }
 
-    // --- Lógica de Renderizado y Flujo ---
+    function selectMood(emoji) {
+        myMood = emoji;
+        sessionStorage.setItem("myMood", myMood);
+        updateMyMoodButton(myMood);
+        toggleModal('moodsContainer', false);
+        // Informar al servidor sobre el cambio de estado de ánimo
+        socket.emit('moodChange', { sender: currentUser, mood: myMood });
+    }
 
-    // FUNCIÓN CORREGIDA: Incluye el contador de mensajes nuevos y oculta el texto.
+    // ----------------------------------------------------
+    // RENDERING DE PANTALLAS
+    // ----------------------------------------------------
+
     function renderChatList() {
-        chatListDiv.innerHTML = ""; 
+        const chatListDiv = document.getElementById('chatList');
+        if (!chatListDiv) return;
 
-        // 1. DIBUJAR el botón para crear un nuevo chat (siempre)
-        const addBtn = document.createElement("button");
-        addBtn.className = "add-chat";
-        addBtn.title = "Nuevo chat (hoy)";
-        addBtn.innerText = "+";
-        chatListDiv.appendChild(addBtn);
+        chatListDiv.innerHTML = ''; 
+        const chatKeys = Object.keys(chats).sort((a, b) => b.localeCompare(a));
 
-        // Obtener y ordenar las claves de chat
-        const days = Object.keys(chats).sort((a, b) => {
-            // Asumiendo que el formato es DD-MM
-            const currentYear = new Date().getFullYear(); 
-            const parseDate = (key) => {
-                const parts = key.split("-");
-                // Crea una fecha real para la comparación
-                return new Date(`${currentYear}-${parts[1]}-${parts[0]}`); 
-            };
-            
-            return parseDate(b) - parseDate(a); // Orden descendente (más nuevo primero)
-        });
+        chatKeys.forEach(key => {
+            const chat = chats[key];
+            const lastMsg = chat[chat.length - 1];
+            const dateStr = key;
 
-        // 2. Renderizar los chats existentes
-        if (days.length === 0) {
-            const empty = document.createElement("div");
-            empty.className = "chat-item empty-message";
-            empty.innerHTML = `
+            const item = document.createElement('button');
+            item.className = 'chat-item';
+            item.setAttribute('data-chatkey', key);
+            item.onclick = () => openChat(key);
+
+            item.innerHTML = `
                 <div class="meta">
-                <div class="chat-name">Sin chats</div>
-                <div class="chat-last">Presioná '+' para iniciar</div>
+                    <div class="chat-name">Chat ${dateStr}</div>
+                    <div class="chat-last">${lastMsg ? (lastMsg.sender === currentUser ? 'Tú' : getPartnerName()) + ': ' + lastMsg.text : 'Comenzar chat...'}</div>
                 </div>
             `;
-            chatListDiv.appendChild(empty);
-        } else {
-            days.forEach(day => {
-                const btn = document.createElement("button");
-                btn.className = "chat-item";
-                
-                const chatMessages = chats[day] || []; 
-                const lastMsg = (chatMessages.length)
-                    ? chatMessages[chatMessages.length - 1]
-                    : null;
-                    
-                // LÓGICA CLAVE: Contamos cuántos mensajes RECIBIDOS NO leídos tiene este chat
-                const unreadMessagesCount = chatMessages.filter(
-                    msg => msg.sender !== currentUser && !msg.read
-                ).length;
-                
-                const hasUnread = unreadMessagesCount > 0;
-                
-                if (hasUnread) {
-                    btn.classList.add('unread');
-                }
-                
-                // LÓGICA CLAVE: Ocultar el mensaje si hay no leídos y mostrar el contador
-                let chatLastContent = "Toca para empezar a hablar";
-                if (lastMsg) {
-                    if (hasUnread) {
-                        const plural = unreadMessagesCount > 1 ? 's' : '';
-                        chatLastContent = `<span class="unread-count">${unreadMessagesCount} mensaje${plural} nuevo${plural}</span>`;
-                    } else {
-                        // Si está todo leído (o son mensajes enviados por ti), muestra el último mensaje
-                        const senderName = lastMsg.sender === currentUser ? `Tú:` : `${partnerName}:`;
-                        chatLastContent = `${senderName} ${lastMsg.text.substring(0, 30)}...`;
-                    }
-                }
-
-                btn.innerHTML = `
-                    <div class="meta">
-                        <div class="chat-name">Chat ${day}</div>
-                        <div class="chat-last">${chatLastContent}</div>
-                    </div>
-                    <span class="chat-date">${day}</span>
-                `;
-                btn.onclick = () => tryOpenChat(day);
-                chatListDiv.appendChild(btn);
-            });
-        }
+            chatListDiv.appendChild(item);
+        });
     }
 
-    // Función: Verifica si el usuario puede entrar al chat (Restricción de Estado)
-    function tryOpenChat(day) {
-        // Volvemos a obtener el mood para asegurar que no esté obsoleto
-        myMood = sessionStorage.getItem("myMood"); 
+    // Lógica principal de renderizado de mensajes
+    function renderMessages(messageList) {
+        const messagesContainer = document.getElementById('messagesContainer');
+        if (!messagesContainer) return;
 
-        if (!myMood || myMood === "?") {
-            alert("⚠️ ¡Debes seleccionar tu estado emocional antes de entrar a un chat!");
-            // Abre el modal de estado para forzar la selección
-            openStateModal.click(); 
-            return;
-        }
+        messagesContainer.innerHTML = '';
         
-        openChat(day);
-    }
-    
-    // 🔴 FUNCIÓN CRÍTICA: Lógica de Apertura de Chat y Marcado de Lectura
-    function openChat(day) {
-        currentChat = day;
-        mainScreen.classList.remove("active");
-        chatScreen.classList.add("active");
-
-        chatPartner.textContent = partnerName;
-        
-        // 1. Marcar todos los mensajes RECIBIDOS no leídos como leídos (aquí es donde ocurre la lectura)
-        markAllReceivedMessagesAsRead(day); 
-        
-        // 2. Renderizar los mensajes (con los estados de lectura ya actualizados)
-        renderMessages();
-        
-        // 3. Forzar el scroll
-        scrollToBottom(); 
-    }
-    
-    // FUNCIÓN REVISADA: renderMessages para mostrar el estado "Leído" SÓLO si el servidor lo confirma
-    function renderMessages() { 
-        messagesContainer.innerHTML = "";
-        if (!currentChat || !chats[currentChat]) return;
-
-        // 1. Determinar el ID del ÚLTIMO mensaje que fue ENVIADO por el usuario actual (TÚ).
+        // 1. Obtener ID del ÚLTIMO mensaje enviado por el usuario actual
         let lastSentMessageId = null;
-        const allSentMessages = chats[currentChat].filter(msg => msg.sender === currentUser);
+        const allSentMessages = messageList.filter(msg => msg.sender === currentUser);
         if (allSentMessages.length > 0) {
             lastSentMessageId = allSentMessages[allSentMessages.length - 1].id;
         }
 
-        // 2. Renderizar mensajes
-        chats[currentChat].forEach(msg => {
-            const div = document.createElement("div");
-            div.className = msg.sender === currentUser ? "message sent" : "message received";
-            div.dataset.messageId = msg.id; 
-            
-            // Resaltado para MENSAJE IMPORTANTE
-            if (msg.isImportant) {
-                // Clase CSS para el resaltado del mensaje importante
-                div.classList.add('important'); 
-            }
+        // 2. Iterar y renderizar
+        messageList.forEach((msg, index) => {
+            // A. Crear la burbuja de mensaje
+            const div = document.createElement('div');
+            div.classList.add('message');
+            div.classList.add(msg.sender === currentUser ? 'sent' : 'received');
+            div.classList.toggle('important', msg.important);
 
-            // Bloque de RESPUESTA
-            if (msg.replyToText) {
-                const replyBlock = document.createElement('div');
-                replyBlock.className = 'reply-block';
-                // La comprobación del ID de respuesta usa el sufijo del ID, que incluye la primera letra del usuario (L o E)
-                const originalSenderName = msg.replyToId.endsWith(currentUser.substring(0, 1)) ? 'Tú' : partnerName; 
-                replyBlock.innerHTML = `
-                    <strong>${originalSenderName}:</strong> ${msg.replyToText}
-                `;
-                div.appendChild(replyBlock);
-            }
+            div.setAttribute('data-id', msg.id);
+            div.setAttribute('data-sender', msg.sender);
+            div.textContent = msg.text;
 
-            const msgText = document.createElement('p');
-            msgText.textContent = msg.text;
-            div.appendChild(msgText);
-
-            const ts = document.createElement("span");
-            ts.className = "ts";
-            const d = new Date(msg.time);
-            ts.textContent = `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+            // Añadir el timestamp
+            const ts = document.createElement('span');
+            ts.classList.add('ts');
+            const date = new Date(msg.timestamp);
+            ts.textContent = `${date.getHours()}:${date.getMinutes().toString().padStart(2, '0')}`;
             div.appendChild(ts);
 
+            // Evento para abrir el modal de acciones
+            div.addEventListener('click', () => handleMessageAction(msg.id, msg.text, msg.sender === currentUser));
+            
             messagesContainer.appendChild(div);
 
-            // 🔴 LÓGICA DE LECTURA: Solo mostramos la etiqueta 'Leído' si:
-            // a) El mensaje fue ENVIADO por mí.
-            // b) Es el ÚLTIMO mensaje que envié.
-            // c) El servidor ya confirmó la lectura (msg.read es TRUE).
+            // B. LÓGICA DE "VISTO" (Elemento Bloque Separado)
             if (msg.sender === currentUser && msg.id === lastSentMessageId && msg.read) {
-                const readStatus = document.createElement('span');
-                readStatus.className = 'read-status'; 
-                readStatus.textContent = 'Leído';
-                // Lo añadimos DENTRO de la burbuja del mensaje
-                div.appendChild(readStatus); 
+                
+                // CRÍTICO: Comprobar si la pareja ya ha respondido *después* de este mensaje.
+                let partnerRepliedAfter = false;
+                for (let i = index + 1; i < messageList.length; i++) {
+                    if (messageList[i].sender !== currentUser) {
+                        partnerRepliedAfter = true;
+                        break;
+                    }
+                }
+                
+                // Si NO ha respondido, mostramos el "Visto".
+                if (!partnerRepliedAfter) {
+                    const readStatus = document.createElement('div');
+                    readStatus.className = 'read-status'; 
+                    readStatus.textContent = 'Visto';
+                    
+                    // Lo añadimos DESPUÉS de la burbuja del mensaje, como bloque separado
+                    messagesContainer.appendChild(readStatus); 
+                }
             }
         });
         
-        scrollToBottom();
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
     }
 
-    // Añade un mensaje al historial y lo renderiza
-    function addMessage(msgData) { 
-        const dayKey = formatDateKey(new Date(msgData.time));
-        if (!chats[dayKey]) chats[dayKey] = [];
-        chats[dayKey].push(msgData);
+    function openChat(chatKey) {
+        currentChat = chatKey;
+        document.getElementById('mainScreen').classList.remove('active');
+        document.getElementById('chatScreen').classList.add('active');
+        
+        // Actualizar header del chat (nombre, estado y ánimo de la pareja)
+        document.getElementById('partnerName').textContent = getPartnerName();
+        updatePartnerStatusDisplay(partnerMood, partnerStatus); 
+
+        renderMessages(chats[currentChat]);
+
+        // Emitir evento al servidor para marcar los mensajes como leídos
+        socket.emit('readChat', { chatKey, reader: currentUser });
+
+        // Habilitar y enfocar el input para simular la elevación del teclado
+        const input = document.getElementById('messageInput');
+        const sendBtn = document.getElementById('sendMessageBtn');
+        if (input) {
+            input.disabled = false;
+            sendBtn.disabled = false;
+            setTimeout(() => input.focus(), 100); 
+        }
+    }
+
+    function closeChat() {
+        currentChat = null;
+        document.getElementById('chatScreen').classList.remove('active');
+        document.getElementById('mainScreen').classList.add('active');
+        
+        // Deshabilitar input al salir del chat
+        const input = document.getElementById('messageInput');
+        const sendBtn = document.getElementById('sendMessageBtn');
+        if (input) {
+            input.disabled = true;
+            sendBtn.disabled = true;
+        }
+        renderChatList(); // Refrescar la lista de chats al volver
+    }
+
+    // ----------------------------------------------------
+    // MANEJADORES DE EVENTOS
+    // ----------------------------------------------------
+
+    function handleMessageAction(messageId, messageText, isSent) {
+        const modal = document.getElementById('messageActionsModal');
+        const selectedMessageText = document.getElementById('selectedMessageText');
+        const markImportantBtn = document.getElementById('markImportantBtn');
+        const replyMessageBtn = document.getElementById('replyMessageBtn');
+
+        selectedMessageText.textContent = messageText;
+
+        // Limpiar handlers y resetear estados
+        markImportantBtn.disabled = true;
+        markImportantBtn.onclick = null;
+        replyMessageBtn.onclick = null; // Asumiendo que quieres que funcione para propios y ajenos
+
+        // Si el mensaje es SENT (enviado por mí), habilito el botón importante.
+        if (isSent) {
+            markImportantBtn.disabled = false;
+            markImportantBtn.onclick = () => {
+                markMessageImportant(messageId);
+                toggleModal('messageActionsModal', false);
+            };
+        }
+
+        // Lógica de respuesta (funciona para ambos)
+        replyMessageBtn.onclick = () => {
+            replyToMessageId = messageId;
+            // Aquí puedes agregar lógica visual para mostrar que estás respondiendo
+            toggleModal('messageActionsModal', false);
+            document.getElementById('messageInput').focus();
+        };
+
+
+        toggleModal('messageActionsModal', true);
+    }
+
+    function markMessageImportant(messageId) {
+        const chat = chats[currentChat];
+        const message = chat.find(msg => msg.id === messageId);
+        // CRÍTICO: Solo se marcan los mensajes propios
+        if (message && message.sender === currentUser) { 
+            message.important = !message.important;
+            saveData();
+            renderMessages(chat);
+            socket.emit('messageUpdate', { chatKey: currentChat, messageId: message.id, important: message.important });
+        }
+    }
+    
+    // Función para manejar el envío de mensajes
+    function sendMessage() {
+        const input = document.getElementById('messageInput');
+        const text = input.value.trim();
+        if (text === '' || !currentChat) return;
+
+        const newMessage = {
+            id: generateMessageId(),
+            sender: currentUser,
+            text: text,
+            timestamp: Date.now(),
+            read: false,
+            important: false,
+            replyTo: replyToMessageId // Incluye el ID del mensaje al que se responde
+        };
+        
+        chats[currentChat].push(newMessage);
         saveData();
+        renderMessages(chats[currentChat]);
 
-        if (dayKey === currentChat) {
-            // Si estamos en el chat, se re-renderiza.
-            renderMessages();
-            
-            // Si el mensaje fue RECIBIDO mientras estamos viendo el chat,
-            // marcamos inmediatamente como leído
-            if (msgData.sender !== currentUser) {
-                markAllReceivedMessagesAsRead(dayKey);
-            }
-        }
-        // Siempre actualiza la lista para mostrar el indicador/contador
-        renderChatList();
+        socket.emit('sendMessage', { chatKey: currentChat, message: newMessage, receiver: getPartnerName() });
+
+        input.value = ''; // Limpiar input
+        replyToMessageId = null; // Limpiar estado de respuesta
+        
+        // Enfocar el input nuevamente después de enviar
+        input.focus(); 
+    }
+
+    // Función para manejar la pausa del chat (placeholder)
+    function handlePause(duration) {
+        // Lógica real de pausa:
+        // 1. Deshabilitar input
+        // 2. Enviar evento al servidor
+        // 3. Establecer un temporizador local
+
+        console.log(`Pausa solicitada por ${duration / 60000} minutos.`);
+        toggleModal('pauseTimeModal', false);
+        // Aquí iría la lógica para deshabilitar el chat e informar al servidor.
     }
     
-    function renderMoods() {
-        moodList.innerHTML = "";
-        AVAILABLE_MOODS.forEach(mood => {
-            const btn = document.createElement("button");
-            btn.className = "mood-btn";
-            btn.textContent = mood;
-            btn.dataset.mood = mood;
-            moodList.appendChild(btn);
+    function renderPauseButtons() {
+        const container = document.getElementById('pauseTimeButtons');
+        if (!container) return;
+
+        container.innerHTML = '';
+        PAUSE_TIMES.forEach(item => {
+            const btn = document.createElement('button');
+            btn.className = 'btn primary small';
+            btn.textContent = item.label;
+            btn.onclick = () => handlePause(item.duration);
+            container.appendChild(btn);
         });
+
+        document.getElementById('pauseChatBtn')?.addEventListener('click', () => toggleModal('pauseTimeModal', true));
     }
 
-    // Modificación de sendMessage para incluir ID y datos de respuesta/importante
-    const sendMessage = () => { 
-        if (!currentChat) {
-            alert("Seleccioná un chat primero.");
-            return;
-        }
-        
-        // Bloquear envío si el chat está pausado
-        if(messageInput.disabled) return;
 
-        const text = messageInput.value.trim();
-        if (!text) return;
+    // ----------------------------------------------------
+    // ASIGNACIÓN DE EVENTOS Y SOCKETS
+    // ----------------------------------------------------
 
-        // DETECCIÓN DE INSULTOS
-        if (containsInsult(text)) {
-            alert("🚫 ¡Atención! Tu mensaje no debe contener insultos o palabras ofensivas. Por favor, revisá tu redacción.");
-            return; // Bloquea el envío si hay insulto
-        }
-        
-        // Si no hay insultos, procede directamente al envío
-        const msgData = {
-            // Genera un ID basado en el tiempo y el usuario para asegurar unicidad
-            id: new Date().getTime().toString() + currentUser.substring(0, 1), 
-            sender: currentUser,
-            text,
-            time: new Date().toISOString(),
-            // 🔴 CRÍTICO: Read SIEMPRE false al enviar. Solo el socket lo cambia.
-            read: false, 
-            replyToId: messageToReplyId, 
-            replyToText: messageToReplyText, 
-            isImportant: false 
-        };
-
-        // Emitir el mensaje al servidor
-        socket.emit("sendMessage", msgData);
-
-        // Añadir el mensaje localmente
-        addMessage(msgData);
-
-        messageInput.value = "";
-
-        // Restablecer el estado de respuesta
-        messageToReplyId = null;
-        messageToReplyText = null;
-        messageInput.placeholder = "Escribe tu mensaje..."; 
-    };
-
-    // --- Lógica de Event Listeners ---
-
-    // Lógica para ABRIR el selector de estados (Zona Roja)
-    openStateModal.addEventListener("click", () => {
-        moodsContainer.classList.add("active"); 
-    });
-
-    // Lógica para SELECCIONAR y EMITIR el estado
-    moodList.addEventListener("click", (e) => {
-        const selectedMood = e.target.dataset.mood;
-        if (!selectedMood) return;
-
-        const moodData = {
-            sender: currentUser,
-            mood: selectedMood
-        };
-        
-        // 1. Guardar mi estado emocional localmente para la restricción 
-        sessionStorage.setItem("myMood", selectedMood);
-        myMood = selectedMood; // Actualizamos la variable local
-
-        // 2. Emitir el estado al servidor
-        socket.emit("updateMood", moodData);
-
-        // 3. Ocultar el selector de estados y actualizar el botón
-        moodsContainer.classList.remove("active");
-        updateMyMoodButton(myMood); 
-    });
-    
-    // Conexión del botón de enviar
-    sendBtnIcon.addEventListener("click", sendMessage);
-    
-    // Conexión de Enter para enviar mensaje
-    messageInput.addEventListener("keypress", (e) => {
-        if (e.key === "Enter" && !e.shiftKey) { // Permite Shift+Enter para nueva línea
-            e.preventDefault(); 
+    document.getElementById('backToMain')?.addEventListener('click', closeChat);
+    document.getElementById('addChatBtn')?.addEventListener('click', () => openChat(formatDateKey()));
+    document.getElementById('sendMessageBtn')?.addEventListener('click', sendMessage);
+    document.getElementById('messageInput')?.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
             sendMessage();
         }
     });
 
-    // Eventos para forzar el scroll al último mensaje (para la barra fija)
-    messageInput.addEventListener('focus', () => {
-        // Scroll inmediato al enfocar (para teclado virtual)
-        scrollToBottom(); 
-        // Scroll de reserva
-        setTimeout(scrollToBottom, 200); 
-    });
-    // Scroll al escribir (en caso de que el mensaje crezca)
-    messageInput.addEventListener('input', scrollToBottom);
-
-
-    // Conexión del botón de pausa al nuevo modal
-    pauseChatBtn.addEventListener("click", openPauseModal);
-
-    // Listener para la selección de tiempo en el modal de pausa
-    pauseTimeButtons.addEventListener("click", (e) => {
-        const target = e.target;
-        if (target.classList.contains('pause-option')) {
-            const duration = parseInt(target.dataset.minutes);
-            if (!isNaN(duration)) {
-                applyPause(duration);
-            }
-        }
-    });
-
-    // Listener para cerrar los modales (Maneja Moods, Pausa y Acciones de Mensaje)
-    document.querySelectorAll('.close-modal-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            // Maneja el modal de Pausa
-            if (e.target.closest('#pauseTimeModal')) {
-                pauseTimeModal.style.display = 'none';
-            // Maneja el modal de Acciones de Mensaje
-            } else if (e.target.closest('#messageActionsModal')) {
-                messageActionsModal.style.display = 'none';
-            // Maneja el modal de Moods
-            } else if (e.target.closest('#moodsContainer')) {
-                moodsContainer.classList.remove("active");
-            }
-        });
-    });
-
-    // Lógica para crear un nuevo chat diario (si no existe) y abrirlo
-    chatListDiv.addEventListener("click", e => {
-        if (e.target.classList.contains("add-chat")) {
-            const key = formatDateKey();
-            if (!chats[key]) chats[key] = [];
-            saveData();
-            renderChatList();
-            tryOpenChat(key); 
-        }
-    });
-    
-    // Lógica: Alerta si intenta salir sin responder un mensaje importante
-    backBtn.addEventListener("click", () => {
-        // 1. Si no hay chat activo o no hay mensajes, salir directamente
-        if (!currentChat || !chats[currentChat] || chats[currentChat].length === 0) {
-            chatScreen.classList.remove("active");
-            mainScreen.classList.add("active");
-            // Renderizar la lista de chats para que se actualice el contador de no leídos
-            renderChatList(); 
-            return;
-        }
-
-        // 2. Buscar el último mensaje *marcado como importante* que el currentUser *recibió*
-        const importantReceivedMessage = chats[currentChat].slice().reverse().find(
-            msg => msg.isImportant && msg.sender !== currentUser
-        );
-
-        if (importantReceivedMessage) {
-            // 3. Comprobar si ya existe una respuesta directa a ese mensaje importante
-            const hasReplied = chats[currentChat].some(
-                msg => msg.sender === currentUser && msg.replyToId === importantReceivedMessage.id
-            );
-
-            if (!hasReplied) {
-                // 4. Mostrar la alerta de confirmación si NO ha respondido
-                const confirmation = confirm(
-                    `⚠️ ¡Alerta de Pareja! ⚠️\n\nTu pareja marcó el mensaje: "${importantReceivedMessage.text.substring(0, 50)}..." como importante.\n\n¿Seguro que querés salir sin responder?`
-                );
-
-                if (!confirmation) {
-                    // Si el usuario cancela, se queda en el chat
-                    return;
-                }
-            }
-        }
-
-        // 5. Si no hay mensaje importante, ya se respondió, o el usuario confirmó la salida, salir
-        chatScreen.classList.remove("active");
-        mainScreen.classList.add("active");
-        renderChatList(); 
-    });
-
-    // Lógica para abrir el menú de acciones al hacer clic en un mensaje
-    messagesContainer.addEventListener('click', (e) => {
-        let target = e.target.closest('.message');
-        if (!target) return;
-
-        const messageId = target.dataset.messageId;
-        
-        // Obtener el objeto mensaje real
-        const msg = chats[currentChat].find(m => m.id === messageId);
-        if (!msg) return;
-
-        // Configurar la ventana modal
-        messageActionsModal.style.display = 'flex';
-        messageActionsModal.dataset.messageId = messageId;
-        selectedMessageText.textContent = msg.text.substring(0, 100) + (msg.text.length > 100 ? '...' : '');
-
-        // Deshabilitar "Marcar Importante" si ya lo está O si es un mensaje que *envié* (solo puedo marcar los que *recibí*)
-        markImportantBtn.disabled = msg.isImportant || msg.sender === currentUser;
-    });
-
-    // Listener para el botón RESPONDER
-    replyMessageBtn.addEventListener('click', () => {
-        const messageId = messageActionsModal.dataset.messageId;
-        const msg = chats[currentChat].find(m => m.id === messageId);
-
-        if (msg) {
-            // Almacenar el ID y Texto para el próximo envío
-            messageToReplyId = messageId;
-            messageToReplyText = msg.text.substring(0, 50) + (msg.text.length > 50 ? '...' : ''); 
-
-            // Indicar al usuario que está respondiendo y cerrar modal
-            messageInput.placeholder = `Respondiendo a: "${messageToReplyText}"`;
-            messageInput.focus();
-            messageActionsModal.style.display = 'none';
-        }
-    });
-
-    // Listener para el botón MARCAR IMPORTANTE
-    markImportantBtn.addEventListener('click', () => {
-        const messageId = messageActionsModal.dataset.messageId;
-        const msgIndex = chats[currentChat].findIndex(m => m.id === messageId);
-        
-        // Verificamos si el mensaje es uno que *recibimos* antes de marcarlo como importante.
-        if (msgIndex !== -1 && chats[currentChat][msgIndex].sender !== currentUser) { 
-            // Marcar localmente
-            chats[currentChat][msgIndex].isImportant = true;
-            saveData();
-            renderMessages(); // Actualizar la visualización para el resaltado
-
-            // Notificar al servidor (y al otro usuario)
-            socket.emit("markImportant", { 
-                chatId: currentChat, 
-                messageId: messageId,
-                sender: currentUser // Necesario para que el servidor sepa quién lo marcó
-            });
-
-            messageActionsModal.style.display = 'none';
-            alert("🌟 Mensaje marcado como importante. ¡Tu pareja recibirá una alerta si intenta salir sin responder!");
-        } else {
-             // Esto puede ocurrir si el usuario intenta marcar un mensaje propio, lo cual está deshabilitado en el modal.
-            alert("⚠️ Solo puedes marcar como importante un mensaje que tu pareja te envió, no uno propio.");
-        }
-    });
-
-    // --- Lógica de Recepción (Socket.io) ---
-
-    // Lógica de RECEPCIÓN (Mensajes)
-    socket.on("receiveMessage", (msgData) => { 
-        if (msgData.sender !== currentUser) {
-            addMessage(msgData);
-        }
-    });
-    
-    // 🔴 FUNCIÓN CRÍTICA: Lógica de RECEPCIÓN de estado de lectura (read) y marcado (important)
-    socket.on("messageStatusUpdate", (data) => {
-        const dayKey = data.chatId;
-        if (chats[dayKey]) {
-            const msg = chats[dayKey].find(m => m.id === data.messageId);
-            if (msg) {
-                if (data.status === 'read' && msg.sender === currentUser) {
-                    // CRÍTICO: SOLO si el mensaje es MÍO, lo marco como leído
-                    msg.read = true;
-                } else if (data.status === 'important') {
-                    // Actualización de estado importante (tanto el que lo recibe como el que lo envía debe verlo)
-                    msg.isImportant = true; 
-                }
-
+    // Lógica de RECEPCIÓN DE MENSAJES
+    socket.on('receiveMessage', (data) => {
+        if (data.receiver === currentUser) {
+            const chat = chats[data.chatKey];
+            if (chat) {
+                chat.push(data.message);
                 saveData();
                 
-                // Si estamos viendo el chat, re-renderizar para actualizar el estado "Leído" o el resaltado
-                if (dayKey === currentChat) {
-                    renderMessages();
+                if (data.chatKey === currentChat) {
+                    renderMessages(chat);
+                    // Emitir que se leyó si está en el chat
+                    socket.emit('readChat', { chatKey: currentChat, reader: currentUser });
                 } else {
-                    // Si no estamos en el chat, actualizar la lista de chats para que el contador de mensajes nuevos se actualice
-                    renderChatList();
+                    renderChatList(); // Actualizar el listado si el chat no está abierto
                 }
             }
         }
     });
     
-    // Lógica de RECEPCIÓN DE ESTADOS EMOCIONALES
-    socket.on("moodChanged", (data) => {
-        if (data.sender !== currentUser) {
-            const moodEmoji = data.mood;
+    // Lógica de CONFIRMACIÓN DE LECTURA
+    socket.on('messageRead', (data) => {
+        if (data.reader !== currentUser && data.chatKey === currentChat) {
+            const chat = chats[data.chatKey];
+            // Marcar todos los mensajes como leídos
+            chat.forEach(msg => msg.read = true);
+            saveData();
+            renderMessages(chat); // Refrescar para que aparezca el "Visto"
+        }
+    });
 
-            // 1. Guardar el estado para persistencia
-            sessionStorage.setItem("partnerMood", moodEmoji); 
-            partnerMood = moodEmoji;
-
-            // 2. ACTUALIZAR la visualización completa (asumimos 'online' al cambiar el mood)
-            updatePartnerStatusDisplay(moodEmoji, 'online'); 
+    // Lógica de RECEPCIÓN DE ESTADO DE ÁNIMO
+    socket.on("moodChanged", (data) => { 
+        if (data.sender === getPartnerName()) {
+            sessionStorage.setItem("partnerMood", data.mood); 
+            updatePartnerStatusDisplay(data.mood, partnerStatus); 
         }
     });
 
     // Lógica de RECEPCIÓN DE ESTADO DE CONEXIÓN
     socket.on("statusChanged", (data) => { 
-        if (data.sender !== currentUser && partnerStatus) {
-            // data.status es 'online' o 'offline'
+        if (data.sender === getPartnerName()) {
             const currentPartnerMood = sessionStorage.getItem("partnerMood") || "?";
-            
-            // 1. Llamar a la función de display con el estado de ánimo guardado y el estado de conexión recién recibido.
             updatePartnerStatusDisplay(currentPartnerMood, data.status);
         }
     });
@@ -885,19 +504,17 @@ if (loginBtn) {
             saveData();
         }
         
-        // 2. Renderizar la lista de chats guardados
-        renderChatList(); // 👈 Esto soluciona el problema de no ver los chats
-        
-        // 3. Renderizar el selector de estados y el botón de estado local
+        // 2. Renderizar la lista de chats, el selector de estados y el botón de pausa
+        renderChatList(); 
         renderMoods();
+        renderPauseButtons();
         updateMyMoodButton(myMood);
         
-        // 4. Inicializar el estado de la pareja
-        // Asumimos offline hasta que el servidor confirme el estado real.
+        // 3. Inicializar el estado de la pareja
         updatePartnerStatusDisplay(partnerMood, 'offline'); 
         
-        // 5. Pedir al servidor el estado de ánimo y conexión real de la pareja
+        // 4. Pedir al servidor el estado de ánimo y conexión real de la pareja
         socket.emit('requestPartnerStatus'); 
     }
     
-})(); // Fin del script de chat
+})();
