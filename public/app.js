@@ -1,5 +1,5 @@
 // =======================================================
-// A. PARTE DE LOGIN (Recuperada de tu primer mensaje)
+// A. PARTE DE LOGIN 
 // =======================================================
 
 // Contraseñas válidas
@@ -190,6 +190,7 @@ if (loginBtn) {
             console.warn("Error cargando chats:", e);
         }
     }
+    // Carga inicial de datos al principio del IIFE
     loadData();
 
     function formatDateKey(date = new Date()) {
@@ -497,7 +498,8 @@ if (loginBtn) {
             if (msg.replyToText) {
                 const replyBlock = document.createElement('div');
                 replyBlock.className = 'reply-block';
-                const originalSenderName = msg.replyToId.endsWith(currentUser) ? 'Tú' : partnerName;
+                // La comprobación del ID de respuesta usa el sufijo del ID, que incluye la primera letra del usuario (L o E)
+                const originalSenderName = msg.replyToId.endsWith(currentUser.substring(0, 1)) ? 'Tú' : partnerName; 
                 replyBlock.innerHTML = `
                     <strong>${originalSenderName}:</strong> ${msg.replyToText}
                 `;
@@ -760,7 +762,7 @@ if (loginBtn) {
         messageActionsModal.dataset.messageId = messageId;
         selectedMessageText.textContent = msg.text.substring(0, 100) + (msg.text.length > 100 ? '...' : '');
 
-        // Deshabilitar "Marcar Importante" si ya lo está O si es un mensaje que *recibí* // (solo puedo marcar los que *envié* para que mi pareja sepa que yo los quiero de respuesta)
+        // Deshabilitar "Marcar Importante" si ya lo está O si es un mensaje que *envié* (solo puedo marcar los que *recibí*)
         markImportantBtn.disabled = msg.isImportant || msg.sender === currentUser;
     });
 
@@ -787,7 +789,6 @@ if (loginBtn) {
         const msgIndex = chats[currentChat].findIndex(m => m.id === messageId);
         
         // Verificamos si el mensaje es uno que *recibimos* antes de marcarlo como importante.
-        // Si el mensaje es *mío*, no puedo marcarlo como importante (solo el que lo recibe).
         if (msgIndex !== -1 && chats[currentChat][msgIndex].sender !== currentUser) { 
             // Marcar localmente
             chats[currentChat][msgIndex].isImportant = true;
@@ -870,49 +871,33 @@ if (loginBtn) {
         }
     });
 
-    // --- Inicialización ---
-
-    // 1. Asegurarse de que el chat de hoy exista 
-    const todayKey = formatDateKey();
-    if (!chats[todayKey]) {
-        chats[todayKey] = [];
-        saveData();
-    }
-    
-    // 2. Renderizar la lista de chats y la interfaz de estado
-    renderChatList();
-    renderMoods();
-    updateMyMoodButton(myMood);
-    
-    // 3. Inicializar el estado de la pareja
-    // Al cargar la página, asumimos el estado guardado y mostramos "Ausente" (offline) por defecto, 
-    // hasta que el servidor nos confirme el estado real.
-    updatePartnerStatusDisplay(partnerMood, 'offline'); 
-    
-})();
-
 // =======================================================
-// C. INICIALIZACIÓN (AGREGAR ESTO AL FINAL DE LA PARTE B)
+// C. INICIALIZACIÓN 
 // =======================================================
 
-    // Si tenemos la interfaz activa (index.html):
+    // Si estamos en la interfaz principal (index.html), ejecutamos el setup
     if (window.location.pathname.endsWith('index.html')) {
-        // 1. Cargar el historial de chats del localStorage
-        loadData(); 
+        
+        // 1. Asegurarse de que el chat de hoy exista 
+        const todayKey = formatDateKey();
+        if (!chats[todayKey]) {
+            chats[todayKey] = [];
+            saveData();
+        }
         
         // 2. Renderizar la lista de chats guardados
-        renderChatList(); // 👈 ¡ESTA ES LA LÍNEA QUE FALTABA!
+        renderChatList(); // 👈 Esto soluciona el problema de no ver los chats
         
-        // 3. Inicializar el estado de ánimo local
+        // 3. Renderizar el selector de estados y el botón de estado local
+        renderMoods();
         updateMyMoodButton(myMood);
         
-        // 4. Pedir al servidor el estado de ánimo y conexión de la pareja
-        // (Esto es crucial para que la Zona Verde se actualice)
+        // 4. Inicializar el estado de la pareja
+        // Asumimos offline hasta que el servidor confirme el estado real.
+        updatePartnerStatusDisplay(partnerMood, 'offline'); 
+        
+        // 5. Pedir al servidor el estado de ánimo y conexión real de la pareja
         socket.emit('requestPartnerStatus'); 
     }
     
 })(); // Fin del script de chat
-
-// =======================================================
-// FIN
-// =======================================================
