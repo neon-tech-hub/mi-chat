@@ -50,6 +50,9 @@
         const partnerMoodDisplay = document.getElementById("partnerMoodDisplay");
         const myMoodButton = document.getElementById("openMoodModal");
         
+        // Verificación de elementos (por seguridad)
+        if (!partnerMoodEmoji || !statusHeader || !partnerMoodDisplay || !myMoodButton) return;
+        
         partnerStatus = status; // Actualiza el estado local
 
         let text = "";
@@ -58,15 +61,15 @@
         if (status === 'paused') {
             text = "Chat Pausado 🚫";
             classList = "status-paused";
-            partnerMoodEmoji.textContent = '⏸️'; // Símbolo de pausa
+            partnerMoodEmoji.textContent = '⏸️'; 
         } else if (status === 'online') {
             text = MOODS[mood]?.text || "En línea";
             classList = MOODS[mood]?.class || "status-online";
-            partnerMoodEmoji.textContent = mood; // El emoji de estado de ánimo
+            partnerMoodEmoji.textContent = mood; 
         } else { // 'offline'
             text = "Desconectado/a 😴";
             classList = "status-offline";
-            partnerMoodEmoji.textContent = '❌'; // Símbolo de desconexión
+            partnerMoodEmoji.textContent = '❌'; 
         }
 
         // Actualiza el texto y las clases del header de estado
@@ -80,6 +83,7 @@
     // Actualiza el emoji de mi propio estado de ánimo
     const updateMyMoodButton = (mood) => {
         const myMoodButton = document.getElementById("openMoodModal");
+        if (!myMoodButton) return;
         myMoodButton.textContent = mood;
         myMood = mood;
         sessionStorage.setItem("myMood", mood);
@@ -92,8 +96,10 @@
     // Renderiza la lista de chats
     const renderChatList = () => {
         const chatListContainer = document.getElementById("chatList");
+        if (!chatListContainer) return; // Evita crash si el div no existe
+        
         chatListContainer.innerHTML = '';
-        const sortedKeys = Object.keys(chats).sort().reverse(); // Ordena de más nuevo a más viejo
+        const sortedKeys = Object.keys(chats).sort().reverse(); 
 
         if (sortedKeys.length === 0) {
             chatListContainer.innerHTML = '<p class="no-chats">¡Aún no hay chats! Selecciona tu estado para empezar.</p>';
@@ -109,6 +115,8 @@
                 const chatItem = document.createElement("div");
                 chatItem.className = "chat-item";
                 chatItem.dataset.chatKey = dateKey;
+                
+                // 🔴 CORRECCIÓN: Apuntar a chat.html con el parámetro
                 chatItem.addEventListener('click', () => {
                     window.location.href = `chat.html?chatKey=${dateKey}`;
                 });
@@ -137,6 +145,8 @@
     // Renderiza los botones de estado de ánimo en el modal
     const renderMoods = () => {
         const moodList = document.getElementById("moodList");
+        if (!moodList) return; // Evita crash si el div no existe
+        
         moodList.innerHTML = '';
 
         Object.entries(MOODS).forEach(([emoji, data]) => {
@@ -149,13 +159,13 @@
             button.addEventListener('click', () => {
                 updateMyMoodButton(emoji);
                 // Cerrar modal
-                document.getElementById('moodsContainer').classList.remove('active');
+                const moodsContainer = document.getElementById('moodsContainer');
+                if (moodsContainer) moodsContainer.classList.remove('active');
                 
                 // 🟢 Emitir el evento al servidor
                 socket.emit('moodChanged', { 
                     user: currentUser, 
                     mood: emoji,
-                    // Si el chat está pausado localmente, no se debe cambiar el estado a 'online'
                     status: 'online' 
                 });
             });
@@ -167,6 +177,9 @@
     // Renderiza los botones de tiempo de pausa
     const renderPauseButtons = () => {
         const pauseTimeButtons = document.getElementById("pauseTimeButtons");
+        const pauseContainer = document.getElementById('pauseTimeModal');
+        if (!pauseTimeButtons || !pauseContainer) return; // Evita crash si el div no existe
+        
         pauseTimeButtons.innerHTML = '';
         
         PAUSE_TIMES.forEach(time => {
@@ -176,7 +189,7 @@
             
             button.addEventListener('click', () => {
                 // Cerrar modal
-                document.getElementById('pauseTimeModal').classList.remove('active');
+                pauseContainer.classList.remove('active');
                 
                 // 🟢 Emitir el evento de pausa al servidor
                 socket.emit('pauseChat', {
@@ -185,7 +198,7 @@
                 });
 
                 // Actualizar mi estado visual a Pausado
-                updateMyMoodButton('⏸️'); // O el emoji que desees para pausa
+                updateMyMoodButton('⏸️'); 
                 updatePartnerStatusDisplay(partnerMood, 'paused'); 
             });
             pauseTimeButtons.appendChild(button);
@@ -198,18 +211,32 @@
     // =======================================================
     
     // Manejo de Modales
-    document.getElementById('openMoodModal').addEventListener('click', () => {
-        document.getElementById('moodsContainer').classList.add('active');
-    });
+    const openMoodBtn = document.getElementById('openMoodModal');
+    const moodsContainer = document.getElementById('moodsContainer');
+    const openPauseBtn = document.getElementById('openPauseTimeModal');
+    const pauseContainer = document.getElementById('pauseTimeModal');
 
-    document.getElementById('openPauseTimeModal').addEventListener('click', () => {
-        document.getElementById('pauseTimeModal').classList.add('active');
-    });
+    // 🟢 Hacemos verificaciones para evitar el crash (Causa del problema)
+    if (openMoodBtn && moodsContainer) {
+        openMoodBtn.addEventListener('click', () => {
+            moodsContainer.classList.add('active');
+        });
+    }
 
+    if (openPauseBtn && pauseContainer) {
+        openPauseBtn.addEventListener('click', () => {
+            pauseContainer.classList.add('active');
+        });
+    }
+
+    // 🟢 Listener para cerrar Modales (La 'X' que no funcionaba)
     document.querySelectorAll('.close-modal-btn').forEach(button => {
         button.addEventListener('click', (e) => {
             const targetId = e.target.dataset.modalTarget;
-            document.getElementById(targetId).classList.remove('active');
+            const modalElement = document.getElementById(targetId);
+            if (modalElement) {
+                modalElement.classList.remove('active');
+            }
         });
     });
 
@@ -235,7 +262,6 @@
     socket.on("moodChanged", (data) => { 
         if (data.sender === getPartnerName()) {
             sessionStorage.setItem("partnerMood", data.mood); 
-            // Usamos el status local (online/offline/paused)
             updatePartnerStatusDisplay(data.mood, partnerStatus); 
         }
     });
@@ -244,7 +270,6 @@
     socket.on("statusChanged", (data) => { 
         if (data.sender === getPartnerName()) {
             const currentPartnerMood = sessionStorage.getItem("partnerMood") || "?";
-            // Actualizamos la visualización con el nuevo status (online/offline)
             updatePartnerStatusDisplay(currentPartnerMood, data.status);
         }
     });
@@ -252,7 +277,6 @@
     // 4. Recepción de PAUSA DE CHAT
     socket.on("chatPaused", (data) => {
         if (data.sender === getPartnerName()) {
-            // Si la pareja pausó, actualizamos el estado visual
             updatePartnerStatusDisplay(partnerMood, 'paused');
             alert(`El chat fue pausado por ${getPartnerName()} por ${data.duration} minutos.`);
         }
@@ -260,25 +284,16 @@
     
     // 5. Recepción de MENSAJE NUEVO
     socket.on("newMessage", (data) => {
-        // Ignoramos mensajes que no son de la pareja
         if (data.sender !== getPartnerName()) return; 
         
-        // Añadir el mensaje al chat local
         const todayKey = formatDateKey();
         if (!chats[todayKey]) {
             chats[todayKey] = [];
         }
-        // Marcar el mensaje como no leído por defecto al recibir
-        chats[todayKey].push({ ...data, read: false }); 
+        chats[todayKey].push({ ...data.message, read: false }); 
         saveData();
         
-        // Renderizar la lista nuevamente para mostrar el nuevo mensaje y el contador de no leídos
         renderChatList();
-        
-        // Notificación visual/auditiva si la app está en segundo plano (Opcional)
-        if (document.hidden) {
-             // Lógica de notificación push o sonido si es posible
-        }
     });
 
 
@@ -293,18 +308,15 @@
         saveData();
     }
     
-    // 2. Renderizar la lista de chats y los modales
+    // 2. Renderizar la lista de chats y los modales (Ahora se ejecutan)
     renderChatList(); 
     renderMoods();
     renderPauseButtons();
     updateMyMoodButton(myMood);
     
-    // 3. Inicializar el estado de la pareja (asumir offline hasta la conexión)
+    // 3. Inicializar el estado de la pareja
     partnerMood = sessionStorage.getItem("partnerMood") || "?";
     updatePartnerStatusDisplay(partnerMood, 'offline'); 
-    
-    // NOTA: La lógica de conexión y solicitud de estado real (requestPartnerStatus)
-    // ocurre dentro del 'socket.on("connect", ...)' para asegurar que el socket esté listo.
     
     
 })(); // Fin del IIFE
