@@ -335,7 +335,7 @@
     overflow-y: auto;
     padding: 10px 15px;
     display: flex;
-    flex-direction: column;
+    flex-direction: column-reverse;
     gap: 8px;
     /* Para empezar desde abajo en mobile/desktop */
     align-content: flex-end; 
