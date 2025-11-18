@@ -1,6 +1,6 @@
 /* ======================================================= */
 /* menu-principal.css */
-/* Estilos para la estructura principal y la vista del menú (mainScreen) */
+/* Estilos para la estructura principal y la vista del menú (Estilo Instagram Dark) */
 /* ======================================================= */
 
 /* --------------------------- */
@@ -20,12 +20,11 @@
     --bg: #0d0d0f; 
     --panel: #141416; 
     --muted: #a8a8a8; 
-    --primary: #0095f6; 
-    --accent-gradient: linear-gradient(135deg, #f58529, #dd2a7b, #8134af, #515bd4);
+    --primary: #0095f6; /* Azul Instagram */
+    --accent-gradient: linear-gradient(45deg, #f58529, #dd2a7b, #8134af); /* Degradado llamativo */
     --bubble-them: #262626; 
     --important: #ffcc00; 
     --shadow: 0 6px 18px rgba(0,0,0,0.6);
-    --read-status-color: #7d7d7d; 
     
     /* Colores para el círculo emocional */
     --mood-enamorado: #dd2a7b; 
@@ -47,7 +46,7 @@
 html, body {
     margin: 0;
     padding: 0;
-    height: 100vh; /* Altura completa de la vista */
+    height: 100vh; 
     width: 100%;
     overflow: hidden; 
 }
@@ -62,35 +61,51 @@ html, body {
     color: #fff;
 }
 
+/* --------------------------- */
+/* CABECERA (Header) */
+/* --------------------------- */
+
 .app-header {
-    height: 60px;
+    height: 52px; /* Más bajo, estilo móvil */
     padding: 0 15px;
     display: flex;
     justify-content: space-between;
     align-items: center;
     background-color: var(--panel);
-    border-bottom: 1px solid #262626;
+    border-bottom: 1px solid var(--bubble-them);
     flex-shrink: 0; 
     z-index: 10;
 }
 
-/* 🔴 CRÍTICO: Reglas para la alternancia de pantallas */
-.app-container > .screen {
-    display: none; 
-    width: 100%;
-    height: 100%; 
-    flex-grow: 1; 
-    overflow: hidden;
+/* Logo (Invento con estilo degradado) */
+.brand {
+    font-size: 1.3rem;
+    font-weight: 700;
+}
+.logo-text {
+    /* Efecto degradado similar a Instagram */
+    background: var(--accent-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    color: transparent; 
 }
 
-.app-container > .screen.active {
-    display: flex; 
-    flex-direction: column;
-    width: 100%;
-    height: 100%; 
-    flex-grow: 1; 
+/* Botón de Mood Propio (Top Right) */
+.my-mood-btn {
+    background: none;
+    border: 1px solid var(--bubble-them); 
+    border-radius: 8px;
+    font-size: 1.3rem;
+    cursor: pointer;
+    padding: 3px 8px;
+    color: #fff;
+    transition: background-color 0.2s;
+    flex-shrink: 0;
 }
-
+.my-mood-btn:hover {
+    background-color: var(--bubble-them);
+}
 
 /* ======================================================= */
 /* PANTALLA PRINCIPAL (#mainScreen) */
@@ -101,120 +116,220 @@ html, body {
     flex-direction: column; 
     width: 100%;
     height: 100%; 
-    overflow-y: auto; /* Permitir scroll vertical en la lista de chats */
+    overflow-y: hidden; /* El scroll lo maneja la lista de chats */
 }
 
-/* Sidebar es la lista de chats en sí */
-.sidebar {
-    width: 100%; 
-    flex-shrink: 0; 
-}
+/* --------------------------- */
+/* ZONA DE ESTADO DEL PARTNER (Top Center/Grande) */
+/* --------------------------- */
 
-/* Zona central de estado (Zona Verde) */
-.main-content {
+.partner-status-header {
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
-    padding: 30px 15px;
-    gap: 20px;
-    text-align: center;
+    padding: 20px 15px 15px;
+    gap: 10px;
     border-bottom: 1px solid var(--bubble-them);
+    background-color: var(--panel); 
+    flex-shrink: 0;
 }
-.partner-status-display { /* ... */ }
-.emoji-circle { /* ... */ }
-/* ... Todos los estilos de Círculo Emocional, Moods y Estados (.mood-*, .status-*) ... */
-.status-header { /* ... */ }
-.online-dot { /* ... */ }
-.partner-mood-display { /* ... */ }
-/* ... */
-.emotional-warning { /* ... */ }
+
+.partner-mood-display {
+    font-size: 4rem; 
+    line-height: 1;
+    margin-bottom: 5px;
+}
+/* Estilo del texto de estado */
+.partner-status-text {
+    font-size: 0.9rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* --------------------------- */
+/* MENSAJE DE RESPONSABILIDAD EMOCIONAL */
+/* --------------------------- */
+
+.emotional-message-box {
+    padding: 10px 15px;
+    text-align: center;
+    font-style: italic;
+    font-size: 0.9rem;
+    color: var(--important); 
+    background-color: var(--panel);
+    border-bottom: 1px solid var(--bubble-them);
+    flex-shrink: 0;
+}
+
+/* --------------------------- */
+/* LISTA DE CHATS */
+/* --------------------------- */
+
+.chat-list-section {
+    flex-grow: 1;
+    overflow-y: auto; 
+    background-color: var(--bg);
+}
 
 .chat-list-header {
-    font-size: 1.2rem;
+    font-size: 1.1rem;
     font-weight: 600;
     padding: 15px;
+    background-color: var(--bg); 
+    position: sticky;
+    top: 0;
+    z-index: 5;
     border-bottom: 1px solid var(--bubble-them);
 }
-
-
-/* Lista de Chats (Chat List) */
 
 #chatList {
     width: 100%;
     padding: 0;
 }
 
-.chat-item { /* ... */ }
-.chat-item:hover { /* ... */ }
-.chat-item.unread { /* ... */ }
-.chat-item .avatar { /* ... */ }
-.chat-item .meta { /* ... */ }
-.chat-item .chat-name { /* ... */ }
-.chat-item .chat-last { /* ... */ }
-.chat-item .chat-date { /* ... */ }
-.chat-item .unread-count { /* ... */ }
+.chat-item {
+    display: flex;
+    align-items: center;
+    padding: 12px 15px;
+    gap: 15px;
+    border-bottom: 1px solid var(--panel); 
+    cursor: pointer;
+    transition: background-color 0.1s;
+}
+.chat-item:hover {
+    background-color: var(--bubble-them);
+}
+.chat-item .avatar {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background-color: var(--bubble-them);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-weight: 600;
+    font-size: 0.8rem;
+    flex-shrink: 0;
+    color: var(--primary); 
+}
+.chat-item .meta {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+.chat-item .chat-name {
+    font-weight: 600;
+}
+.chat-item .chat-last {
+    color: var(--muted);
+    font-size: 0.9rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.chat-item .meta-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 3px;
+    flex-shrink: 0;
+}
+.chat-item .chat-date {
+    font-size: 0.8rem;
+    color: var(--muted);
+}
+.chat-item .unread-count {
+    background-color: var(--primary);
+    color: white;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border-radius: 50%;
+    min-width: 20px;
+    height: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.chat-item.unread .chat-last {
+    color: white; 
+    font-weight: 600;
+}
 
 /* --------------------------- */
-/* Botones de Acción (General) */
+/* ESTILOS DE BOTONES Y MODALES (Simplificados) */
 /* --------------------------- */
 
-.btn { /* ... */ }
-.btn.primary { /* ... */ }
-.btn.secondary { /* ... */ }
-.btn.small { /* ... */ }
-.btn:hover { /* ... */ }
-.btn:disabled { /* ... */ }
-.add-chat { /* ... */ }
-.add-chat:hover { /* ... */ }
+.btn {
+    padding: 8px 15px;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: opacity 0.2s;
+}
+.btn.secondary {
+    background-color: var(--bubble-them);
+    color: #fff;
+}
+.btn.small {
+    padding: 5px 10px;
+    font-size: 0.85rem;
+}
 
-
-/* --------------------------- */
-/* Modales de Menú (Mood y Pausa) */
-/* --------------------------- */
-
-.modal-backdrop { /* ... */ }
-.modal-backdrop.active { /* ... */ }
-.modal-content { /* ... */ }
-.close-modal-btn { /* ... */ }
-.mood-modal h3, .modal-content h3 { /* ... */ }
-.mood-modal p, .modal-content p { /* ... */ }
-.mood-list { /* ... */ }
-.mood-btn { /* ... */ }
-.mood-btn:hover { /* ... */ }
-.mood-btn.selected { /* ... */ }
-
-
-/* --------------------------- */
-/* Media Queries (Desktop - Relevante para MainScreen) */
-/* --------------------------- */
-
-@media (min-width: 769px) {
-    #mainScreen.active {
-        display: grid;
-        grid-template-columns: 350px 1fr; 
-        flex-direction: initial; 
-        overflow: hidden; 
-    }
-
-    .sidebar {
-        width: 350px;
-        height: 100%; 
-        border-right: 1px solid var(--bubble-them); 
-        overflow-y: auto; 
-    }
-    
-    .main-content {
-        width: 100%;
-        height: 100%;
-        border-bottom: none;
-    }
-    
-    .chat-list-header {
-        border-bottom: none;
-    }
-    
-    .chat-item .avatar {
-        display: flex; 
-    }
+.modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.8);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+.modal-backdrop.active {
+    display: flex;
+}
+.modal-content {
+    background-color: var(--panel);
+    padding: 20px;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 400px;
+    position: relative;
+    box-shadow: var(--shadow);
+    text-align: center;
+}
+.close-modal-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-size: 1.2rem;
+    cursor: pointer;
+}
+.mood-list {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 15px;
+}
+.mood-btn {
+    background: var(--bubble-them);
+    color: white;
+    padding: 10px 15px;
+    border: 2px solid transparent;
+    border-radius: 8px;
+    font-size: 1.8rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.mood-btn.selected {
+    border-color: var(--primary);
 }

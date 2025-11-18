@@ -52,7 +52,7 @@
             chatItem.className = `chat-item ${unreadCount > 0 ? 'unread' : ''}`;
             chatItem.dataset.chatKey = key;
             
-            // 🟢 MODIFICACIÓN CLAVE: Redirige a chat.html con la clave de chat
+            // 🟢 REDIRECCIÓN CLAVE: Navega a la página de chat
             chatItem.onclick = () => {
                 window.location.href = `chat.html?chatKey=${key}`;
             };
@@ -70,15 +70,22 @@
             const date = new Date(lastMessage.timestamp);
             const dateStr = date.toLocaleDateString('es-AR', { day: 'numeric', month: 'short' });
 
+            const metaRightDiv = document.createElement('div');
+            metaRightDiv.className = 'meta-right';
+            
+            metaRightDiv.innerHTML = `
+                <div class="chat-date">${dateStr}</div>
+                ${unreadCount > 0 ? `<div class="unread-count">${unreadCount}</div>` : ''}
+            `;
+            
             chatItem.innerHTML = `
                 <div class="avatar">${key.substring(8, 10)}/${key.substring(5, 7)}</div>
                 <div class="meta">
                     <span class="chat-name">${key}</span>
                     <span class="chat-last">${lastText}</span>
                 </div>
-                <span class="chat-date">${dateStr}</span>
-                ${unreadCount > 0 ? `<span class="unread-count">${unreadCount}</span>` : ''}
             `;
+            chatItem.appendChild(metaRightDiv);
             chatListDiv.appendChild(chatItem);
         });
     }
@@ -87,30 +94,40 @@
         partnerMood = moodEmoji;
         partnerStatus = status;
         
-        const emojiCircle = document.getElementById('partnerMood');
+        const partnerMoodDisplay = document.getElementById('partnerMoodEmoji'); // 👈 Nuevo ID para el emoji grande
         const statusHeader = document.getElementById('statusHeader');
+        const displayContainer = document.getElementById('partnerMoodDisplay'); // Contenedor del emoji
         
-        if (emojiCircle) {
-            const moodData = MOODS[moodEmoji] || { text: 'Ausente', class: 'mood-default' };
-            emojiCircle.textContent = moodEmoji;
-            
-            // Remover y añadir clases de mood y estado
-            Object.values(MOODS).forEach(m => emojiCircle.classList.remove(m.class));
-            // También remueve clases de estado que ya se deberían manejar con data-status
-            emojiCircle.classList.remove('mood-default'); 
-            emojiCircle.classList.add(moodData.class);
-            
-            // Actualizar data-status en el contenedor padre
-            const statusDisplay = document.querySelector('.partner-status-display');
-            if (statusDisplay) {
-                statusDisplay.dataset.status = status;
+        let emojiToShow = moodEmoji;
+        let statusText = 'Desconectado';
+        let moodData = MOODS[moodEmoji] || { text: 'Ausente', class: 'mood-default' };
+
+        // 📌 Lógica de emojis por defecto solicitada:
+        if (status === 'offline' || status === 'paused') {
+            emojiToShow = '😴'; // Desconectado o pausado -> Dormido
+            statusText = status === 'paused' ? 'En Pausa' : 'Desconectado';
+        } else if (status === 'online') {
+            statusText = 'En línea';
+            if (moodEmoji === '?') {
+                emojiToShow = '❓'; // Conectado pero no eligió estado -> Pregunta
+                moodData = { text: 'Sin estado', class: 'mood-default' };
             }
         }
+        
+        if (partnerMoodDisplay && displayContainer) {
+            partnerMoodDisplay.textContent = emojiToShow; // Inyectar el emoji
+            
+             // 1. Remover todas las clases de mood y estado
+             Object.values(MOODS).forEach(m => displayContainer.classList.remove(m.class));
+             displayContainer.classList.remove('mood-default', 'status-online', 'status-offline', 'status-paused');
+             
+             // 2. Añadir la clase de mood y estado actual (para posibles colores/efectos)
+             displayContainer.classList.add(moodData.class, `status-${status}`);
+        }
 
-        // Actualizar texto de estado
+        // 3. Actualizar texto de estado
         if (statusHeader) {
-            let statusText = status === 'online' ? 'Disponible' : (status === 'paused' ? 'Pausado' : 'Ausente');
-            const moodText = (MOODS[moodEmoji] && moodEmoji !== '?') ? `(${MOODS[moodEmoji].text})` : '';
+            const moodText = (moodData.text && emojiToShow !== '❓' && emojiToShow !== '😴') ? `(${moodData.text})` : '';
             statusHeader.textContent = `${getPartnerName()} | ${statusText} ${moodText}`;
         }
     }
@@ -197,7 +214,7 @@
     // --- Configuración de Eventos ---
 
     document.getElementById('openMoodModal')?.addEventListener('click', () => openModal('moodsContainer'));
-    document.getElementById('openPauseTimeModal')?.addEventListener('click', () => openModal('pauseTimeModal')); // 👈 CORRECCIÓN: ID del botón de pausa
+    document.getElementById('openPauseTimeModal')?.addEventListener('click', () => openModal('pauseTimeModal')); 
     // 🔴 LÓGICA DE REDIRECCIÓN A CHAT DE HOY
     document.getElementById('addChatBtn')?.addEventListener('click', () => { 
         const todayKey = formatDateKey();
