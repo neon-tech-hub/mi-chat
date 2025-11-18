@@ -890,3 +890,29 @@ if (loginBtn) {
     updatePartnerStatusDisplay(partnerMood, 'offline'); 
     
 })();
+
+// =======================================================
+// C. INICIALIZACIÓN (AGREGAR ESTO AL FINAL DE LA PARTE B)
+// =======================================================
+
+    // Si tenemos la interfaz activa (index.html):
+    if (window.location.pathname.endsWith('index.html')) {
+        // 1. Cargar el historial de chats del localStorage
+        loadData(); 
+        
+        // 2. Renderizar la lista de chats guardados
+        renderChatList(); // 👈 ¡ESTA ES LA LÍNEA QUE FALTABA!
+        
+        // 3. Inicializar el estado de ánimo local
+        updateMyMoodButton(myMood);
+        
+        // 4. Pedir al servidor el estado de ánimo y conexión de la pareja
+        // (Esto es crucial para que la Zona Verde se actualice)
+        socket.emit('requestPartnerStatus'); 
+    }
+    
+})(); // Fin del script de chat
+
+// =======================================================
+// FIN
+// =======================================================
