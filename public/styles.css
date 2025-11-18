@@ -48,7 +48,7 @@ body {
 
 .app-container {
     display: flex;
-    flex-direction: column; /* 👈 CORRECCIÓN CLAVE 1: Apila header y main verticalmente */
+    flex-direction: column; /* Apila header y main verticalmente */
     width: 100%;
     height: 100vh;
     overflow: hidden;
@@ -89,7 +89,6 @@ body {
     cursor: pointer;
     box-shadow: var(--shadow);
     transition: transform 0.2s;
-    /* 🔴 Eliminamos las propiedades 'absolute' de la versión anterior */
     position: relative; 
 }
 
@@ -100,7 +99,7 @@ body {
 
 /* Alternancia de pantallas (mainScreen vs chatScreen) */
 .app-container > .screen {
-    /* Por defecto, los screens no crecen */
+    /* Por defecto, todos los screens están ocultos */
     display: none;
     width: 100%;
     height: 100%;
@@ -108,51 +107,51 @@ body {
     overflow: hidden;
 }
 
+/* 🟢 CORRECCIÓN CLAVE 1: Solo la pantalla activa se muestra y crece para llenar el espacio */
 .app-container > .screen.active {
-    display: flex; /* O grid */
+    display: flex; 
     flex-direction: column;
     width: 100%;
-    /* 👈 CORRECCIÓN CLAVE 2: Hace que la pantalla activa ocupe el espacio restante (debajo del header) */
     flex-grow: 1; 
     height: auto; 
 }
 
-/* Pantalla principal (Lista de chats y estado de la pareja) */
+/* 🟢 CORRECCIÓN CLAVE 2: Pantalla principal ahora es vertical (no Grid de 2 columnas) */
 #mainScreen {
-    display: grid;
-    grid-template-columns: 350px 1fr; /* Sidebar width y main content */
+    display: flex;
+    flex-direction: column; /* Apila el sidebar y el main-content */
     width: 100%;
-    /* 👈 CORRECCIÓN CLAVE 3: Asegura que el grid ocupe todo el alto del contenedor padre */
     height: 100%; 
+    flex-grow: 1; 
 }
 
+/* Sidebar (Lista de Chats) */
 .sidebar {
-    padding: 20px 0;
-    border-right: 1px solid var(--bubble-them);
+    /* 🟢 CORRECCIÓN CLAVE 3: El sidebar ocupa todo el ancho y tiene una altura fija */
+    width: 100%; 
+    height: 150px; 
+    padding: 10px 0;
+    border-right: none; /* Quitamos la línea vertical */
+    border-bottom: 1px solid var(--bubble-them); /* Añadimos línea horizontal */
     overflow-y: auto;
     display: flex; 
     flex-direction: column;
-    height: 100%; 
+    flex-shrink: 0; /* Asegura que no se encoja */
 }
 
-#chatList {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    padding: 0 15px;
-    /* Dejamos que flexbox maneje la altura sin el height: 100% */
-}
-
+/* Main Content (Zona Verde) */
 .main-content {
+    /* 🟢 CORRECCIÓN CLAVE 4: Ocupa todo el resto del espacio vertical disponible */
+    flex-grow: 1;
     display: flex;
     flex-direction: column;
-    align-items: center; /* Centra status content horizontalmente */
-    justify-content: center; /* Centra status content verticalmente */
+    align-items: center; 
+    justify-content: center; 
     padding: 20px;
     text-align: center;
 }
 
-/* --- Login Screen --- (Mantengo tus estilos) */
+/* --- Login Screen --- */
 .login-container {
     width: 100%;
     height: 100vh;
@@ -365,7 +364,6 @@ body {
 /* --------------------------- */
 
 #chatScreen {
-    /* Ya está flex-direction: column por el .screen.active */
     width: 100%;
     height: 100%;
 }
@@ -443,7 +441,7 @@ body {
 
 /* Mensajes */
 .messages-container {
-    flex-grow: 1; /* 👈 CRÍTICO: El contenedor de mensajes debe ocupar todo el espacio restante */
+    flex-grow: 1; 
     overflow-y: auto;
     padding: 20px;
     display: flex;
@@ -455,7 +453,7 @@ body {
     max-width: 70%;
     padding: 10px 15px;
     border-radius: 18px;
-    position: relative;
+    position: relative; /* 🟢 CRÍTICO: Necesario para posicionar el status absoluto */
     cursor: pointer; 
     transition: box-shadow 0.2s;
 }
@@ -483,7 +481,9 @@ body {
     background-color: var(--bubble-me);
     color: #fff;
     align-self: flex-end;
-    padding-bottom: 18px; 
+    /* 🟢 CORRECCIÓN: Deja espacio para el texto "Leído" */
+    padding-bottom: 20px; 
+    position: relative; /* Duplicado, pero se mantiene la importancia */
 }
 
 /* Mensaje Recibido (Pareja) */
@@ -509,11 +509,11 @@ body {
     display: block;
 }
 
-/* Estado de Lectura */
+/* 🟢 CORRECCIÓN CLAVE 5: Posicionamiento del "Leído" */
 .read-status {
     position: absolute;
-    bottom: 3px;
-    right: 15px;
+    bottom: 3px; /* 3px desde el borde inferior de la burbuja */
+    right: 10px; /* 10px desde el borde derecho de la burbuja */
     font-size: 0.7rem;
     color: var(--read-status-color);
     font-weight: 500;
@@ -732,9 +732,9 @@ body {
 /* --------------------------- */
 
 @media (max-width: 768px) {
-    /* Estructura */
+    /* 🟢 CORRECCIÓN: En móvil mantenemos la estructura vertical del #mainScreen */
     #mainScreen {
-        grid-template-columns: 1fr; 
+        flex-direction: column; 
     }
 
     .sidebar {
@@ -745,6 +745,7 @@ body {
         height: 150px; 
     }
     
+    /* Mantenemos la zona verde oculta para dar espacio a los chats */
     .main-content {
         display: none; 
     }
