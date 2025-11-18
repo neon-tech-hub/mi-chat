@@ -44,262 +44,380 @@ if (loginBtn) {
 // =======================================================
 
 (function () {
-    // ----------------------------------------------------
-    // CONSTANTES Y ESTADO GLOBAL
-    // ----------------------------------------------------
-    const currentUser = sessionStorage.getItem("currentUser") || 'Anonimo';
-    // 🔴 CRÍTICO: Asegurarse de cargar los chats de localStorage
-    let chats = JSON.parse(localStorage.getItem("chats")) || {}; 
+    // Variables globales
+    const currentUser = sessionStorage.getItem("currentUser");
+    const partnerName = currentUser === 'Leo' ? 'Estefi' : 'Leo';
+    let chats = JSON.parse(localStorage.getItem(`chats_${currentUser}`)) || {};
     let currentChat = null;
-    let replyToMessageId = null; 
-
-    // Asumimos que la conexión al servidor de sockets está disponible (o un mock si no lo está)
-    const socket = (typeof io !== 'undefined') ? io() : { on: () => {}, emit: () => {} }; 
-
-    let myMood = sessionStorage.getItem("myMood") || '😴'; 
-    let partnerMood = sessionStorage.getItem("partnerMood") || '?'; 
+    let myMood = sessionStorage.getItem("myMood") || "😴";
+    let partnerMood = sessionStorage.getItem("partnerMood") || "?";
     let partnerStatus = 'offline'; 
+    let replyingToId = null; 
 
-    const moodMap = {
-        '❤️': { text: 'Enamorado/a', class: 'enamorado' },
-        '😊': { text: 'Feliz', class: 'happy' },
-        '😴': { text: 'Cansado/a', class: 'cansado' },
-        '😔': { text: 'Triste', class: 'sad' },
-        '😠': { text: 'Enojado/a', class: 'angry' },
-        '😟': { text: 'Ansioso/a', class: 'ansioso' },
-        '💡': { text: 'Inspirado/a', class: 'inspirado' },
-        '💼': { text: 'Ocupado/a', class: 'ocupado' },
-        '?': { text: 'Ausente', class: 'default' }
+    // Mapeo de estados y colores (debe coincidir con CSS)
+    const MOODS = {
+        '😍': { text: 'Enamorado', class: 'mood-enamorado' },
+        '😊': { text: 'Feliz', class: 'mood-happy' },
+        '😴': { text: 'Cansado/a', class: 'mood-cansado' },
+        '😡': { text: 'Enojado/a', class: 'mood-enojado' },
+        '😔': { text: 'Triste', class: 'mood-triste' },
+        '😫': { text: 'Estresado/a', class: 'mood-estresado' },
+        '💬': { text: 'Quiero Hablar', class: 'mood-porhablar' },
     };
-    
-    const PAUSE_TIMES = [
-        { label: '30 min', duration: 30 * 60 * 1000 },
-        { label: '1 hora', duration: 60 * 60 * 1000 },
-        { label: '2 horas', duration: 2 * 60 * 60 * 1000 },
-        { label: '4 horas', duration: 4 * 60 * 60 * 1000 },
-    ];
 
-    // ----------------------------------------------------
-    // FUNCIONES AUXILIARES
-    // ----------------------------------------------------
+    // Funciones de utilidad
+    const getPartnerName = () => partnerName;
+    const formatDateKey = (date = new Date()) => date.toISOString().split('T')[0];
+    const saveData = () => localStorage.setItem(`chats_${currentUser}`, JSON.stringify(chats));
 
-    function saveData() {
-        // 🔴 CRÍTICO: Guarda los chats en localStorage
-        localStorage.setItem("chats", JSON.stringify(chats));
-    }
-    
-    function generateMessageId() {
-        return Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
-    }
+    // Configuración de Socket.IO (ASUMIENDO QUE ESTÁ EN TU SERVIDOR)
+    const socket = (typeof io !== 'undefined') ? io() : { on: () => {}, emit: () => {} };
 
-    function formatDateKey(date = new Date()) {
-        return date.toISOString().split('T')[0];
-    }
-    
-    function getPartnerName() {
-        return currentUser === 'Leo' ? 'Estefi' : 'Leo';
-    }
-
-    function toggleModal(modalId, show) {
-        const modal = document.getElementById(modalId);
-        if (modal) {
-            modal.classList.toggle('active', show);
-        }
-    }
-
-    // Actualiza el estado GRANDE en MainScreen y el PEQUEÑO en ChatHeader
-    function updatePartnerStatusDisplay(moodEmoji, statusText) {
-        const emojiCircle = document.getElementById('emojiCircle'); 
-        const partnerStatusDisplay = document.getElementById('partnerStatus'); 
-        const partnerMoodEmojiDisplay = document.getElementById('partnerMoodEmoji'); 
-        const partnerMoodTextDisplay = document.getElementById('partnerMoodText'); 
-        
-        partnerMood = moodEmoji;
-        partnerStatus = statusText;
-
-        // a) Actualizar MainScreen (Círculo Grande de Pareja)
-        if (emojiCircle) {
-            emojiCircle.textContent = moodEmoji;
-            const moodData = moodMap[moodEmoji] || moodMap['?'];
-            
-            emojiCircle.className = 'emoji-circle';
-            Object.values(moodMap).forEach(m => emojiCircle.classList.remove(`mood-${m.class}`));
-            emojiCircle.classList.add(`mood-${moodData.class}`);
-        }
-
-        // b) Actualizar Chat Header (si el chat está abierto)
-        if (partnerStatusDisplay) {
-            partnerStatusDisplay.textContent = statusText.toUpperCase();
-            partnerStatusDisplay.style.color = statusText === 'online' ? 'var(--primary)' : 'var(--muted)';
-        }
-        if (partnerMoodEmojiDisplay) {
-            const moodData = moodMap[moodEmoji] || moodMap['?'];
-            partnerMoodEmojiDisplay.textContent = moodEmoji; 
-            if (partnerMoodTextDisplay) {
-                 partnerMoodTextDisplay.textContent = `(${moodData.text})`;
-            }
-        }
-    }
-
-    function updateMyMoodButton(mood) {
-        const btn = document.getElementById('openMoodModal');
-        if (btn) {
-            btn.textContent = mood;
-        }
-    }
-    
-    function renderMoods() {
-        const moodListDiv = document.getElementById('moodList');
-        if (!moodListDiv) return;
-
-        moodListDiv.innerHTML = '';
-        Object.keys(moodMap).filter(key => key !== '?').forEach(emoji => {
-            const btn = document.createElement('button');
-            btn.className = 'mood-btn';
-            btn.textContent = emoji;
-            btn.setAttribute('data-mood', emoji);
-            btn.onclick = () => selectMood(emoji);
-            moodListDiv.appendChild(btn);
-        });
-
-        document.getElementById('openMoodModal')?.addEventListener('click', () => toggleModal('moodsContainer', true));
-
-        document.querySelectorAll('.close-modal-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const modalId = e.currentTarget.getAttribute('data-modal-target');
-                if (modalId) {
-                    toggleModal(modalId, false);
-                } else {
-                    e.currentTarget.closest('.modal-backdrop').classList.remove('active');
-                }
-            });
-        });
-    }
-
-    function selectMood(emoji) {
-        myMood = emoji;
-        sessionStorage.setItem("myMood", myMood);
-        updateMyMoodButton(myMood);
-        toggleModal('moodsContainer', false);
-        socket.emit('moodChange', { sender: currentUser, mood: myMood });
-    }
-
-    // ----------------------------------------------------
-    // RENDERING DE PANTALLAS
-    // ----------------------------------------------------
+    // --- Funciones de Renderizado ---
 
     function renderChatList() {
         const chatListDiv = document.getElementById('chatList');
         if (!chatListDiv) return;
+        
+        chatListDiv.innerHTML = '<div class="chat-list-header">Chats</div>';
+        
+        const sortedKeys = Object.keys(chats).sort().reverse();
 
-        chatListDiv.innerHTML = ''; 
-        // 🔴 CRÍTICO: Ordenar chats por clave de fecha (descendente)
-        const chatKeys = Object.keys(chats).sort((a, b) => b.localeCompare(a)); 
-
-        if (chatKeys.length === 0) {
-            chatListDiv.innerHTML = '<p style="text-align: center; color: var(--muted); margin-top: 20px;">¡No hay chats anteriores! Crea uno nuevo.</p>';
-        }
-
-        chatKeys.forEach(key => {
+        sortedKeys.forEach(key => {
             const chat = chats[key];
-            const lastMsg = chat[chat.length - 1];
-            // Formatear la clave para mostrar la fecha de forma legible
-            const dateStr = new Date(key).toLocaleDateString('es-AR', { day: 'numeric', month: 'short', year: 'numeric' });
+            if (!chat || chat.length === 0) return;
 
-            const item = document.createElement('button');
-            item.className = 'chat-item';
-            item.setAttribute('data-chatkey', key);
-            item.onclick = () => openChat(key);
+            const lastMessage = chat[chat.length - 1];
+            const unreadCount = chat.filter(msg => msg.sender !== currentUser && !msg.read).length;
 
-            item.innerHTML = `
+            const chatItem = document.createElement('div');
+            chatItem.className = `chat-item ${unreadCount > 0 ? 'unread' : ''}`;
+            chatItem.dataset.chatKey = key;
+            chatItem.onclick = () => openChat(key);
+
+            let lastText = lastMessage.text;
+            if (lastMessage.replyToText) {
+                lastText = `↩️ Respondió: ${lastMessage.text}`;
+            } else if (lastMessage.important) {
+                lastText = `🌟 Importante: ${lastMessage.text}`;
+            } else if (lastMessage.sender === currentUser) {
+                lastText = `Tú: ${lastText}`;
+            }
+
+            const date = new Date(lastMessage.timestamp);
+            const dateStr = date.toLocaleDateString('es-AR', { day: 'numeric', month: 'short' });
+
+            chatItem.innerHTML = `
+                <div class="avatar">${key.substring(8, 10)}/${key.substring(5, 7)}</div>
                 <div class="meta">
-                    <div class="chat-name">${dateStr}</div>
-                    <div class="chat-last">${lastMsg ? (lastMsg.sender === currentUser ? 'Tú' : getPartnerName()) + ': ' + lastMsg.text : 'Comenzar chat...'}</div>
+                    <span class="chat-name">${key}</span>
+                    <span class="chat-last">${lastText}</span>
+                </div>
+                <span class="chat-date">${dateStr}</span>
+                ${unreadCount > 0 ? `<span class="unread-count">${unreadCount}</span>` : ''}
+            `;
+            chatListDiv.appendChild(chatItem);
+        });
+    }
+
+    function renderMessages(messages) {
+        const container = document.getElementById('messageContainer');
+        if (!container) return;
+
+        container.innerHTML = '';
+
+        messages.forEach(msg => {
+            const isMe = msg.sender === currentUser;
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `chat-message ${isMe ? 'me' : 'them'} ${msg.important ? 'important' : ''} ${msg.replyToText ? 'reply' : ''}`;
+            messageDiv.dataset.messageId = msg.id;
+            messageDiv.onclick = () => openMessageActionsModal(msg);
+            
+            let replyHtml = '';
+            if (msg.replyToText) {
+                replyHtml = `
+                    <div class="reply-box">
+                        ${msg.replyToText}
+                    </div>
+                `;
+            }
+            
+            let statusIcon = '';
+            if (isMe) {
+                statusIcon = msg.read 
+                    ? '<span class="status-icon read">✓✓</span>'
+                    : '<span class="status-icon">✓</span>';
+            }
+
+            messageDiv.innerHTML = `
+                ${replyHtml}
+                <div class="message-content">${msg.text}</div>
+                <div class="meta-info">
+                    ${new Date(msg.timestamp).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}
+                    ${statusIcon}
                 </div>
             `;
-            chatListDiv.appendChild(item);
+            container.appendChild(messageDiv);
         });
+        container.scrollTop = container.scrollHeight;
     }
 
-    // Lógica principal de renderizado de mensajes
-    function renderMessages(messageList) {
-        const messagesContainer = document.getElementById('messagesContainer');
-        if (!messagesContainer) return;
-
-        messagesContainer.innerHTML = '';
+    function updatePartnerStatusDisplay(moodEmoji, status) {
+        partnerMood = moodEmoji;
+        partnerStatus = status;
         
-        // 1. Obtener ID del ÚLTIMO mensaje enviado por el usuario actual
-        let lastSentMessageId = null;
-        let lastSentMessageIndex = -1;
+        const emojiCircle = document.getElementById('emojiCircle');
+        const statusHeader = document.getElementById('partnerStatusHeader');
+        const chatHeaderStatus = document.getElementById('partnerStatus');
+        
+        if (emojiCircle) {
+            const moodData = MOODS[moodEmoji] || { text: 'Ausente', class: 'mood-default' };
+            emojiCircle.textContent = moodEmoji;
+            
+            // Remover clases de mood anteriores
+            Object.values(MOODS).forEach(m => emojiCircle.classList.remove(m.class));
+            emojiCircle.classList.remove('mood-default');
 
-        const allSentMessages = messageList.filter(msg => msg.sender === currentUser);
-        if (allSentMessages.length > 0) {
-             // Encuentra el ID y el índice del último mensaje enviado por el usuario actual
-             for (let i = messageList.length - 1; i >= 0; i--) {
-                if (messageList[i].sender === currentUser) {
-                    lastSentMessageId = messageList[i].id;
-                    lastSentMessageIndex = i;
-                    break;
-                }
-             }
+            // Añadir clase de mood actual
+            emojiCircle.classList.add(moodData.class);
+
+            // Manejo del estado de conexión
+            emojiCircle.classList.remove('status-online', 'status-offline', 'status-paused');
+            emojiCircle.classList.add(`status-${status}`);
         }
 
-        // 2. Iterar y renderizar
-        messageList.forEach((msg, index) => {
-            // A. Crear la burbuja de mensaje
-            const div = document.createElement('div');
-            div.classList.add('message');
-            div.classList.add(msg.sender === currentUser ? 'sent' : 'received');
-            div.classList.toggle('important', msg.important);
+        // Actualizar texto de estado
+        if (statusHeader) {
+            let statusText = status === 'online' ? 'Disponible' : (status === 'paused' ? 'Pausado' : 'Ausente');
+            const moodText = (MOODS[moodEmoji] && moodEmoji !== '?') ? `(${MOODS[moodEmoji].text})` : '';
+            statusHeader.textContent = `${statusText} ${moodText}`;
+        }
 
-            div.setAttribute('data-id', msg.id);
-            div.setAttribute('data-sender', msg.sender);
-            
-            // 🔴 CRÍTICO: Mostrar texto del mensaje
-            div.textContent = msg.text; 
+        // Actualizar el estado en el header del chat
+        if (chatHeaderStatus) {
+            chatHeaderStatus.textContent = status === 'online' ? 'En línea' : (status === 'paused' ? 'Pausado' : 'Última vez hace mucho...');
+        }
 
-            // Añadir el timestamp
-            const ts = document.createElement('span');
-            ts.classList.add('ts');
-            const date = new Date(msg.timestamp);
-            ts.textContent = `${date.getHours()}:${date.getMinutes().toString().padStart(2, '0')}`;
-            div.appendChild(ts);
+        // Habilitar/deshabilitar input de chat
+        const input = document.getElementById('messageInput');
+        const sendBtn = document.getElementById('sendMessageBtn');
+        const canChat = myMood !== '😴' && status !== 'paused';
 
-            // Evento para abrir el modal de acciones
-            div.addEventListener('click', () => handleMessageAction(msg.id, msg.text, msg.sender === currentUser));
-            
-            messagesContainer.appendChild(div);
-
-            // B. LÓGICA DE "VISTO" (Elemento Bloque Separado)
-            // Solo si es el último mensaje enviado por mí Y está marcado como leído
-            if (msg.sender === currentUser && msg.id === lastSentMessageId && msg.read) {
-                
-                // CRÍTICO: Comprobar si la pareja ya ha respondido *después* de este mensaje.
-                let partnerRepliedAfter = false;
-                for (let i = index + 1; i < messageList.length; i++) {
-                    if (messageList[i].sender !== currentUser) {
-                        partnerRepliedAfter = true;
-                        break;
-                    }
-                }
-                
-                // Si NO ha respondido, mostramos el "Visto".
-                if (!partnerRepliedAfter) {
-                    const readStatus = document.createElement('div');
-                    readStatus.className = 'read-status'; 
-                    readStatus.textContent = 'Visto';
-                    
-                    messagesContainer.appendChild(readStatus); 
-                }
-            }
-        });
-        
-        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        if (input) {
+            input.disabled = !canChat;
+            input.placeholder = canChat 
+                ? 'Escribe un mensaje...' 
+                : (myMood === '😴' ? 'Selecciona tu estado para chatear.' : 'El chat está pausado o tu pareja no está.');
+        }
+        if (sendBtn) {
+            sendBtn.disabled = !canChat;
+        }
     }
+
+    function renderMoods() {
+        const moodList = document.getElementById('moodList');
+        if (!moodList) return;
+
+        moodList.innerHTML = '';
+        Object.keys(MOODS).forEach(emoji => {
+            const button = document.createElement('button');
+            button.className = `mood-btn ${emoji === myMood ? 'selected' : ''}`;
+            button.textContent = emoji;
+            button.dataset.mood = emoji;
+            button.onclick = () => selectMood(emoji);
+            moodList.appendChild(button);
+        });
+    }
+
+    function updateMyMoodButton(emoji) {
+        myMood = emoji;
+        sessionStorage.setItem("myMood", emoji);
+        const myMoodBtn = document.getElementById('openMoodModal');
+        if (myMoodBtn) {
+            myMoodBtn.textContent = emoji;
+        }
+    }
+    
+    // --- Lógica de Modales y Acciones ---
+
+    function openModal(modalId) {
+        document.getElementById(modalId)?.classList.add('active');
+    }
+
+    function closeModal(modalId) {
+        document.getElementById(modalId)?.classList.remove('active');
+    }
+
+    function openMessageActionsModal(message) {
+        if (message.sender !== currentUser) return; // Solo puedo hacer acciones en mis mensajes
+        
+        const modal = document.getElementById('messageActionsModal');
+        const selectedMessageText = document.getElementById('selectedMessageText');
+        const markImportantBtn = document.getElementById('markImportantBtn');
+        const replyMessageBtn = document.getElementById('replyMessageBtn');
+
+        if (!modal || !selectedMessageText || !markImportantBtn || !replyMessageBtn) return;
+        
+        // Guardar ID del mensaje
+        modal.dataset.messageId = message.id;
+
+        // Mostrar texto
+        selectedMessageText.textContent = message.text;
+
+        // Configurar botón de Importante
+        if (message.important) {
+            markImportantBtn.textContent = '✅ Marcado como importante';
+            markImportantBtn.disabled = true;
+        } else {
+            markImportantBtn.textContent = '🌟 Marcar como importante';
+            markImportantBtn.disabled = false;
+        }
+
+        // Eventos
+        markImportantBtn.onclick = () => markMessageImportant(message.id);
+        replyMessageBtn.onclick = () => {
+            setReplyContext(message.text, message.id);
+            closeModal('messageActionsModal');
+        };
+
+        openModal('messageActionsModal');
+    }
+    
+    function markMessageImportant(messageId) {
+        const chat = chats[currentChat];
+        if (!chat) return;
+
+        const message = chat.find(m => m.id === messageId);
+        if (message && message.sender === currentUser) {
+            message.important = true;
+            saveData();
+            renderMessages(chat);
+            closeModal('messageActionsModal');
+        }
+    }
+    
+    function setReplyContext(text, id) {
+        replyingToId = id;
+        const replyingToContainer = document.getElementById('replyingToContainer');
+        const replyingToText = document.getElementById('replyingToText');
+        
+        if (replyingToContainer && replyingToText) {
+            replyingToText.textContent = `Respondiendo a: "${text}"`;
+            replyingToContainer.style.display = 'flex';
+        }
+    }
+
+    function cancelReplyContext() {
+        replyingToId = null;
+        const replyingToContainer = document.getElementById('replyingToContainer');
+        if (replyingToContainer) {
+            replyingToContainer.style.display = 'none';
+        }
+    }
+
+    function selectMood(emoji) {
+        myMood = emoji;
+        updateMyMoodButton(emoji);
+        renderMoods(); // Actualiza la selección visual del modal
+        closeModal('moodsContainer');
+        
+        // Notificar a la pareja
+        socket.emit('moodChanged', { sender: currentUser, mood: emoji });
+        
+        // Actualizar display de mi pareja (para habilitar/deshabilitar input)
+        updatePartnerStatusDisplay(partnerMood, partnerStatus); 
+    }
+
+    // --- Lógica de Enviar Mensaje ---
+    function sendMessage() {
+        const input = document.getElementById('messageInput');
+        const text = input.value.trim();
+        
+        if (!text || !currentChat) return;
+
+        const newMessage = {
+            id: Date.now().toString(),
+            sender: currentUser,
+            text: text,
+            timestamp: new Date().toISOString(),
+            read: false,
+            important: false,
+            replyToId: replyingToId,
+            replyToText: null 
+        };
+        
+        // Si es una respuesta, adjuntar el texto original para mostrar en la burbuja
+        if (replyingToId) {
+            const originalMessage = chats[currentChat].find(m => m.id === replyingToId);
+            if (originalMessage) {
+                newMessage.replyToText = originalMessage.text;
+            }
+        }
+
+        chats[currentChat].push(newMessage);
+        saveData();
+        renderMessages(chats[currentChat]);
+        
+        // Enviar por socket
+        socket.emit('sendMessage', { 
+            chatKey: currentChat, 
+            message: newMessage,
+            recipient: partnerName // Para identificar a quién va dirigido
+        });
+
+        // Limpiar
+        input.value = '';
+        cancelReplyContext();
+    }
+    
+    // --- Lógica de Pausa ---
+    function renderPauseButtons() {
+        const buttonsContainer = document.getElementById('pauseTimeButtons');
+        if (!buttonsContainer) return;
+
+        buttonsContainer.innerHTML = '';
+        const pauseTimes = [5, 15, 30, 60]; // Minutos
+
+        pauseTimes.forEach(time => {
+            const button = document.createElement('button');
+            button.className = 'mood-btn';
+            button.textContent = `${time} Min`;
+            button.onclick = () => pauseChat(time);
+            buttonsContainer.appendChild(button);
+        });
+    }
+    
+    function pauseChat(minutes) {
+        // Lógica de pausa: Implementación simplificada (solo notifica)
+        const now = Date.now();
+        const lastPause = parseInt(sessionStorage.getItem('lastPauseTime') || '0', 10);
+        
+        if (now - lastPause < 3600000) { // 3600000ms = 1 hora
+            alert('Solo puedes pausar el chat una vez por hora.');
+            closeModal('pauseTimeModal');
+            return;
+        }
+
+        sessionStorage.setItem('lastPauseTime', now);
+        
+        // Notificar a la pareja sobre la pausa
+        socket.emit('chatPaused', { sender: currentUser, duration: minutes });
+        
+        // Actualizar el estado local (no es persistente, asumo que el servidor lo manejará)
+        updatePartnerStatusDisplay(partnerMood, 'paused');
+        
+        closeModal('pauseTimeModal');
+    }
+
+    // --- Funciones de Cambio de Pantalla ---
 
     function openChat(chatKey) {
         currentChat = chatKey;
+        
+        // 🔴 CRÍTICO: Oculta la pantalla principal
         document.getElementById('mainScreen').classList.remove('active');
+        
+        // 🔴 CRÍTICO: Muestra la pantalla de chat
         document.getElementById('chatScreen').classList.add('active');
         
         document.getElementById('partnerName').textContent = getPartnerName();
@@ -307,6 +425,7 @@ if (loginBtn) {
 
         renderMessages(chats[currentChat]);
 
+        // Notificar que se ha leído el chat
         socket.emit('readChat', { chatKey, reader: currentUser });
 
         const input = document.getElementById('messageInput');
@@ -320,7 +439,11 @@ if (loginBtn) {
 
     function closeChat() {
         currentChat = null;
+        
+        // 🔴 CRÍTICO: Oculta la pantalla de chat
         document.getElementById('chatScreen').classList.remove('active');
+        
+        // 🔴 CRÍTICO: Muestra la pantalla principal
         document.getElementById('mainScreen').classList.add('active');
         
         const input = document.getElementById('messageInput');
@@ -332,151 +455,74 @@ if (loginBtn) {
         renderChatList(); 
     }
 
-    // ----------------------------------------------------
-    // MANEJADORES DE EVENTOS
-    // ----------------------------------------------------
 
-    function handleMessageAction(messageId, messageText, isSent) {
-        const modal = document.getElementById('messageActionsModal');
-        const selectedMessageText = document.getElementById('selectedMessageText');
-        const markImportantBtn = document.getElementById('markImportantBtn');
-        const replyMessageBtn = document.getElementById('replyMessageBtn');
+    // --- Configuración de Eventos ---
 
-        selectedMessageText.textContent = messageText;
+    if (window.location.pathname.endsWith('index.html')) {
+        document.getElementById('sendMessageBtn')?.addEventListener('click', sendMessage);
+        document.getElementById('messageInput')?.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+        document.getElementById('openMoodModal')?.addEventListener('click', () => openModal('moodsContainer'));
+        document.getElementById('openPauseModal')?.addEventListener('click', () => openModal('pauseTimeModal'));
+        document.getElementById('backToMain')?.addEventListener('click', closeChat);
+        document.getElementById('cancelReplyBtn')?.addEventListener('click', cancelReplyContext);
 
-        markImportantBtn.disabled = true;
-        markImportantBtn.onclick = null;
-        replyMessageBtn.onclick = null;
-
-        // CRÍTICO: Solo se pueden marcar como importantes los mensajes propios (isSent=true)
-        if (isSent) {
-            markImportantBtn.disabled = false;
-            const chat = chats[currentChat];
-            const message = chat.find(msg => msg.id === messageId);
-            // Actualiza el texto del botón basado en el estado actual
-            markImportantBtn.textContent = message.important ? '⭐ Quitar importante' : '🌟 Marcar como importante';
-
-            markImportantBtn.onclick = () => {
-                markMessageImportant(messageId);
-                toggleModal('messageActionsModal', false);
-            };
-        } else {
-             markImportantBtn.textContent = '🌟 (Solo mensajes propios)';
-        }
-
-        // Lógica de respuesta 
-        replyMessageBtn.onclick = () => {
-            replyToMessageId = messageId;
-            // Aquí puedes agregar lógica visual para mostrar que estás respondiendo
-            toggleModal('messageActionsModal', false);
-            document.getElementById('messageInput').focus();
-        };
-
-
-        toggleModal('messageActionsModal', true);
-    }
-
-    function markMessageImportant(messageId) {
-        const chat = chats[currentChat];
-        const message = chat.find(msg => msg.id === messageId);
-        if (message && message.sender === currentUser) { 
-            message.important = !message.important;
-            saveData();
-            renderMessages(chat);
-            socket.emit('messageUpdate', { chatKey: currentChat, messageId: message.id, important: message.important });
-        }
-    }
-    
-    function sendMessage() {
-        const input = document.getElementById('messageInput');
-        const text = input.value.trim();
-        if (text === '' || !currentChat) return;
-
-        const newMessage = {
-            id: generateMessageId(),
-            sender: currentUser,
-            text: text,
-            timestamp: Date.now(),
-            read: false,
-            important: false,
-            replyTo: replyToMessageId 
-        };
-        
-        chats[currentChat].push(newMessage);
-        saveData();
-        renderMessages(chats[currentChat]);
-
-        socket.emit('sendMessage', { chatKey: currentChat, message: newMessage, receiver: getPartnerName() });
-
-        input.value = ''; 
-        replyToMessageId = null; 
-        
-        input.focus(); 
-    }
-
-    function handlePause(duration) {
-        console.log(`Pausa solicitada por ${duration / 60000} minutos.`);
-        toggleModal('pauseTimeModal', false);
-        // Implementar lógica de deshabilitar input, guardar estado y emitir a socket.
-    }
-    
-    function renderPauseButtons() {
-        const container = document.getElementById('pauseTimeButtons');
-        if (!container) return;
-
-        container.innerHTML = '';
-        PAUSE_TIMES.forEach(item => {
-            const btn = document.createElement('button');
-            btn.className = 'btn mood-btn'; // Usamos la clase mood-btn para estilo de grid
-            btn.textContent = item.label;
-            btn.onclick = () => handlePause(item.duration);
-            container.appendChild(btn);
+        // Eventos para cerrar modales (delegación)
+        document.querySelectorAll('.modal-backdrop').forEach(modal => {
+            modal.addEventListener('click', (e) => {
+                if (e.target.classList.contains('modal-backdrop')) {
+                    closeModal(modal.id);
+                }
+            });
         });
 
-        document.getElementById('pauseChatBtn')?.addEventListener('click', () => toggleModal('pauseTimeModal', true));
+        document.querySelectorAll('.close-modal-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const targetId = e.currentTarget.dataset.modalTarget || e.currentTarget.closest('.modal-backdrop')?.id;
+                if (targetId) {
+                    closeModal(targetId);
+                }
+            });
+        });
     }
 
-
-    // ----------------------------------------------------
-    // ASIGNACIÓN DE EVENTOS Y SOCKETS
-    // ----------------------------------------------------
-
-    document.getElementById('backToMain')?.addEventListener('click', closeChat);
-    // 🔴 CRÍTICO: Al crear un nuevo chat, usa la fecha de hoy como clave
-    document.getElementById('addChatBtn')?.addEventListener('click', () => openChat(formatDateKey())); 
-    document.getElementById('sendMessageBtn')?.addEventListener('click', sendMessage);
-    document.getElementById('messageInput')?.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            sendMessage();
-        }
-    });
+    // --- Lógica de Socket.IO ---
 
     // Lógica de RECEPCIÓN DE MENSAJES
-    socket.on('receiveMessage', (data) => {
-        if (data.receiver === currentUser) {
-            const chat = chats[data.chatKey];
-            if (chat) {
-                chat.push(data.message);
-                saveData();
-                
-                if (data.chatKey === currentChat) {
-                    renderMessages(chat);
-                    socket.emit('readChat', { chatKey: currentChat, reader: currentUser });
-                } else {
-                    renderChatList(); 
-                }
+    socket.on("receiveMessage", (data) => { 
+        if (data.recipient === currentUser) {
+            const { chatKey, message } = data;
+
+            if (!chats[chatKey]) {
+                chats[chatKey] = [];
             }
+            chats[chatKey].push(message);
+            saveData();
+
+            // Si el chat está abierto, renderiza el nuevo mensaje y notifica que se ha leído
+            if (currentChat === chatKey) {
+                renderMessages(chats[currentChat]);
+                socket.emit('readChat', { chatKey, reader: currentUser });
+            }
+            renderChatList(); // Siempre actualiza la lista para el conteo de no leídos
         }
     });
-    
+
     // Lógica de CONFIRMACIÓN DE LECTURA
-    socket.on('messageRead', (data) => {
-        if (data.reader !== currentUser && data.chatKey === currentChat) {
-            const chat = chats[data.chatKey];
+    socket.on("chatRead", (data) => {
+        if (data.reader === currentUser) return; // Solo nos interesa si la pareja lee
+
+        const { chatKey } = data;
+        const chat = chats[chatKey];
+
+        if (chat) {
             chat.forEach(msg => {
-                // Solo marcar como leído si yo lo envié
-                if (msg.sender === currentUser) {
+                // Marca como leído todo lo que el otro usuario haya enviado
+                if (msg.sender !== data.reader) { 
                      msg.read = true;
                 }
             });
@@ -501,6 +547,17 @@ if (loginBtn) {
         }
     });
 
+    // --- Lógica de RECEPCIÓN DE PAUSA ---
+    socket.on("chatPaused", (data) => {
+        if (data.sender === getPartnerName()) {
+            // Nota: Esto es solo un ejemplo. Idealmente el servidor manejaría el tiempo.
+            // Aquí, simplemente actualizamos el estado visual de la pareja a "paused"
+            updatePartnerStatusDisplay(partnerMood, 'paused');
+            alert(`El chat fue pausado por ${getPartnerName()} por ${data.duration} minutos.`);
+        }
+    });
+
+
 // =======================================================
 // C. INICIALIZACIÓN 
 // =======================================================
@@ -508,20 +565,24 @@ if (loginBtn) {
     // Si estamos en la interfaz principal (index.html), ejecutamos el setup
     if (window.location.pathname.endsWith('index.html')) {
         
+        // 1. Asegurarse de que el chat de hoy exista 
         const todayKey = formatDateKey();
         if (!chats[todayKey]) {
             chats[todayKey] = [];
             saveData();
         }
         
-        // 🔴 CRÍTICO: Asegura que la lista de chats se renderice al inicio
+        // 2. Renderizar la lista de chats y los modales
         renderChatList(); 
         renderMoods();
         renderPauseButtons();
         updateMyMoodButton(myMood);
         
+        // 3. Inicializar el estado de la pareja
+        // Al cargar, asumimos offline hasta que el servidor confirme el estado real.
         updatePartnerStatusDisplay(partnerMood, 'offline'); 
         
+        // 4. Pedir al servidor el estado de ánimo y conexión real de la pareja
         socket.emit('requestPartnerStatus'); 
     }
     
