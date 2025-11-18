@@ -29,7 +29,7 @@ loginBtn.addEventListener("click", () => {
     // Guardado SOLO durante la sesión actual
     sessionStorage.setItem("currentUser", user);
 
-    window.location.href = "index.html";
+    window.location.href = "menu.html";
 });
 
 // Permitir Enter

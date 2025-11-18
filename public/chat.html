@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+    <title>Conversación</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="chat.css" /> 
+    <link rel="icon" href="favicon.ico" />
+
+    <script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+
+<script>
+    // Lógica de redirección a login si no hay usuario (redundante pero seguro)
+    const currentUser = sessionStorage.getItem("currentUser");
+    if (!currentUser) {
+        window.location.href = "login.html"; 
+    }
+</script>
+
+
+<div class="app-container">
+    
+    <section class="screen active" id="chatScreen">
+        
+        <div class="chat-header">
+            <button id="backToMain" class="back-btn" aria-label="Volver al menú">←</button>
+            <div class="partner-info">
+                <div id="partnerName" class="partner-name">Nombre del Chat</div>
+                <div id="partnerStatus" class="partner-status">En línea</div>
+            </div>
+            <button id="openMoodModalChat" class="my-mood-btn" aria-label="Cambiar estado emocional">😴</button> 
+        </div>
+
+        <div id="messageContainer" class="message-container">
+            <div class="chat-message them">Hola!</div>
+            <div class="chat-message me">¿Cómo estás?</div>
+        </div>
+
+        <div id="replyingToContainer" class="reply-context">
+            <span id="replyingToText"></span>
+            <button id="cancelReplyBtn" class="btn small">X</button>
+        </div>
+
+        <div class="input-area">
+            <textarea id="messageInput" placeholder="Escribí un mensaje..." rows="1"></textarea>
+            <button id="sendMessageBtn" class="btn primary" disabled>Enviar</button>
+        </div>
+        
+    </section>
+    
+</div>
+
+<div id="messageActionsModal" class="modal-backdrop">
+    <div class="modal-content">
+        <button class="close-modal-btn" data-modal-target="messageActionsModal" aria-label="Cerrar modal">X</button>
+        <h3>Mensaje Seleccionado</h3>
+        <p id="selectedMessageText">Texto del mensaje...</p>
+        <div class="action-buttons">
+            <button id="replyMessageBtn" class="btn">↩️ Responder</button>
+            <button id="markImportantBtn" class="btn">🌟 Marcar como importante</button>
+        </div>
+        <button class="btn small primary close-modal-btn" data-modal-target="messageActionsModal">Cerrar</button>
+    </div>
+</div>
+
+<script src="chat.js"></script> </body>
+</html>

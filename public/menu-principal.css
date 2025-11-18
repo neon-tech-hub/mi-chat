@@ -1,0 +1,220 @@
+/* ======================================================= */
+/* menu-principal.css */
+/* Estilos para la estructura principal y la vista del menú (mainScreen) */
+/* ======================================================= */
+
+/* --------------------------- */
+/* RESET Y VARIABLES GLOBALES (BASE) */
+/* --------------------------- */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: "Inter", Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+:root{
+    --bg: #0d0d0f; 
+    --panel: #141416; 
+    --muted: #a8a8a8; 
+    --primary: #0095f6; 
+    --accent-gradient: linear-gradient(135deg, #f58529, #dd2a7b, #8134af, #515bd4);
+    --bubble-them: #262626; 
+    --important: #ffcc00; 
+    --shadow: 0 6px 18px rgba(0,0,0,0.6);
+    --read-status-color: #7d7d7d; 
+    
+    /* Colores para el círculo emocional */
+    --mood-enamorado: #dd2a7b; 
+    --mood-happy: #ffcc00; 
+    --mood-cansado: #7d7d7d; 
+    --mood-enojado: #ff3b30;
+    --mood-triste: #007aff;
+    --mood-estresado: #ff9500;
+    --mood-porhablar: #5ac8fa; 
+    --mood-default: #555555;
+    
+    /* Variables de pausa */
+    --pause-color: #8B0000;
+    --pause-bg: #400000;
+}
+
+/* ESTRUCTURA BASE Y MANEJO DE PANTALLAS (Full Screen) */
+
+html, body {
+    margin: 0;
+    padding: 0;
+    height: 100vh; /* Altura completa de la vista */
+    width: 100%;
+    overflow: hidden; 
+}
+
+.app-container {
+    display: flex;
+    flex-direction: column; 
+    width: 100%;
+    height: 100vh; 
+    overflow: hidden; 
+    background-color: var(--bg);
+    color: #fff;
+}
+
+.app-header {
+    height: 60px;
+    padding: 0 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: var(--panel);
+    border-bottom: 1px solid #262626;
+    flex-shrink: 0; 
+    z-index: 10;
+}
+
+/* 🔴 CRÍTICO: Reglas para la alternancia de pantallas */
+.app-container > .screen {
+    display: none; 
+    width: 100%;
+    height: 100%; 
+    flex-grow: 1; 
+    overflow: hidden;
+}
+
+.app-container > .screen.active {
+    display: flex; 
+    flex-direction: column;
+    width: 100%;
+    height: 100%; 
+    flex-grow: 1; 
+}
+
+
+/* ======================================================= */
+/* PANTALLA PRINCIPAL (#mainScreen) */
+/* ======================================================= */
+
+#mainScreen {
+    display: flex; 
+    flex-direction: column; 
+    width: 100%;
+    height: 100%; 
+    overflow-y: auto; /* Permitir scroll vertical en la lista de chats */
+}
+
+/* Sidebar es la lista de chats en sí */
+.sidebar {
+    width: 100%; 
+    flex-shrink: 0; 
+}
+
+/* Zona central de estado (Zona Verde) */
+.main-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 30px 15px;
+    gap: 20px;
+    text-align: center;
+    border-bottom: 1px solid var(--bubble-them);
+}
+.partner-status-display { /* ... */ }
+.emoji-circle { /* ... */ }
+/* ... Todos los estilos de Círculo Emocional, Moods y Estados (.mood-*, .status-*) ... */
+.status-header { /* ... */ }
+.online-dot { /* ... */ }
+.partner-mood-display { /* ... */ }
+/* ... */
+.emotional-warning { /* ... */ }
+
+.chat-list-header {
+    font-size: 1.2rem;
+    font-weight: 600;
+    padding: 15px;
+    border-bottom: 1px solid var(--bubble-them);
+}
+
+
+/* Lista de Chats (Chat List) */
+
+#chatList {
+    width: 100%;
+    padding: 0;
+}
+
+.chat-item { /* ... */ }
+.chat-item:hover { /* ... */ }
+.chat-item.unread { /* ... */ }
+.chat-item .avatar { /* ... */ }
+.chat-item .meta { /* ... */ }
+.chat-item .chat-name { /* ... */ }
+.chat-item .chat-last { /* ... */ }
+.chat-item .chat-date { /* ... */ }
+.chat-item .unread-count { /* ... */ }
+
+/* --------------------------- */
+/* Botones de Acción (General) */
+/* --------------------------- */
+
+.btn { /* ... */ }
+.btn.primary { /* ... */ }
+.btn.secondary { /* ... */ }
+.btn.small { /* ... */ }
+.btn:hover { /* ... */ }
+.btn:disabled { /* ... */ }
+.add-chat { /* ... */ }
+.add-chat:hover { /* ... */ }
+
+
+/* --------------------------- */
+/* Modales de Menú (Mood y Pausa) */
+/* --------------------------- */
+
+.modal-backdrop { /* ... */ }
+.modal-backdrop.active { /* ... */ }
+.modal-content { /* ... */ }
+.close-modal-btn { /* ... */ }
+.mood-modal h3, .modal-content h3 { /* ... */ }
+.mood-modal p, .modal-content p { /* ... */ }
+.mood-list { /* ... */ }
+.mood-btn { /* ... */ }
+.mood-btn:hover { /* ... */ }
+.mood-btn.selected { /* ... */ }
+
+
+/* --------------------------- */
+/* Media Queries (Desktop - Relevante para MainScreen) */
+/* --------------------------- */
+
+@media (min-width: 769px) {
+    #mainScreen.active {
+        display: grid;
+        grid-template-columns: 350px 1fr; 
+        flex-direction: initial; 
+        overflow: hidden; 
+    }
+
+    .sidebar {
+        width: 350px;
+        height: 100%; 
+        border-right: 1px solid var(--bubble-them); 
+        overflow-y: auto; 
+    }
+    
+    .main-content {
+        width: 100%;
+        height: 100%;
+        border-bottom: none;
+    }
+    
+    .chat-list-header {
+        border-bottom: none;
+    }
+    
+    .chat-item .avatar {
+        display: flex; 
+    }
+}

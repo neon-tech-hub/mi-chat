@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+    <title>Chat Principal</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="menu-principal.css" /> 
+    <link rel="icon" href="favicon.ico" />
+
+    <script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+
+<script>
+    // Lógica de redirección a login si no hay usuario
+    const currentUser = sessionStorage.getItem("currentUser");
+    if (!currentUser) {
+        window.location.href = "login.html"; 
+    }
+</script>
+
+
+<div class="app-container">
+
+    <header class="app-header">
+        <div class="brand">
+            <div class="brand-text">Chat para Conectar</div>
+        </div>
+        <button id="openMoodModal" class="my-mood-btn" aria-label="Cambiar estado emocional">😴</button> 
+    </header>
+
+    <main class="screen active" id="mainScreen">
+        
+        <div class="sidebar">
+            <div class="main-content">
+                <div class="partner-status-display" data-status="online" data-mood="cansado">
+                    <div id="partnerMood" class="emoji-circle mood-cansado">😴</div>
+                    <div id="statusHeader" class="status-header">Pareja | En línea</div>
+                </div>
+                
+                <p id="emotionalWarning" class="emotional-warning">Tu pareja se siente cansada. Es un buen momento para una charla tranquila.</p>
+                
+                <button id="openPauseTimeModal" class="btn secondary">Pausar Conversación</button>
+            </div>
+            
+            <div class="chat-list-header">Chats</div>
+            
+            <div id="chatList" class="chat-list">
+                <div class="chat-item" data-chat-id="1">
+                    <div class="avatar">P</div>
+                    <div class="meta">
+                        <div class="chat-name">Mi Pareja</div>
+                        <div class="chat-last">¡Hola! ¿Cómo te fue hoy?</div>
+                    </div>
+                    <div class="meta-right">
+                        <div class="chat-date">Ahora</div>
+                        <div class="unread-count">1</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+    
+</div>
+
+<div id="moodsContainer" class="modal-backdrop" aria-hidden="true">
+    <div class="modal-content mood-modal">
+        <button class="close-modal-btn" data-modal-target="moodsContainer" aria-label="Cerrar modal">X</button>
+        <h3>¿Cómo te sentís hoy?</h3>
+        <p>Seleccioná tu estado para habilitar el chat.</p>
+        <div id="moodList" class="mood-list">
+            </div>
+    </div>
+</div>
+
+<div id="pauseTimeModal" class="modal-backdrop">
+    <div class="modal-content">
+        <button class="close-modal-btn" data-modal-target="pauseTimeModal" aria-label="Cerrar modal">X</button> 
+        <h3>Seleccioná el tiempo de Pausa</h3>
+        <p>Recordá: solo podés pausar el chat una vez por hora.</p>
+        <div id="pauseTimeButtons" class="mood-list">
+            </div>
+    </div>
+</div>
+
+<script src="menu.js"></script> </body>
+</html>

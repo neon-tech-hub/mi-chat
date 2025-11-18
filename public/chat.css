@@ -1,0 +1,155 @@
+/* ======================================================= */
+/* chat.css */
+/* Estilos para la vista de conversación (chatScreen) */
+/* ======================================================= */
+
+/* --------------------------- */
+/* RESET Y VARIABLES GLOBALES (BASE) */
+/* --------------------------- */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: "Inter", Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+:root{
+    --bg: #0d0d0f; 
+    --panel: #141416; 
+    --muted: #a8a8a8; 
+    --primary: #0095f6; 
+    --bubble-me: #0095f6;
+    --bubble-them: #262626; 
+    --important: #ffcc00; 
+    --shadow: 0 6px 18px rgba(0,0,0,0.6);
+    --read-status-color: #7d7d7d; 
+}
+
+/* ESTRUCTURA BASE Y MANEJO DE PANTALLAS (Full Screen) */
+
+html, body {
+    margin: 0;
+    padding: 0;
+    height: 100vh; /* Altura completa de la vista */
+    width: 100%;
+    overflow: hidden; 
+}
+
+.app-container {
+    display: flex;
+    flex-direction: column; 
+    width: 100%;
+    height: 100vh; 
+    overflow: hidden; 
+    background-color: var(--bg);
+    color: #fff;
+}
+
+/* 🔴 CRÍTICO: Reglas para la alternancia de pantallas */
+.app-container > .screen {
+    display: none; 
+    width: 100%;
+    height: 100%; 
+    flex-grow: 1; 
+    overflow: hidden;
+}
+
+.app-container > .screen.active {
+    display: flex; 
+    flex-direction: column;
+    width: 100%;
+    height: 100%; 
+    flex-grow: 1; 
+}
+
+/* ======================================================= */
+/* PANTALLA DE CHAT (#chatScreen) */
+/* ======================================================= */
+
+#chatScreen {
+    /* 🔴 CRÍTICO: Nos aseguramos de que el chat siempre sea Full Screen dentro del .app-container */
+    display: flex; 
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    flex-grow: 1;
+    overflow: hidden;
+}
+
+.chat-header {
+    display: flex;
+    align-items: center;
+    padding: 10px 15px;
+    gap: 10px;
+    background-color: var(--panel);
+    border-bottom: 1px solid #262626;
+    flex-shrink: 0;
+}
+.chat-header .back-btn { /* ... */ }
+.chat-header .partner-info { /* ... */ }
+.chat-header .partner-name { /* ... */ }
+.chat-header .partner-status { /* ... */ }
+.chat-header .my-mood-btn { /* ... */ }
+
+/* Contenedor de Mensajes */
+.message-container {
+    flex-grow: 1;
+    overflow-y: auto;
+    padding: 10px 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-content: flex-end; 
+    flex-wrap: wrap; 
+}
+
+/* Burbujas de Mensajes */
+.chat-message { /* ... */ }
+.chat-message.me { /* ... */ }
+.chat-message.them { /* ... */ }
+.chat-message.me .meta-info { /* ... */ }
+.chat-message.them .meta-info { /* ... */ }
+.chat-message.important { /* ... */ }
+.chat-message.reply { /* ... */ }
+.reply-box { /* ... */ }
+.chat-message.me .reply-box { /* ... */ }
+.meta-info { /* ... */ }
+.status-icon { /* ... */ }
+.status-icon.read { /* ... */ }
+
+/* Área de Input */
+.input-area {
+    display: flex;
+    padding: 10px 15px;
+    gap: 10px;
+    background-color: var(--panel);
+    border-top: 1px solid #262626;
+    flex-shrink: 0;
+}
+#messageInput { /* ... */ }
+.input-area button { /* ... */ }
+.input-area button:disabled { /* ... */ }
+#replyingToContainer { /* ... */ }
+#replyingToText { /* ... */ }
+#cancelReplyBtn { /* ... */ }
+
+/* --------------------------- */
+/* Modales de Chat (Acciones de mensaje) */
+/* --------------------------- */
+
+/* NOTA: Las reglas de .btn generales también deberían estar aquí si esta pantalla fuera independiente. 
+   Como no lo es, solo incluimos los estilos de la modal de acciones de mensaje. */
+
+.modal-backdrop { /* ... */ }
+.modal-backdrop.active { /* ... */ }
+.modal-content { /* ... */ }
+.close-modal-btn { /* ... */ }
+#selectedMessageText { /* ... */ }
+.action-buttons { /* ... */ }
+.action-buttons button { /* ... */ }
+#replyMessageBtn { /* ... */ }
+#markImportantBtn { /* ... */ }
+#markImportantBtn:disabled { /* ... */ }
