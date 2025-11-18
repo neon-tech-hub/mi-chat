@@ -118,7 +118,7 @@ html, body {
     padding: 15px 20px 10px;
     background-color: var(--panel);
     border-bottom: 1px solid #262626;
-    position: sticky; /* Fija el header de estado */
+    position: sticky; 
     top: 0;
     z-index: 10;
 }
@@ -166,7 +166,7 @@ html, body {
 }
 
 /* --------------------------- */
-/* LISTA DE CHATS (NUEVOS ESTILOS) */
+/* LISTA DE CHATS */
 /* --------------------------- */
 
 .chat-list-section {
@@ -181,7 +181,7 @@ html, body {
     padding: 15px;
     background-color: var(--bg); 
     position: sticky;
-    top: 50px; /* Ajustado para quedar debajo del status header si éste es sticky */
+    top: 50px; 
     z-index: 5;
     border-bottom: 1px solid var(--bubble-them);
 }
@@ -242,14 +242,13 @@ html, body {
     font-weight: 600;
     font-size: 1rem;
     color: #fff;
-    /* Para que el nombre no empuje la hora a otra línea */
     white-space: nowrap; 
     overflow: hidden;
     text-overflow: ellipsis;
     padding-right: 10px; 
 }
 
-.chat-item .chat-meta-info { /* Reemplaza .chat-date */
+.chat-item .chat-meta-info { 
     font-size: 0.75rem;
     color: var(--muted);
     font-weight: 400;
@@ -374,14 +373,14 @@ html, body {
 .mood-modal h3, .mood-modal p {
     margin-bottom: 10px;
 }
-.mood-options { /* Contenedor de botones de moods (Antiguo) */
+.mood-options { 
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
     gap: 10px;
     margin-top: 15px;
 }
-.mood-option-btn { /* Botones grandes (Antiguo) */
+.mood-option-btn { 
     background: var(--bubble-them);
     color: #fff;
     border: none;
