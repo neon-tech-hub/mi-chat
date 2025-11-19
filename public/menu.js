@@ -1,5 +1,5 @@
 // =======================================================
-// menu.js (COMPLETO Y CORREGIDO)
+// menu.js (SOLO CHATS TEMÁTICOS)
 // Lógica para la PÁGINA PRINCIPAL / LISTA DE CHATS
 // =======================================================
 
@@ -9,13 +9,12 @@
     // -------------------
     const currentUser = sessionStorage.getItem("currentUser");
     if (!currentUser) {
-        // En un entorno real, redirigirías a login.html si no hay usuario.
         console.error("Usuario no autenticado.");
         return;
     }
 
     const partnerName = currentUser === 'Leo' ? 'Estefi' : 'Leo';
-    // ✅ CLAVE: Claves de los chats temáticos
+    // ✅ CLAVE: Solo las claves de los chats temáticos
     const TOPIC_CHATS = ['discutir', 'consolar', 'debatir']; 
     
     let chats = JSON.parse(localStorage.getItem(`chats_${currentUser}`)) || {};
@@ -40,7 +39,7 @@
     const getPartnerName = () => partnerName;
     const formatDateKey = (date = new Date()) => date.toISOString().split('T')[0];
 
-    // ✅ NUEVO: Función para obtener la hora formateada
+    // Función para obtener la hora formateada
     const formatTime = (timestamp) => {
         if (!timestamp) return '';
         const date = new Date(timestamp);
@@ -52,7 +51,7 @@
         localStorage.setItem(`chats_${currentUser}`, JSON.stringify(chats));
     };
 
-    // Actualiza la visualización del estado de la pareja
+    // Actualiza la visualización del estado de la pareja (SIN CAMBIOS)
     const updatePartnerStatusDisplay = (mood, status) => {
         const partnerMoodEmoji = document.getElementById("partnerMoodEmoji");
         const statusHeader = document.getElementById("statusHeader");
@@ -71,7 +70,6 @@
             classList = "status-paused";
             partnerMoodEmoji.textContent = '⏸️'; 
         } else if (status === 'online') {
-            // Se muestra el texto del mood si está en línea
             text = `En línea: ${MOODS[mood]?.text || "Desconocido"}`;
             classList = MOODS[mood]?.class || "status-online";
             partnerMoodEmoji.textContent = mood; 
@@ -86,7 +84,7 @@
         myMoodButton.disabled = false;
     };
 
-    // Actualiza el emoji de mi propio estado de ánimo
+    // Actualiza el emoji de mi propio estado de ánimo (SIN CAMBIOS)
     const updateMyMoodButton = (mood) => {
         const myMoodButton = document.getElementById("openMoodModal");
         if (!myMoodButton) return;
@@ -97,7 +95,7 @@
     };
 
     // =======================================================
-    // D. RENDERIZADO Y UI (CORREGIDO PARA MÚLTIPLES CHATS)
+    // D. RENDERIZADO Y UI (SOLO TÓPICOS)
     // =======================================================
     
     const renderChatList = () => {
@@ -108,53 +106,36 @@
         
         let chatItems = [];
         
-        // Filtrar claves: solo fechas (daily chats) y claves temáticas (topic chats)
-        const allChatKeys = Object.keys(chats).filter(key => 
-            key.match(/^\d{4}-\d{2}-\d{2}$/) || TOPIC_CHATS.includes(key)
-        );
+        // ✅ CLAVE: Solo usar las claves de los chats temáticos
+        const keysToShow = TOPIC_CHATS; 
 
-        allChatKeys.forEach(chatKey => {
+        keysToShow.forEach(chatKey => {
             const chatDay = chats[chatKey];
             if (!chatDay) return;
 
-            const isTopic = TOPIC_CHATS.includes(chatKey);
+            const isTopic = TOPIC_CHATS.includes(chatKey); // Siempre true en esta nueva lógica
             
             // --- 1. Definir Metadata ---
             const lastMessage = chatDay.length > 0 
                 ? chatDay[chatDay.length - 1] 
                 : { 
-                    text: isTopic 
-                        ? `Toca para empezar a ${chatKey}` 
-                        : 'Toca para empezar tu chat diario.', 
+                    // Mensaje inicial para chats vacíos
+                    text: `Toca para empezar a ${chatKey}`, 
                     sender: 'System', 
-                    // Usar timestamp bajo para ordenar si no hay mensajes. Si es chat diario, usamos la fecha.
-                    timestamp: chatDay.length > 0 ? chatDay[chatDay.length - 1].timestamp : (isTopic ? 1 : new Date(chatKey).getTime()) 
+                    // Usamos un timestamp muy bajo (0) para que los vacíos queden al final si se mezclan
+                    timestamp: chatDay.length > 0 ? chatDay[chatDay.length - 1].timestamp : 0 
                 };
             
             const unreadCount = chatDay.filter(m => m.sender !== currentUser && !m.read).length;
 
-            let displayTitle = partnerName;
-            let initial = partnerName.charAt(0).toUpperCase();
-            let displayMeta = ''; // Hora o Fecha
-
-            if (isTopic) {
-                // Título es el nombre del tópico ("Discutir")
-                displayTitle = chatKey.charAt(0).toUpperCase() + chatKey.slice(1); 
-                initial = displayTitle.charAt(0);
-                displayMeta = chatDay.length > 0 ? formatTime(lastMessage.timestamp) : '';
-            } else {
-                // Chat Diario (Fecha)
-                const todayKey = formatDateKey();
-                displayTitle = todayKey === chatKey ? 'Chat Diario Hoy' : partnerName; // Puede ser el nombre de la pareja o 'Chat Diario Hoy'
-                initial = partnerName.charAt(0).toUpperCase();
-                displayMeta = chatKey === todayKey
-                    ? formatTime(lastMessage.timestamp) // Mostrar hora para "Hoy"
-                    : new Date(chatKey).toLocaleDateString('es-AR', { day: 'numeric', month: 'short' });
-            }
+            // Para chats temáticos, el título es el tópico y la inicial es la primera letra
+            const displayTitle = chatKey.charAt(0).toUpperCase() + chatKey.slice(1); 
+            const initial = displayTitle.charAt(0);
+            const displayMeta = chatDay.length > 0 ? formatTime(lastMessage.timestamp) : '';
             
             // Determinar si el último mensaje fue mío o de la pareja
             const senderPrefix = lastMessage.sender === currentUser ? 'Tú: ' : 
-                                 (lastMessage.sender !== 'System' ? `${partnerName}: ` : '');
+            (lastMessage.sender !== 'System' ? `${partnerName}: ` : '');
             
             // Truncar el mensaje
             const truncatedText = lastMessage.text.substring(0, 40) + (lastMessage.text.length > 40 ? '...' : '');
@@ -174,11 +155,11 @@
         chatItems.sort((a, b) => b.lastMessage.timestamp - a.lastMessage.timestamp);
         
         if (chatItems.length === 0) {
-            chatListContainer.innerHTML = '<p class="no-chats">¡Aún no hay chats! Selecciona tu estado para empezar.</p>';
+            chatListContainer.innerHTML = '<p class="no-chats">Error: No se encontraron chats temáticos. ¡Revisa la configuración!</p>';
             return;
         }
 
-        // 3. Generar el HTML
+        // 3. Generar el HTML (SIN CAMBIOS)
         chatItems.forEach(item => {
             const unreadBadge = item.unreadCount > 0 ? `<div class="unread-count">${item.unreadCount}</div>` : '';
             const metaHtml = item.meta ? `<div class="chat-meta-info">${item.meta}</div>` : '';
@@ -204,21 +185,19 @@
             chatListContainer.innerHTML += chatItemHTML;
         });
 
-        // 4. Agregar Event Listeners
+        // 4. Agregar Event Listeners (SIN CAMBIOS)
         chatListContainer.querySelectorAll('.chat-item').forEach(item => {
             item.addEventListener('click', () => {
-                // ✅ CORRECCIÓN CLAVE: Usamos .dataset.chatKey (camelCase)
                 const chatKey = item.dataset.chatKey; 
-                
-                // Almacenar la clave para que chat.js la use
                 sessionStorage.setItem('currentChatKey', chatKey); 
                 window.location.href = `chat.html?chatKey=${chatKey}`;
             });
         });
     };
 
-    // Renderiza los botones de estado de ánimo en el modal
+    // Renderiza los botones de estado de ánimo en el modal (SIN CAMBIOS)
     const renderMoods = () => {
+        // ... (Tu código actual de renderMoods)
         const moodList = document.getElementById("moodList");
         if (!moodList) return;
         
@@ -233,11 +212,9 @@
             
             button.addEventListener('click', () => {
                 updateMyMoodButton(emoji);
-                // Cerrar modal
                 const moodsContainer = document.getElementById('moodsContainer');
                 if (moodsContainer) moodsContainer.classList.remove('active');
                 
-                // Emitir el evento al servidor
                 socket.emit('moodChanged', { 
                     user: currentUser, 
                     mood: emoji,
@@ -250,7 +227,7 @@
     };
     
     // =======================================================
-    // E. MANEJO DE EVENTOS (Modales)
+    // E. MANEJO DE EVENTOS (Modales - SIN CAMBIOS)
     // =======================================================
     
     // Manejo del modal de estados de ánimo
@@ -263,7 +240,7 @@
         });
     }
 
-    // Listener para cerrar Modales (La 'X')
+    // Listener para cerrar Modales
     document.querySelectorAll('.close-modal-btn').forEach(button => {
         button.addEventListener('click', (e) => {
             const target = e.target.closest('.close-modal-btn');
@@ -278,7 +255,7 @@
     });
 
     // =======================================================
-    // F. LÓGICA DE SOCKET.IO
+    // F. LÓGICA DE SOCKET.IO (SIN CAMBIOS SIGNIFICATIVOS)
     // =======================================================
     
     socket.on('connect', () => {
@@ -313,10 +290,10 @@
         }
     });
     
-    // ✅ Nuevo mensaje: usa data.chatKey si existe, sino, usa el diario de hoy.
     socket.on("newMessage", (data) => {
         if (data.sender !== getPartnerName()) return; 
         
+        // Usa data.chatKey si existe, sino, usa el diario de hoy (aunque no se muestre)
         const chatKey = data.chatKey || formatDateKey(); 
         
         if (!chats[chatKey]) {
@@ -336,20 +313,16 @@
 
 
     // =======================================================
-    // G. INICIALIZACIÓN DE menu.html (INCLUYE CHATS TEMÁTICOS)
+    // G. INICIALIZACIÓN DE menu.html (SOLO TEMÁTICOS)
     // =======================================================
 
-    // 1. Asegurarse de que el chat de hoy Y los chats de tópicos existan 
-    const todayKey = formatDateKey();
-    if (!chats[todayKey]) {
-        chats[todayKey] = [];
-    }
-    // ✅ CLAVE: Inicializar los chats temáticos si no existen
+    // ✅ CLAVE: Solo inicializar los chats temáticos si no existen
     TOPIC_CHATS.forEach(key => {
         if (!chats[key]) {
             chats[key] = [];
         }
     });
+    // Eliminamos la inicialización del chat diario por defecto
     saveData();
     
     // 2. Renderizar la lista de chats y el modal de estados de ánimo
