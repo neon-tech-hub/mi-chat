@@ -203,9 +203,10 @@
         });
     };
 
-    // ✅ CORRECCIÓN CLAVE 3: Función que renderiza los emojis (estaba ahí, pero debe ser correcta)
+    // ✅ CORRECCIÓN CLAVE 3: Función que renderiza los emojis
     const renderMoods = () => {
-        const moodList = document.getElementById("moodList");
+        // CORREGIDO: Usar el ID 'moodOptions' que está en el HTML
+        const moodList = document.getElementById("moodOptions"); 
         if (!moodList) return;
         
         moodList.innerHTML = '';

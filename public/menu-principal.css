@@ -321,11 +321,21 @@ html, body {
     padding: 5px;
 }
 
-.mood-list {
+/* ⚠️ Nota de consistencia: Tu HTML usa la clase 'mood-options', 
+   pero el CSS usa 'mood-list'. Para que funcione con el estilo actual:
+   DEBES ASEGURARTE DE QUE TU HTML USE LA CLASE 'mood-list' O CAMBIAR ESTO
+   Si usas el HTML que enviaste, el estilo de grid no funcionará, a menos que uses la clase 'mood-options'.
+   Para arreglarlo en el CSS (asumiendo que no quieres tocar el HTML):
+*/
+/* .mood-options (si el HTML usa mood-options) */
+.mood-options { 
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 15px;
 }
+/* Y asegúrate de que, si existía, la clase .mood-list sea reemplazada por .mood-options en el CSS,
+   o que tu HTML use la clase .mood-list para el contenedor. */
+
 
 .mood-btn {
     width: 100%;
