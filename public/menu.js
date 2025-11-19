@@ -1,5 +1,5 @@
 // =======================================================
-// menu.js (SOLO CHATS TEMÁTICOS)
+// menu.js (SOLO CHATS TEMÁTICOS - VERSIÓN DEFINITIVA)
 // Lógica para la PÁGINA PRINCIPAL / LISTA DE CHATS
 // =======================================================
 
@@ -46,12 +46,20 @@
         return date.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
     };
 
-    // Guarda los datos en localStorage
+    // 🔴 CORRECCIÓN CLAVE 1: Solo guarda las claves temáticas (elimina chats diarios)
     const saveData = () => {
-        localStorage.setItem(`chats_${currentUser}`, JSON.stringify(chats));
+        // Al guardar, SOLO guardamos las claves temáticas
+        const filteredChats = {};
+        TOPIC_CHATS.forEach(key => {
+            if (chats[key]) {
+                filteredChats[key] = chats[key];
+            }
+        });
+        
+        localStorage.setItem(`chats_${currentUser}`, JSON.stringify(filteredChats));
     };
 
-    // Actualiza la visualización del estado de la pareja (SIN CAMBIOS)
+    // Actualiza la visualización del estado de la pareja
     const updatePartnerStatusDisplay = (mood, status) => {
         const partnerMoodEmoji = document.getElementById("partnerMoodEmoji");
         const statusHeader = document.getElementById("statusHeader");
@@ -84,7 +92,7 @@
         myMoodButton.disabled = false;
     };
 
-    // Actualiza el emoji de mi propio estado de ánimo (SIN CAMBIOS)
+    // Actualiza el emoji de mi propio estado de ánimo
     const updateMyMoodButton = (mood) => {
         const myMoodButton = document.getElementById("openMoodModal");
         if (!myMoodButton) return;
@@ -106,38 +114,37 @@
         
         let chatItems = [];
         
-        // ✅ CLAVE: Solo usar las claves de los chats temáticos
+        // Solo usar las claves de los chats temáticos
         const keysToShow = TOPIC_CHATS; 
 
         keysToShow.forEach(chatKey => {
             const chatDay = chats[chatKey];
-            if (!chatDay) return;
+            // Si por alguna razón el chat temático no existe en 'chats', lo inicializamos
+            if (!chatDay) {
+                chats[chatKey] = [];
+                return; // Continuar al siguiente chat si no está
+            } 
 
-            const isTopic = TOPIC_CHATS.includes(chatKey); // Siempre true en esta nueva lógica
+            const isTopic = true; 
             
             // --- 1. Definir Metadata ---
             const lastMessage = chatDay.length > 0 
                 ? chatDay[chatDay.length - 1] 
                 : { 
-                    // Mensaje inicial para chats vacíos
                     text: `Toca para empezar a ${chatKey}`, 
                     sender: 'System', 
-                    // Usamos un timestamp muy bajo (0) para que los vacíos queden al final si se mezclan
                     timestamp: chatDay.length > 0 ? chatDay[chatDay.length - 1].timestamp : 0 
                 };
             
             const unreadCount = chatDay.filter(m => m.sender !== currentUser && !m.read).length;
 
-            // Para chats temáticos, el título es el tópico y la inicial es la primera letra
             const displayTitle = chatKey.charAt(0).toUpperCase() + chatKey.slice(1); 
             const initial = displayTitle.charAt(0);
             const displayMeta = chatDay.length > 0 ? formatTime(lastMessage.timestamp) : '';
             
-            // Determinar si el último mensaje fue mío o de la pareja
             const senderPrefix = lastMessage.sender === currentUser ? 'Tú: ' : 
-            (lastMessage.sender !== 'System' ? `${partnerName}: ` : '');
+                                (lastMessage.sender !== 'System' ? `${partnerName}: ` : '');
             
-            // Truncar el mensaje
             const truncatedText = lastMessage.text.substring(0, 40) + (lastMessage.text.length > 40 ? '...' : '');
 
             chatItems.push({
@@ -155,11 +162,11 @@
         chatItems.sort((a, b) => b.lastMessage.timestamp - a.lastMessage.timestamp);
         
         if (chatItems.length === 0) {
-            chatListContainer.innerHTML = '<p class="no-chats">Error: No se encontraron chats temáticos. ¡Revisa la configuración!</p>';
+            chatListContainer.innerHTML = '<p class="no-chats">No se encontraron chats temáticos. ¡Revisa la configuración!</p>';
             return;
         }
 
-        // 3. Generar el HTML (SIN CAMBIOS)
+        // 3. Generar el HTML
         chatItems.forEach(item => {
             const unreadBadge = item.unreadCount > 0 ? `<div class="unread-count">${item.unreadCount}</div>` : '';
             const metaHtml = item.meta ? `<div class="chat-meta-info">${item.meta}</div>` : '';
@@ -185,7 +192,7 @@
             chatListContainer.innerHTML += chatItemHTML;
         });
 
-        // 4. Agregar Event Listeners (SIN CAMBIOS)
+        // 4. Agregar Event Listeners
         chatListContainer.querySelectorAll('.chat-item').forEach(item => {
             item.addEventListener('click', () => {
                 const chatKey = item.dataset.chatKey; 
@@ -197,7 +204,6 @@
 
     // Renderiza los botones de estado de ánimo en el modal (SIN CAMBIOS)
     const renderMoods = () => {
-        // ... (Tu código actual de renderMoods)
         const moodList = document.getElementById("moodList");
         if (!moodList) return;
         
@@ -227,7 +233,7 @@
     };
     
     // =======================================================
-    // E. MANEJO DE EVENTOS (Modales - SIN CAMBIOS)
+    // E. MANEJO DE EVENTOS (Modales)
     // =======================================================
     
     // Manejo del modal de estados de ánimo
@@ -255,7 +261,7 @@
     });
 
     // =======================================================
-    // F. LÓGICA DE SOCKET.IO (SIN CAMBIOS SIGNIFICATIVOS)
+    // F. LÓGICA DE SOCKET.IO
     // =======================================================
     
     socket.on('connect', () => {
@@ -290,12 +296,19 @@
         }
     });
     
+    // 🔴 CORRECCIÓN CLAVE 2: Solo guarda mensajes si tienen una clave de chat temático
     socket.on("newMessage", (data) => {
         if (data.sender !== getPartnerName()) return; 
         
-        // Usa data.chatKey si existe, sino, usa el diario de hoy (aunque no se muestre)
+        // Obtiene la clave, o la fecha de hoy si no viene (la que no queremos guardar)
         const chatKey = data.chatKey || formatDateKey(); 
         
+        // Si el mensaje NO pertenece a un chat temático, lo ignoramos y salimos.
+        if (!TOPIC_CHATS.includes(chatKey)) {
+            console.log(`Mensaje del chat diario ignorado: ${chatKey}`);
+            return; 
+        }
+
         if (!chats[chatKey]) {
             chats[chatKey] = [];
         }
@@ -316,21 +329,21 @@
     // G. INICIALIZACIÓN DE menu.html (SOLO TEMÁTICOS)
     // =======================================================
 
-    // ✅ CLAVE: Solo inicializar los chats temáticos si no existen
+    // 1. Inicializar los chats temáticos si no existen
     TOPIC_CHATS.forEach(key => {
         if (!chats[key]) {
             chats[key] = [];
         }
     });
-    // Eliminamos la inicialización del chat diario por defecto
-    saveData();
+    // 2. Guardar los datos. La función saveData ahora filtra las claves de fecha automáticamente.
+    saveData(); 
     
-    // 2. Renderizar la lista de chats y el modal de estados de ánimo
+    // 3. Renderizar la lista de chats y el modal de estados de ánimo
     renderChatList(); 
     renderMoods();
     updateMyMoodButton(myMood);
     
-    // 3. Inicializar el estado de la pareja
+    // 4. Inicializar el estado de la pareja
     partnerMood = sessionStorage.getItem("partnerMood") || "?";
     updatePartnerStatusDisplay(partnerMood, 'offline'); 
     
