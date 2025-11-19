@@ -48,7 +48,6 @@
 
     // 🔴 CORRECCIÓN CLAVE 1: Solo guarda las claves temáticas (elimina chats diarios)
     const saveData = () => {
-        // Al guardar, SOLO guardamos las claves temáticas
         const filteredChats = {};
         TOPIC_CHATS.forEach(key => {
             if (chats[key]) {
@@ -119,31 +118,33 @@
 
         keysToShow.forEach(chatKey => {
             const chatDay = chats[chatKey];
-            // Si por alguna razón el chat temático no existe en 'chats', lo inicializamos
+            // Si por alguna razón el chat temático no existe en 'chats', lo inicializamos para renderizarlo vacío
             if (!chatDay) {
                 chats[chatKey] = [];
-                return; // Continuar al siguiente chat si no está
             } 
+            
+            // Re-obtener la referencia después de la posible inicialización
+            const currentChatMessages = chats[chatKey];
 
             const isTopic = true; 
             
             // --- 1. Definir Metadata ---
-            const lastMessage = chatDay.length > 0 
-                ? chatDay[chatDay.length - 1] 
+            const lastMessage = currentChatMessages.length > 0 
+                ? currentChatMessages[currentChatMessages.length - 1] 
                 : { 
                     text: `Toca para empezar a ${chatKey}`, 
                     sender: 'System', 
-                    timestamp: chatDay.length > 0 ? chatDay[chatDay.length - 1].timestamp : 0 
+                    timestamp: currentChatMessages.length > 0 ? currentChatMessages[currentChatMessages.length - 1].timestamp : 0 
                 };
             
-            const unreadCount = chatDay.filter(m => m.sender !== currentUser && !m.read).length;
+            const unreadCount = currentChatMessages.filter(m => m.sender !== currentUser && !m.read).length;
 
             const displayTitle = chatKey.charAt(0).toUpperCase() + chatKey.slice(1); 
             const initial = displayTitle.charAt(0);
-            const displayMeta = chatDay.length > 0 ? formatTime(lastMessage.timestamp) : '';
+            const displayMeta = currentChatMessages.length > 0 ? formatTime(lastMessage.timestamp) : '';
             
             const senderPrefix = lastMessage.sender === currentUser ? 'Tú: ' : 
-                                (lastMessage.sender !== 'System' ? `${partnerName}: ` : '');
+                                 (lastMessage.sender !== 'System' ? `${partnerName}: ` : '');
             
             const truncatedText = lastMessage.text.substring(0, 40) + (lastMessage.text.length > 40 ? '...' : '');
 
@@ -202,7 +203,7 @@
         });
     };
 
-    // Renderiza los botones de estado de ánimo en el modal (SIN CAMBIOS)
+    // ✅ CORRECCIÓN CLAVE 3: Función que renderiza los emojis (estaba ahí, pero debe ser correcta)
     const renderMoods = () => {
         const moodList = document.getElementById("moodList");
         if (!moodList) return;
@@ -236,7 +237,6 @@
     // E. MANEJO DE EVENTOS (Modales)
     // =======================================================
     
-    // Manejo del modal de estados de ánimo
     const openMoodBtn = document.getElementById('openMoodModal');
     const moodsContainer = document.getElementById('moodsContainer');
     
@@ -246,7 +246,6 @@
         });
     }
 
-    // Listener para cerrar Modales
     document.querySelectorAll('.close-modal-btn').forEach(button => {
         button.addEventListener('click', (e) => {
             const target = e.target.closest('.close-modal-btn');
@@ -305,8 +304,8 @@
         
         // Si el mensaje NO pertenece a un chat temático, lo ignoramos y salimos.
         if (!TOPIC_CHATS.includes(chatKey)) {
-            console.log(`Mensaje del chat diario ignorado: ${chatKey}`);
-            return; 
+             console.log(`Mensaje del chat diario ignorado: ${chatKey}`);
+             return; 
         }
 
         if (!chats[chatKey]) {
@@ -326,7 +325,7 @@
 
 
     // =======================================================
-    // G. INICIALIZACIÓN DE menu.html (SOLO TEMÁTICOS)
+    // G. INICIALIZACIÓN DE menu.html
     // =======================================================
 
     // 1. Inicializar los chats temáticos si no existen
@@ -340,7 +339,7 @@
     
     // 3. Renderizar la lista de chats y el modal de estados de ánimo
     renderChatList(); 
-    renderMoods();
+    renderMoods(); 
     updateMyMoodButton(myMood);
     
     // 4. Inicializar el estado de la pareja
