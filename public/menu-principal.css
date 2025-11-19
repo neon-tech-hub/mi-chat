@@ -1,10 +1,10 @@
 /* ======================================================= */
-/* menu-principal.css (COMPLETO Y CORREGIDO) */
-/* Estilos para la estructura principal y la vista del menú (Estilo Dark) */
+/* menu-principal.css - ESTILO MODERNO Y MINIMALISTA */
+/* Centrado en la Conexión y la Intención (Dark Mode Elegante) */
 /* ======================================================= */
 
 /* --------------------------- */
-/* RESET Y VARIABLES GLOBALES (BASE) */
+/* RESET Y VARIABLES GLOBALES */
 /* --------------------------- */
 
 * {
@@ -17,124 +17,101 @@
 }
 
 :root{
-    --bg: #0d0d0f; 
-    --panel: #141416; 
-    --muted: #a8a8a8; 
-    --primary: #0095f6; /* Azul */
-    --accent-gradient: linear-gradient(45deg, #f58529, #dd2a7b, #8134af); /* Degradado llamativo */
-    --bubble-them: #262626; 
-    --important: #ffcc00; 
-    --shadow: 0 6px 18px rgba(0,0,0,0.6);
+    --bg: #101014;           /* Fondo Oscuro Principal */
+    --panel: #1e1e24;         /* Fondo de Paneles/Elementos */
+    --muted: #9a9aa8;         /* Texto Secundario/Suave */
+    --text-primary: #f0f0f5;  /* Texto Principal Blanco */
+    --primary: #5A7EFC;       /* Azul Suave (Para énfasis) */
+    --accent-dark: #303038;   /* Para líneas divisorias y bordes */
+    --bubble-them: #2a2a33;   /* Fondo de chats/items */
+    --important: #ffcc00;     /* Amarillo */
+    --shadow: 0 4px 12px rgba(0,0,0,0.4);
     
     /* Colores para el círculo emocional */
-    --mood-enamorado: #dd2a7b; 
-    --mood-happy: #ffcc00; 
-    --mood-cansado: #4a4a4a; 
-    --mood-enojado: #cc0000; 
-    --mood-triste: #0056b3; 
-    --mood-estresado: #ff6600;
-    --mood-porhablar: #00bcd4;
-
-    --status-online: #2ecc71;
-    --status-paused: #e74c3c;
-    --status-offline: var(--muted);
+    --mood-enamorado: #fc5a95;
+    --mood-happy: #ffcc00;
+    --mood-cansado: #5a7e8f;
+    --mood-enojado: #fc5a5a;
+    --mood-triste: #5a7efc;
+    --mood-estresado: #7e5a8f;
+    --mood-porhablar: #5afcb6;
 }
 
 html, body {
     height: 100vh;
     width: 100%;
     margin: 0;
-    padding: 0;
     background-color: var(--bg);
-    color: #fff;
-    overflow: hidden; 
+    color: var(--text-primary);
+    overflow: hidden; /* Para manejar la app como una pantalla única */
 }
-
-/* --------------------------- */
-/* ESTRUCTURA GENERAL DEL MENÚ */
-/* --------------------------- */
 
 .app-container {
     display: flex;
     flex-direction: column;
     height: 100vh;
-    max-width: 600px;
+    max-width: 500px; /* Limitar el ancho para vista móvil */
     margin: 0 auto;
-    background-color: var(--panel); 
+    box-shadow: var(--shadow);
 }
 
-/* Header */
+/* --------------------------- */
+/* ENCABEZADO Y ESTADO */
+/* --------------------------- */
+
 .app-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     padding: 15px 20px;
     background-color: var(--panel);
-    border-bottom: 1px solid #262626;
-    flex-shrink: 0;
+    border-bottom: 1px solid var(--accent-dark);
+    flex-shrink: 0; /* Evitar que el header se achique */
 }
+
 .brand .logo-text {
     font-size: 1.2rem;
     font-weight: 700;
-    background: var(--accent-gradient);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-}
-.my-mood-btn {
-    background: var(--bubble-them);
-    color: #fff;
-    border: none;
-    border-radius: 50%;
-    width: 40px;
-    height: 40px;
-    font-size: 1.2rem;
-    cursor: pointer;
-    transition: transform 0.2s;
-    flex-shrink: 0;
-}
-.my-mood-btn:hover {
-    transform: scale(1.1);
+    color: var(--primary); /* El título resalta con el color primario */
 }
 
-/* Main Content */
-.screen {
-    flex-grow: 1;
-    overflow-y: auto; 
-    display: none;
-    background-color: var(--bg);
-}
-.screen.active {
-    display: block;
+.my-mood-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--bubble-them);
+    border: none;
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: background 0.2s;
 }
 
 /* --------------------------- */
-/* ESTADO DE LA PAREJA (HEADER) */
+/* SECCIÓN DE ESTADO Y MENSAJE EMOCIONAL */
 /* --------------------------- */
 
 .partner-status-header {
     display: flex;
+    flex-direction: column;
     align-items: center;
-    gap: 10px;
-    padding: 15px 20px 10px;
-    background-color: var(--panel);
-    border-bottom: 1px solid #262626;
-    position: sticky; 
-    top: 0;
-    z-index: 10;
+    padding: 25px 20px 15px;
+    background-color: var(--bg);
 }
+
 .partner-mood-display {
-    width: 40px;
-    height: 40px;
+    width: 60px;
+    height: 60px;
     border-radius: 50%;
     display: flex;
     justify-content: center;
     align-items: center;
-    font-size: 1.2rem;
-    border: 3px solid var(--status-offline); 
-    transition: border-color 0.3s;
+    font-size: 1.8rem;
+    margin-bottom: 10px;
+    box-shadow: var(--shadow);
+    border: 3px solid transparent; /* Base */
+    transition: all 0.3s;
 }
-
-/* Clases dinámicas de Mood y Status */
+/* Estilos dinámicos */
 .partner-mood-display.mood-enamorado { border-color: var(--mood-enamorado); }
 .partner-mood-display.mood-happy { border-color: var(--mood-happy); }
 .partner-mood-display.mood-cansado { border-color: var(--mood-cansado); }
@@ -142,196 +119,156 @@ html, body {
 .partner-mood-display.mood-triste { border-color: var(--mood-triste); }
 .partner-mood-display.mood-estresado { border-color: var(--mood-estresado); }
 .partner-mood-display.mood-porhablar { border-color: var(--mood-porhablar); }
+.partner-mood-display.status-paused { border-color: #6a00ff; }
+.partner-mood-display.status-offline { border-color: var(--muted); opacity: 0.7; }
+
 
 .partner-status-text {
+    color: var(--muted);
+    font-size: 0.9rem;
     font-weight: 600;
-    color: #fff;
+    text-align: center;
+    min-height: 18px; /* Evita saltos de layout */
 }
-.partner-status-text.offline {
-    color: var(--status-offline);
-}
-.partner-status-text.paused {
-    color: var(--status-paused);
-}
-
 
 .emotional-message-box {
-    padding: 10px 20px;
+    margin: 0 20px 20px;
+    padding: 12px 15px;
+    background-color: var(--bubble-them);
+    border-radius: 8px;
+    font-size: 0.85rem;
     color: var(--muted);
-    font-style: italic;
-    font-size: 0.9rem;
     text-align: center;
-    border-bottom: 1px solid #262626;
-    background-color: var(--panel);
+    font-style: italic;
+    border: 1px solid var(--accent-dark);
 }
 
 /* --------------------------- */
-/* LISTA DE CHATS */
+/* LISTA DE CHATS (TEMÁTICOS) */
 /* --------------------------- */
 
 .chat-list-section {
-    flex-grow: 1;
-    overflow-y: auto; 
+    flex-grow: 1; /* Ocupa el espacio restante */
     background-color: var(--bg);
+    overflow-y: auto;
+    padding: 0 0 10px;
+    border-top: 1px solid var(--accent-dark); /* Línea de separación sutil */
 }
 
 .chat-list-header {
-    font-size: 1.1rem;
-    font-weight: 600;
-    padding: 15px;
-    background-color: var(--bg); 
-    position: sticky;
-    top: 50px; 
-    z-index: 5;
-    border-bottom: 1px solid var(--bubble-them);
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    padding: 15px 20px 10px;
+    text-transform: uppercase;
 }
 
-#chatList {
-    width: 100%;
-    padding: 0;
+.chat-list {
+    display: flex;
+    flex-direction: column;
 }
 
-/* Contenedor del ítem */
 .chat-item {
     display: flex;
     align-items: center;
-    padding: 12px 15px;
-    gap: 15px;
-    border-bottom: 1px solid var(--panel); 
+    padding: 12px 20px;
     cursor: pointer;
-    transition: background-color 0.1s;
-}
-.chat-item:hover {
-    background-color: var(--bubble-them);
+    transition: background-color 0.2s;
+    border-bottom: 1px solid var(--accent-dark); /* Separador sutil */
 }
 
-/* AVATAR (Círculo con inicial) */
+.chat-item:last-child {
+    border-bottom: none;
+}
+
+.chat-item:hover {
+    background-color: var(--panel);
+}
+
 .chat-avatar {
-    width: 50px;
-    height: 50px;
-    border-radius: 50%;
-    background-color: var(--bubble-them); 
+    width: 48px;
+    height: 48px;
+    border-radius: 12px; /* Avatar cuadrado/redondeado para tópicos */
+    background-color: var(--primary);
+    color: var(--text-primary);
     display: flex;
     justify-content: center;
     align-items: center;
-    font-weight: 600;
-    font-size: 1.1rem; 
+    font-size: 1.1rem;
+    font-weight: 700;
     flex-shrink: 0;
-    color: #fff; 
-    border: 1px solid var(--primary); 
 }
 
-/* META (Información principal: Nombre, Mensaje) */
-.chat-item .meta {
+.meta {
     flex-grow: 1;
-    display: flex;
-    flex-direction: column;
+    margin-left: 15px;
     overflow: hidden;
 }
 
-/* LÍNEA DE NOMBRE Y HORA/FECHA */
-.chat-item .chat-name-line {
+.chat-name-line {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    width: 100%;
-    margin-bottom: 2px;
 }
 
-.chat-item .chat-name {
+.chat-name {
     font-weight: 600;
     font-size: 1rem;
-    color: #fff;
-    white-space: nowrap; 
-    overflow: hidden;
-    text-overflow: ellipsis;
-    padding-right: 10px; 
+    color: var(--text-primary);
 }
 
-.chat-item .chat-meta-info { 
+.chat-meta-info {
     font-size: 0.75rem;
     color: var(--muted);
-    font-weight: 400;
-    flex-shrink: 0; 
+    flex-shrink: 0;
+    margin-left: 10px;
 }
 
-/* Último mensaje */
-.chat-item .chat-last {
+.chat-last {
     font-size: 0.9rem;
     color: var(--muted);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: 100%;
+    margin-top: 2px;
 }
 
-/* PREFIJO DEL REMITENTE */
-.chat-item .chat-last .sender-prefix {
-    font-weight: 600;
-    margin-right: 4px;
-    color: var(--muted); 
-}
-
-/* CONTADOR NO LEÍDO */
-.chat-item .status-info { 
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    justify-content: center;
-    margin-left: 10px;
-    flex-shrink: 0;
-}
-.chat-item .unread-count {
-    background-color: var(--primary);
-    color: white;
-    font-size: 0.75rem;
-    font-weight: 600;
-    border-radius: 10px;
-    padding: 2px 7px;
-    min-width: 20px;
-    text-align: center;
-    height: auto;
-}
-/* Estilo para items con mensajes no leídos */
-.chat-item.unread .chat-last {
-    color: white; 
-    font-weight: 600;
-}
-.chat-item.unread .chat-last .sender-prefix {
-    color: white;
-}
-
-
-.no-chats {
-    padding: 20px;
-    text-align: center;
+.sender-prefix {
+    font-weight: 500;
     color: var(--muted);
 }
 
-/* --------------------------- */
-/* BOTONES Y MODALES */
-/* --------------------------- */
-
-.btn {
-    padding: 8px 15px;
-    border-radius: 6px;
-    font-weight: 600;
-    cursor: pointer;
-    border: none;
-    transition: opacity 0.2s;
+.message-text {
+    font-weight: 400;
 }
-.btn.primary {
+
+.status-info {
+    margin-left: 15px;
+    flex-shrink: 0;
+}
+
+.unread-count {
     background-color: var(--primary);
     color: #fff;
+    font-size: 0.75rem;
+    font-weight: 700;
+    border-radius: 12px;
+    padding: 2px 7px;
+    min-width: 24px;
+    text-align: center;
+    display: inline-block;
 }
-.btn.secondary {
-    background-color: var(--bubble-them);
-    color: #fff;
+
+.no-chats {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--muted);
+    font-style: italic;
 }
-.btn.small {
-    padding: 5px 10px;
-    font-size: 0.85rem;
-}
+
+/* --------------------------- */
+/* ESTILOS DE MODALES (MOODS) */
+/* --------------------------- */
 
 .modal-backdrop {
     position: fixed;
@@ -339,7 +276,7 @@ html, body {
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.8);
+    background-color: rgba(0, 0, 0, 0.85); /* Más oscuro */
     display: none;
     justify-content: center;
     align-items: center;
@@ -350,14 +287,25 @@ html, body {
 }
 .modal-content {
     background-color: var(--panel);
-    padding: 20px;
-    border-radius: 12px;
+    padding: 25px;
+    border-radius: 16px;
     width: 90%;
-    max-width: 400px;
+    max-width: 450px;
     position: relative;
     box-shadow: var(--shadow);
     text-align: center;
 }
+
+.modal-content h3 {
+    margin-bottom: 5px;
+    color: var(--primary);
+}
+.modal-content p {
+    color: var(--muted);
+    margin-bottom: 20px;
+    font-size: 0.9rem;
+}
+
 .close-modal-btn {
     position: absolute;
     top: 10px;
@@ -365,68 +313,33 @@ html, body {
     background: none;
     border: none;
     color: var(--muted);
-    font-size: 1.2rem;
+    font-size: 1.1rem;
     cursor: pointer;
+    padding: 5px;
 }
 
-/* Modal de Mood */
-.mood-modal h3, .mood-modal p {
-    margin-bottom: 10px;
-}
-.mood-options { 
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 10px;
-    margin-top: 15px;
-}
-.mood-option-btn { 
-    background: var(--bubble-them);
-    color: #fff;
-    border: none;
-    padding: 10px 15px;
-    border-radius: 8px;
-    font-size: 1.5rem;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 5px;
-    cursor: pointer;
-    transition: background-color 0.2s;
-    width: calc(50% - 5px); 
-}
-.mood-option-btn .mood-text {
-    font-size: 0.7rem;
-    font-weight: 600;
-}
-.mood-option-btn:hover {
-    background-color: #333;
+.mood-list {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
 }
 
-/* Nuevo contenedor de botones de mood para el modal actualizado */
-#moodList {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    justify-content: center;
-}
 .mood-btn {
-    width: 80px;
-    height: 80px;
-    border-radius: 50%;
-    font-size: 2rem;
-    background-color: var(--bubble-them);
+    width: 100%;
+    aspect-ratio: 1 / 1; /* Hacer los botones cuadrados */
+    border-radius: 12px;
+    font-size: 2.5rem;
     border: 3px solid transparent;
+    background-color: var(--bubble-them);
     cursor: pointer;
     transition: all 0.2s;
 }
-.mood-btn:hover {
-    transform: scale(1.05);
-}
-.mood-btn.mood-enamorado { border-color: var(--mood-enamorado); }
-.mood-btn.mood-happy { border-color: var(--mood-happy); }
-.mood-btn.mood-cansado { border-color: var(--mood-cansado); }
-.mood-btn.mood-enojado { border-color: var(--mood-enojado); }
-.mood-btn.mood-triste { border-color: var(--mood-triste); }
-.mood-btn.mood-estresado { border-color: var(--mood-estresado); }
-.mood-btn.mood-porhablar { border-color: var(--mood-porhablar); }
+
+/* Aplicar el color de ánimo al borde del botón al hacer hover */
+.mood-btn.mood-enamorado:hover { border-color: var(--mood-enamorado); }
+.mood-btn.mood-happy:hover { border-color: var(--mood-happy); }
+.mood-btn.mood-cansado:hover { border-color: var(--mood-cansado); }
+.mood-btn.mood-enojado:hover { border-color: var(--mood-enojado); }
+.mood-btn.mood-triste:hover { border-color: var(--mood-triste); }
+.mood-btn.mood-estresado:hover { border-color: var(--mood-estresado); }
+.mood-btn.mood-porhablar:hover { border-color: var(--mood-porhablar); }
