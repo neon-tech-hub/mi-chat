@@ -46,7 +46,7 @@
         return date.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
     };
 
-    // 🔴 CORRECCIÓN CLAVE 1: Solo guarda las claves temáticas (elimina chats diarios)
+    // Solo guarda las claves temáticas (elimina chats diarios)
     const saveData = () => {
         const filteredChats = {};
         TOPIC_CHATS.forEach(key => {
@@ -203,9 +203,9 @@
         });
     };
 
-    // ✅ CORRECCIÓN CLAVE 3: Función que renderiza los emojis
+    // Función que renderiza los emojis
     const renderMoods = () => {
-        // CORREGIDO: Usar el ID 'moodOptions' que está en el HTML
+        // ✅ CORRECCIÓN: Usar el ID 'moodOptions' del HTML
         const moodList = document.getElementById("moodOptions"); 
         if (!moodList) return;
         
@@ -296,7 +296,7 @@
         }
     });
     
-    // 🔴 CORRECCIÓN CLAVE 2: Solo guarda mensajes si tienen una clave de chat temático
+    // Solo guarda mensajes si tienen una clave de chat temático
     socket.on("newMessage", (data) => {
         if (data.sender !== getPartnerName()) return; 
         
