@@ -14,13 +14,16 @@
 <body>
 
 <script>
-    // Lógica de redirección a login si no hay usuario (redundante pero seguro)
+    // Lógica de redirección a login si no hay usuario
     const currentUser = sessionStorage.getItem("currentUser");
     if (!currentUser) {
         window.location.href = "login.html"; 
     }
-    // Lógica para asegurar que hay un chat seleccionado
-    if (!sessionStorage.getItem('currentChatDate')) {
+    
+    // ✅ CORRECCIÓN CLAVE: Lógica para asegurar que hay un chat seleccionado
+    // Verifica que el parámetro 'chatKey' exista en la URL, que es lo que menu.js envía.
+    const chatKey = new URLSearchParams(window.location.search).get('chatKey');
+    if (!chatKey) {
         window.location.href = "menu.html"; 
     }
 </script>
@@ -34,15 +37,13 @@
             <button id="backToMain" class="back-btn" aria-label="Volver al menú">←</button>
             <div class="partner-info">
                 <div id="partnerName" class="partner-name">Nombre del Chat</div>
-                <div id="partnerStatus" class="partner-status">Estado...</div>
+                <div id="partnerStatus" class="partner-status">Estado de la pareja</div>
             </div>
             <button id="openMoodModalChat" class="my-mood-btn" aria-label="Cambiar estado emocional">😴</button> 
         </div>
 
         <div id="messageContainer" class="message-container">
-            <div class="chat-message them">Hola!</div>
-            <div class="chat-message me">¿Cómo estás?</div>
-        </div>
+            </div>
 
         <div id="replyingToContainer" class="reply-context">
             <span id="replyingToText"></span>
