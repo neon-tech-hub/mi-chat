@@ -24,13 +24,20 @@
     --primary: #5A7EFC;       /* Azul Suave (Para énfasis) */
     --accent-dark: #303038;   /* Para líneas divisorias y bordes */
     --bubble-them: #2a2a33;   /* Burbuja del receptor */
+    --bubble-me: var(--primary); /* Burbuja propia */
     --important: #ffcc00;     /* Amarillo */
-    --insta-gradient: linear-gradient(45deg, #f58529, #dd2a7b, #8134af); /* Gradiente de Instagram */
-    --read-status-color: #5A7EFC; /* Color de doble check */
-
-    /* Colores para el estado de ánimo (Moods - Mismos que menu-principal.css) */
+    --read-status-color: #9a9aa8; /* Color gris para el checkmark */
+    --shadow: 0 0 10px rgba(0,0,0,0.5); /* Sombra suave */
+    
+    /* Colores de estado de ánimo (Deben coincidir con menu-principal.css) */
     --mood-enamorado: #dd2a7b; 
-    --mood-cansado: #505050; 
+    --mood-happy: #ffcc00;     
+    --mood-cansado: #4a4a4a;   
+    --mood-enojado: #ff4d4d;   
+    --mood-triste: #5a5aff;    
+    --mood-estresado: #ff9900; 
+    --mood-ansioso: #00cc99;   
+    --mood-neutral: #9a9aa8;
 }
 
 /* ESTRUCTURA BASE Y MANEJO DE PANTALLAS (Full Screen) */
@@ -38,8 +45,9 @@
 html, body {
     margin: 0;
     padding: 0;
-    height: 100vh;
+    height: 100vh; 
     width: 100%;
+    overflow-x: hidden;
     background-color: var(--bg);
     color: var(--text-primary);
 }
@@ -48,8 +56,9 @@ html, body {
     display: flex;
     flex-direction: column;
     height: 100%;
-    max-width: 500px;
-    margin: 0 auto;
+    max-width: 500px; 
+    margin: 0 auto; 
+    box-shadow: var(--shadow);
     background-color: var(--bg);
 }
 
@@ -57,6 +66,7 @@ html, body {
     display: none;
     flex-direction: column;
     height: 100%;
+    width: 100%;
 }
 .screen.active {
     display: flex;
@@ -69,7 +79,7 @@ html, body {
 .chat-header {
     display: flex;
     align-items: center;
-    padding: 15px;
+    padding: 15px 10px;
     background-color: var(--panel);
     border-bottom: 1px solid var(--accent-dark);
     flex-shrink: 0;
@@ -80,44 +90,71 @@ html, body {
     border: none;
     color: var(--text-primary);
     font-size: 1.5rem;
-    margin-right: 10px;
     cursor: pointer;
-    padding: 5px;
+    padding: 0 10px;
+    margin-right: 5px;
+    transition: color 0.2s;
+}
+.back-btn:hover {
+    color: var(--primary);
 }
 
 .partner-info {
     flex-grow: 1;
-    text-align: left;
+    display: flex;
+    flex-direction: column;
+    margin-right: 15px;
 }
 
 .partner-name {
-    font-size: 1.1rem;
-    font-weight: 600;
+    font-size: 1rem;
+    font-weight: 700;
 }
 
 .partner-status {
     font-size: 0.8rem;
     color: var(--muted);
-    font-weight: 400;
+    transition: color 0.3s;
 }
-/* Estilos para el status de la pareja (debe coincidir con chat.js) */
-.partner-status.status-online { color: var(--primary); }
-.partner-status.status-offline { color: var(--muted); }
-.partner-status.status-paused { color: var(--mood-cansado); }
 
+.partner-status.online {
+    color: var(--primary);
+}
 
-/* Botón de Mood Propio (Círculo de Estado) */
-.my-mood-btn {
+.partner-status.offline {
+    color: var(--muted);
+}
+
+/* El estado de ánimo en el chat */
+.partner-mood-display {
     width: 35px;
     height: 35px;
     border-radius: 50%;
-    background: var(--insta-gradient);
-    border: none;
-    font-size: 1.1rem;
-    cursor: pointer;
-    box-shadow: 0 0 0 3px var(--panel); 
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1rem;
+    background-color: var(--bubble-them); 
+    border: 3px solid var(--mood-neutral); 
+    transition: border-color 0.3s;
+    margin-right: 10px;
 }
+/* Estilos del borde del mood (igual que en menu-principal.css) */
+.partner-mood-display.mood-enamorado { border-color: var(--mood-enamorado); }
+.partner-mood-display.mood-happy { border-color: var(--mood-happy); }
+.partner-mood-display.mood-cansado { border-color: var(--mood-cansado); }
+.partner-mood-display.mood-enojado { border-color: var(--mood-enojado); }
+.partner-mood-display.mood-triste { border-color: var(--mood-triste); }
+.partner-mood-display.mood-estresado { border-color: var(--mood-estresado); }
+.partner-mood-display.mood-ansioso { border-color: var(--mood-ansioso); }
+.partner-mood-display.mood-neutral { border-color: var(--mood-neutral); }
 
+
+.my-mood-btn {
+    /* Usar los estilos definidos en menu-principal.css */
+    /* Aquí solo ajustamos el margen si es necesario */
+    margin-left: auto;
+}
 
 /* --------------------------- */
 /* CONTENEDOR DE MENSAJES */
@@ -125,107 +162,152 @@ html, body {
 
 .message-container {
     flex-grow: 1;
-    padding: 15px;
     overflow-y: auto;
+    padding: 10px 15px;
     display: flex;
     flex-direction: column;
-    gap: 10px;
-    background-color: var(--bg);
+    gap: 8px;
+    -webkit-overflow-scrolling: touch; 
 }
 
 /* Burbujas de Mensajes */
 .chat-message {
     max-width: 80%;
-    padding: 10px 12px;
-    border-radius: 18px;
+    padding: 8px 12px;
+    border-radius: 12px;
     line-height: 1.4;
-    position: relative;
-    font-size: 0.95rem;
     word-wrap: break-word;
+    position: relative;
+    cursor: pointer; /* Para longpress/acciones */
 }
 
-/* Burbuja MÍA (YO) */
+/* Mensajes Propios */
 .chat-message.me {
     align-self: flex-end;
-    background: var(--insta-gradient); /* Usar el degradado de Instagram */
-    color: white;
-    border-bottom-right-radius: 4px; /* Punta del mensaje */
+    background-color: var(--bubble-me);
+    color: #fff;
+    border-top-right-radius: 2px;
 }
 
-/* Burbuja DE ELLOS (Pareja) */
+/* Mensajes de la Pareja */
 .chat-message.them {
     align-self: flex-start;
     background-color: var(--bubble-them);
     color: var(--text-primary);
-    border-bottom-left-radius: 4px; /* Punta del mensaje */
+    border-top-left-radius: 2px;
 }
 
-/* Estado Importante */
+/* Mensaje Importante */
 .chat-message.important {
-    border: 1px solid var(--important);
-    box-shadow: 0 0 5px rgba(255, 204, 0, 0.5);
+    border: 2px solid var(--important);
+    animation: important-pulse 1.5s infinite alternate;
+}
+@keyframes important-pulse {
+    from { box-shadow: 0 0 5px var(--important); }
+    to { box-shadow: 0 0 10px var(--important); }
 }
 
-/* Contexto de Respuesta (Reply) */
-.chat-message.reply {
-    padding-top: 5px; /* Dejar espacio para la caja de respuesta */
-}
+
+/* --------------------------- */
+/* REPLY BOX (Respuesta) */
+/* --------------------------- */
+
 .reply-box {
-    padding: 5px 8px;
-    margin-bottom: 5px;
+    background-color: rgba(255, 255, 255, 0.1); 
+    padding: 5px 10px;
+    margin: -5px -5px 5px -5px; 
     border-radius: 8px;
     border-left: 3px solid var(--primary);
-    background-color: rgba(255, 255, 255, 0.1); /* Fondo semitransparente claro */
     font-size: 0.8rem;
-    opacity: 0.8;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    display: flex;
+    flex-direction: column;
 }
-.chat-message.me .reply-box {
-    background-color: rgba(0, 0, 0, 0.15); /* Más oscuro en el degradado */
-    border-left-color: white;
-}
+
 .reply-sender {
     font-weight: 700;
-    display: block;
+    color: var(--primary);
     margin-bottom: 2px;
+    font-size: 0.75rem;
 }
+
 .reply-text {
     font-style: italic;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    display: block;
+    color: var(--muted);
 }
 
+/* --------------------------- */
+/* METADATA (Hora y Status) */
+/* --------------------------- */
 
-/* Metadatos (Hora y Estado de Lectura) */
 .meta-info {
     font-size: 0.7rem;
     opacity: 0.8;
     margin-top: 3px;
-    text-align: right;
     display: flex;
-    justify-content: flex-end;
     align-items: center;
     gap: 4px;
 }
 
+.chat-message.me .meta-info {
+    justify-content: flex-end;
+    color: rgba(255, 255, 255, 0.7);
+}
+
 .chat-message.them .meta-info {
+    justify-content: flex-start;
     color: var(--muted);
 }
 
 .status-icon {
-    font-size: 0.6rem;
-    color: var(--muted);
-    font-style: normal;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--read-status-color);
 }
 .status-icon.read {
-    color: var(--read-status-color); /* Color de doble check */
+    color: var(--important); /* Usar el amarillo de importante para el doble check */
 }
 
 
 /* --------------------------- */
-/* ÁREA DE INPUT */
+/* ÁREA DE INPUT Y CONTEXTO DE RESPUESTA */
 /* --------------------------- */
+
+.reply-context {
+    display: none;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 15px;
+    background-color: var(--accent-dark);
+    border-top: 1px solid var(--accent-dark);
+}
+.reply-context.active {
+    display: flex;
+}
+
+#replyingToText {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--muted);
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    flex-grow: 1;
+    margin-right: 10px;
+}
+
+#cancelReplyBtn {
+    /* Estilos del botón pequeño del modal */
+    background-color: var(--panel);
+    color: var(--muted);
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    line-height: 1;
+    flex-shrink: 0;
+}
 
 .input-area {
     display: flex;
@@ -238,74 +320,38 @@ html, body {
 
 #messageInput {
     flex-grow: 1;
-    min-height: 40px;
-    max-height: 120px; /* Limita el crecimiento */
-    padding: 10px 15px;
-    border: 1px solid var(--accent-dark);
+    padding: 10px;
     border-radius: 20px;
-    background-color: var(--bg);
+    border: 1px solid var(--accent-dark);
+    background-color: var(--bubble-them);
     color: var(--text-primary);
     font-size: 1rem;
-    resize: none;
+    resize: none; /* Desactivar resize manual */
+    max-height: 150px; /* Limitar altura */
     overflow-y: auto;
     line-height: 1.4;
-    transition: border-color 0.2s;
-}
-#messageInput:focus {
-    outline: none;
-    border-color: var(--primary);
 }
 #messageInput::placeholder {
     color: var(--muted);
 }
 
 .input-area button {
-    padding: 8px 15px;
+    /* Estilos base de .btn para el botón de enviar */
+    padding: 0 15px; 
     border-radius: 20px;
     font-weight: 600;
     cursor: pointer;
     border: none;
-    background: var(--primary);
-    color: white;
-    transition: opacity 0.2s;
+    flex-shrink: 0;
+    line-height: 40px; /* Altura del botón igual a la línea única del input */
+    height: 40px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 }
-
 .input-area button:disabled {
     opacity: 0.5;
     cursor: not-allowed;
-}
-
-/* Contexto de Respuesta (Banda superior) */
-#replyingToContainer {
-    display: flex;
-    align-items: center;
-    padding: 8px 15px;
-    background-color: #2a2a33; /* Color oscuro sutil */
-    color: var(--text-primary);
-    font-size: 0.9rem;
-    border-top: 1px solid var(--accent-dark);
-    display: none;
-}
-#replyingToContainer.active {
-    display: flex;
-}
-#replyingToText {
-    flex-grow: 1;
-    opacity: 0.8;
-    font-style: italic;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-#cancelReplyBtn {
-    margin-left: 10px;
-    padding: 3px 8px;
-    font-size: 0.8rem;
-    border-radius: 50%;
-    background-color: var(--accent-dark);
-    color: var(--text-primary);
-    border: none;
-    cursor: pointer;
 }
 
 
@@ -314,7 +360,6 @@ html, body {
 /* --------------------------- */
 
 .modal-backdrop {
-    /* ... (Estilos básicos del modal, usar los de menu-principal.css) */
     position: fixed;
     top: 0;
     left: 0;
@@ -341,35 +386,27 @@ html, body {
 }
 .modal-content h3 {
     margin-bottom: 10px;
+    color: var(--primary);
 }
 .modal-content p {
     color: var(--muted);
     margin-bottom: 20px;
+    font-style: italic;
+    word-wrap: break-word;
 }
+
 .action-buttons {
     display: flex;
     flex-direction: column;
     gap: 10px;
-    margin-bottom: 15px;
-}
-.action-buttons button {
-    width: 100%;
-    padding: 10px;
-    border-radius: 8px;
-    font-weight: 600;
-    background-color: var(--bubble-them);
-    color: var(--text-primary);
-    border: none;
-    cursor: pointer;
+    margin-bottom: 20px;
 }
 
-.close-modal-btn {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    background: none;
-    border: none;
-    color: var(--muted);
-    font-size: 1.2rem;
-    cursor: pointer;
+.action-buttons .btn {
+    width: 100%;
+    background-color: var(--primary);
+    color: #fff;
+}
+.action-buttons .btn:last-child {
+    background-color: var(--important);
 }

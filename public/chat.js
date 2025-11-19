@@ -4,18 +4,32 @@
 // =======================================================
 
 (function () {
-    // -------------------
+    // -------------------\
     // VARIABLES Y UTILIDADES
-    // -------------------
+    // -------------------\
     const currentUser = sessionStorage.getItem("currentUser");
     const partnerName = currentUser === 'Leo' ? 'Estefi' : 'Leo';
     let chats = JSON.parse(localStorage.getItem(`chats_${currentUser}`)) || {};
     // ✅ CORRECTO: Obtiene la clave del chat (ej: 'discutir') del URL
     let currentChat = new URLSearchParams(window.location.search).get('chatKey'); 
+    
+    if (!currentChat) {
+        window.location.href = "menu.html"; // Redirigir si no hay chatKey
+        return;
+    }
+
     let partnerMood = sessionStorage.getItem("partnerMood") || "?";
     let partnerStatus = 'offline'; 
     let replyingToId = null; 
     let currentMessages = chats[currentChat] || [];
+    
+    // Elementos del DOM
+    const messageContainer = document.getElementById('messageContainer');
+    const messageInput = document.getElementById('messageInput');
+    const sendMessageBtn = document.getElementById('sendMessageBtn');
+    const replyingToContainer = document.getElementById('replyingToContainer');
+    const replyingToText = document.getElementById('replyingToText');
+    const cancelReplyBtn = document.getElementById('cancelReplyBtn');
     
     // Variables para Socket.IO 🟢 CORRECCIÓN: Usar la URL de Render
     const SERVER_URL = 'https://mi-chat-omr7.onrender.com';
@@ -29,313 +43,311 @@
         '😡': { text: 'Enojado/a', class: 'mood-enojado' },
         '😔': { text: 'Triste', class: 'mood-triste' },
         '😫': { text: 'Estresado/a', class: 'mood-estresado' },
-        '💬': { text: 'Quiero Hablar', class: 'mood-porhablar' },
+        '🤯': { text: 'Ansioso/a', class: 'mood-ansioso' },
+        '😐': { text: 'Neutral', class: 'mood-neutral' }
     };
 
-    const getPartnerName = () => partnerName;
-
-    // Función para obtener la hora formateada
-    const formatTime = (timestamp) => {
-        if (!timestamp) return '';
-        const date = new Date(timestamp);
-        return date.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
-    };
-
-    // Función de guardado de datos
-    const saveData = () => {
+    // -------------------\
+    // MANEJO DE ALMACENAMIENTO Y UTILIDADES
+    // -------------------\
+    function saveData() {
         localStorage.setItem(`chats_${currentUser}`, JSON.stringify(chats));
-    };
-
-    // Función para generar un ID único (para mensajes)
-    const generateMessageId = () => Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
-
-    // -------------------
-    // ELEMENTOS DEL DOM
-    // -------------------
-    const partnerNameDisplay = document.getElementById("partnerName");
-    const partnerStatusDisplay = document.getElementById("partnerStatus");
-    const messageContainer = document.getElementById("messageContainer");
-    const messageInput = document.getElementById("messageInput");
-    const sendMessageBtn = document.getElementById("sendMessageBtn");
-    const backToMainBtn = document.getElementById("backToMain");
-    const replyingToContainer = document.getElementById("replyingToContainer");
-    const replyingToText = document.getElementById("replyingToText");
-    const cancelReplyBtn = document.getElementById("cancelReplyBtn");
+    }
     
-    // Modales y botones de acción
-    const messageActionsModal = document.getElementById("messageActionsModal");
-    const selectedMessageText = document.getElementById("selectedMessageText");
-    const replyMessageBtn = document.getElementById("replyMessageBtn");
-    const markImportantBtn = document.getElementById("markImportantBtn");
-    const openMoodModalChat = document.getElementById("openMoodModalChat");
+    function generateMessageId() {
+        return Date.now().toString(36) + Math.random().toString(36).substring(2, 5);
+    }
+    
+    function getMessageById(id) {
+        return currentMessages.find(m => m.id === id);
+    }
+    
+    function formatTime(timestamp) {
+        return new Date(timestamp).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
+    }
 
-    // -------------------
-    // RENDERIZADO
-    // -------------------
-
-    const updatePartnerStatusDisplay = (mood, status) => {
-        partnerStatus = status;
-
-        partnerNameDisplay.textContent = currentChat.charAt(0).toUpperCase() + currentChat.slice(1);
+    // -------------------\
+    // RENDERIZADO DE INTERFAZ
+    // -------------------\
+    
+    function updatePartnerStatusDisplay(mood, status) {
+        const moodEmoji = document.getElementById('partnerMoodEmojiChat');
+        const statusHeader = document.getElementById('partnerStatus');
+        const partnerMoodDisplay = document.getElementById('partnerMoodDisplayChat');
         
-        let text = "";
-        let classList = "";
-
-        if (status === 'paused') {
-            text = `Chat Pausado por ${partnerName}`;
-            classList = "status-paused";
-        } else if (status === 'online') {
-            text = `En línea: ${MOODS[mood]?.text || "Desconocido"}`;
-            classList = MOODS[mood]?.class || "status-online";
-        } else { // 'offline'
-            text = `${partnerName} Desconectado/a`;
-            classList = "status-offline";
+        partnerMood = mood;
+        partnerStatus = status;
+        sessionStorage.setItem("partnerMood", partnerMood);
+        
+        if (moodEmoji) moodEmoji.textContent = mood;
+        
+        // Aplicar el color de estado de ánimo al círculo de la pareja
+        if (partnerMoodDisplay) {
+            partnerMoodDisplay.className = 'partner-mood-display ' + (MOODS[mood] ? MOODS[mood].class : 'mood-neutral');
         }
 
-        partnerStatusDisplay.textContent = text;
-        partnerStatusDisplay.className = `partner-status ${classList}`;
-    };
+        if (statusHeader) {
+            if (status === 'online') {
+                statusHeader.textContent = `En línea (${MOODS[mood]?.text || '?'})`;
+                statusHeader.classList.remove('offline');
+                statusHeader.classList.add('online');
+            } else if (status === 'paused') {
+                statusHeader.textContent = `Chat en pausa`;
+                statusHeader.classList.add('offline');
+                statusHeader.classList.remove('online');
+            } else { // offline
+                statusHeader.textContent = `Desconectado`;
+                statusHeader.classList.add('offline');
+                statusHeader.classList.remove('online');
+            }
+        }
+    }
 
-    const renderMessages = (messages) => {
+    function renderMessages(messages) {
         messageContainer.innerHTML = '';
-        currentMessages = messages; 
-
-        messages.forEach(message => {
-            const isMe = message.sender === currentUser;
+        currentMessages = messages; // Asegurar que currentMessages esté sincronizado
+        
+        messages.forEach((msg, index) => {
+            const isMe = msg.sender === currentUser;
             const messageElement = document.createElement('div');
-            messageElement.className = `chat-message ${isMe ? 'me' : 'them'} ${message.important ? 'important' : ''}`;
-            messageElement.dataset.messageId = message.id;
-
-            // Lógica de respuesta (reply)
+            messageElement.className = `chat-message ${isMe ? 'me' : 'them'} ${msg.important ? 'important' : ''}`;
+            messageElement.setAttribute('data-message-id', msg.id);
+            
             let replyHtml = '';
-            if (message.replyToId) {
-                const repliedMsg = messages.find(m => m.id === message.replyToId);
-                const repliedText = repliedMsg ? repliedMsg.text.substring(0, 40) + (repliedMsg.text.length > 40 ? '...' : '') : 'Mensaje original...';
-                const repliedSender = repliedMsg?.sender === currentUser ? 'Tú' : partnerName;
+            if (msg.replyToId) {
+                const repliedMsg = getMessageById(msg.replyToId);
+                const repliedText = repliedMsg ? repliedMsg.text.substring(0, 50) + (repliedMsg.text.length > 50 ? '...' : '') : 'Mensaje original...';
+                const repliedSender = repliedMsg ? (repliedMsg.sender === currentUser ? 'Tú' : partnerName) : 'Mensaje eliminado';
                 replyHtml = `
                     <div class="reply-box">
                         <span class="reply-sender">${repliedSender}</span>
                         <span class="reply-text">${repliedText}</span>
                     </div>
                 `;
-                messageElement.classList.add('reply');
             }
 
-            // Contenido del mensaje
-            const textContent = message.text.replace(/\n/g, '<br>');
-            const messageContentHtml = `<div class="message-content">${replyHtml}${textContent}</div>`;
-
-            // Metadatos
+            // El estado de lectura solo se muestra en mensajes propios
             let statusIcon = '';
             if (isMe) {
-                statusIcon = `<span class="status-icon ${message.read ? 'read' : 'sent'}">✓</span>`;
-                if (message.read) {
-                    statusIcon = `<span class="status-icon read">✓✓</span>`;
-                }
+                statusIcon = `<span class="status-icon ${msg.read ? 'read' : ''}">${msg.read ? '✓✓' : '✓'}</span>`;
             }
 
-            const metaHtml = `
+            messageElement.innerHTML = `
+                ${replyHtml}
+                <div class="message-content">${msg.text}</div>
                 <div class="meta-info">
-                    ${message.important ? '🌟' : ''}
-                    ${formatTime(message.timestamp)}
+                    ${msg.important ? '🌟' : ''}
+                    <span class="timestamp">${formatTime(msg.timestamp)}</span>
                     ${statusIcon}
                 </div>
             `;
             
-            messageElement.innerHTML = messageContentHtml + metaHtml;
-
+            // Añadir el listener para el modal de acciones de mensaje
+            messageElement.addEventListener('longpress', (e) => openMessageActionsModal(msg));
+            
+            // Fallback para click si no hay 'longpress'
             messageElement.addEventListener('click', (e) => {
-                if (!isMe) return; // Solo permitir acciones en mis propios mensajes
-                
-                // Abrir modal de acciones
-                if (messageActionsModal) {
-                    selectedMessageText.textContent = message.text;
-                    messageActionsModal.dataset.selectedId = message.id;
-                    messageActionsModal.classList.add('active');
-                }
+                // Prevenir que se abra el modal si ya se abrió con longpress
+                if (!e.defaultPrevented) openMessageActionsModal(msg);
             });
-
+            
             messageContainer.appendChild(messageElement);
         });
-
-        // Asegurarse de que el chat esté al final
-        messageContainer.scrollTop = messageContainer.scrollHeight;
-    };
-
-    // -------------------
-    // MANEJO DE EVENTOS
-    // -------------------
-
-    // 1. Botón de Volver al Menú
-    if (backToMainBtn) {
-        backToMainBtn.addEventListener('click', () => {
-            window.location.href = "menu.html";
-        });
-    }
-
-    // 2. Input de Mensaje
-    if (messageInput) {
-        messageInput.addEventListener('input', () => {
-            // Habilitar/Deshabilitar el botón de enviar
-            sendMessageBtn.disabled = messageInput.value.trim() === '';
-            
-            // Ajuste de altura del textarea (para que crezca con el texto)
-            messageInput.style.height = 'auto';
-            messageInput.style.height = (messageInput.scrollHeight) + 'px';
-        });
-
-        // Enviar al presionar Enter (si no se presiona Shift)
-        messageInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                if (!sendMessageBtn.disabled) {
-                    sendMessageBtn.click();
-                }
-            }
-        });
-    }
-
-    // 3. Botón de Enviar Mensaje
-    if (sendMessageBtn) {
-        sendMessageBtn.addEventListener('click', () => {
-            const text = messageInput.value.trim();
-            if (!text) return;
-            
-            const newMessage = {
-                id: generateMessageId(),
-                text: text,
-                sender: currentUser,
-                timestamp: Date.now(),
-                read: false,
-                important: false,
-                replyToId: replyingToId,
-            };
-
-            // 1. Agregar a la lista de mensajes local
-            if (!chats[currentChat]) {
-                chats[currentChat] = [];
-            }
-            chats[currentChat].push(newMessage);
-            currentMessages = chats[currentChat];
-            saveData();
-            
-            // 2. Renderizar y limpiar
-            renderMessages(currentMessages);
-            messageInput.value = '';
-            sendMessageBtn.disabled = true;
-            messageInput.style.height = 'auto'; // Resetear altura
-            
-            // 3. Limpiar respuesta
-            replyingToId = null;
-            replyingToContainer.classList.remove('active');
-
-            // 4. Enviar por Socket.IO
-            socket.emit('messageSent', {
-                sender: currentUser,
-                chatKey: currentChat,
-                message: newMessage
-            });
-        });
-    }
-    
-    // 4. Botones del Modal de Acciones
-    if (replyMessageBtn) {
-        replyMessageBtn.addEventListener('click', () => {
-            replyingToId = messageActionsModal.dataset.selectedId;
-            const repliedMsg = currentMessages.find(m => m.id === replyingToId);
-            if (repliedMsg) {
-                const repliedText = repliedMsg.text.substring(0, 40) + (repliedMsg.text.length > 40 ? '...' : '');
-                replyingToText.textContent = `Respondiendo a: "${repliedText}"`;
-                replyingToContainer.classList.add('active');
-            }
-            messageActionsModal.classList.remove('active');
-        });
-    }
-    
-    if (markImportantBtn) {
-        markImportantBtn.addEventListener('click', () => {
-            const messageId = messageActionsModal.dataset.selectedId;
-            const messageIndex = currentMessages.findIndex(m => m.id === messageId);
-            
-            if (messageIndex !== -1) {
-                currentMessages[messageIndex].important = true;
-                chats[currentChat] = currentMessages;
-                saveData();
-                renderMessages(currentMessages);
-                
-                // Notificar al servidor
-                socket.emit('markImportant', {
-                    sender: currentUser,
-                    chatId: currentChat,
-                    messageId: messageId
-                });
-            }
-            messageActionsModal.classList.remove('active');
-        });
-    }
-    
-    // 5. Botón de Cancelar Respuesta
-    if (cancelReplyBtn) {
-        cancelReplyBtn.addEventListener('click', () => {
-            replyingToId = null;
-            replyingToContainer.classList.remove('active');
-        });
-    }
-    
-    // 6. Cierre de Modales
-    document.querySelectorAll('.close-modal-btn').forEach(button => {
-        button.addEventListener('click', (e) => {
-            const target = e.target.closest('.close-modal-btn');
-            if (!target) return;
-            
-            const targetId = target.dataset.modalTarget;
-            const modalElement = document.getElementById(targetId);
-            if (modalElement) {
-                modalElement.classList.remove('active');
-            }
-        });
-    });
-
-    // -------------------
-    // LÓGICA DE SOCKET.IO
-    // -------------------
-    
-    socket.on('connect', () => {
-        console.log("Socket.IO conectado en Chat:", socket.id);
         
-        socket.emit('userConnected', { 
-            user: currentUser, 
-            mood: sessionStorage.getItem("myMood") || '😴',
-        });
+        // Autoscroll al final
+        messageContainer.scrollTop = messageContainer.scrollHeight;
+    }
+    
+    // -------------------\
+    // MANEJADORES DE EVENTOS
+    // -------------------\
+    
+    function sendMessage() {
+        const text = messageInput.value.trim();
+        if (!text) return;
 
-        socket.emit('requestPartnerStatus', { targetUser: partnerName });
-    });
+        const message = {
+            id: generateMessageId(),
+            text: text,
+            timestamp: Date.now(),
+            sender: currentUser,
+            read: false,
+            important: false,
+            replyToId: replyingToId // Será null si no se está respondiendo
+        };
 
-    // 1. Recepción de un nuevo mensaje
-    socket.on("newMessage", (data) => {
-        if (data.sender === getPartnerName() && data.chatKey === currentChat) {
-            
-            // 1. Agregar y guardar
-            if (!chats[currentChat]) {
-                chats[currentChat] = [];
+        // 1. Guardar localmente
+        currentMessages.push(message);
+        chats[currentChat] = currentMessages;
+        saveData();
+
+        // 2. Renderizar (para que aparezca inmediatamente)
+        renderMessages(currentMessages);
+        
+        // 3. Emitir al servidor
+        socket.emit("sendMessage", {
+            chatId: currentChat,
+            message: {
+                id: message.id,
+                text: message.text,
+                timestamp: message.timestamp,
+                replyToId: message.replyToId
             }
-            chats[currentChat].push({ ...data.message, sender: data.sender, read: true }); 
-            currentMessages = chats[currentChat];
+        });
+        
+        // 4. Limpiar input y estado de respuesta
+        messageInput.value = '';
+        sendMessageBtn.disabled = true;
+        
+        if (replyingToId) {
+            clearReplyContext();
+        }
+    }
+    
+    function handleInput() {
+        sendMessageBtn.disabled = messageInput.value.trim() === '';
+        // Autosize de textarea
+        messageInput.style.height = 'auto';
+        messageInput.style.height = messageInput.scrollHeight + 'px';
+    }
+    
+    function openMessageActionsModal(message) {
+        const modal = document.getElementById('messageActionsModal');
+        const selectedMessageText = document.getElementById('selectedMessageText');
+        const replyBtn = document.getElementById('replyMessageBtn');
+        const markBtn = document.getElementById('markImportantBtn');
+        
+        // Actualizar el texto del modal
+        selectedMessageText.textContent = `"${message.text.substring(0, 80) + (message.text.length > 80 ? '...' : '')}"`;
+        
+        // Limpiar handlers anteriores
+        replyBtn.replaceWith(replyBtn.cloneNode(true));
+        markBtn.replaceWith(markBtn.cloneNode(true));
+        const newReplyBtn = document.getElementById('replyMessageBtn');
+        const newMarkBtn = document.getElementById('markImportantBtn');
+        
+        // Configurar botón de Responder
+        newReplyBtn.addEventListener('click', () => {
+            setReplyContext(message.id, message.text);
+            modal.classList.remove('active');
+        });
+        
+        // Configurar botón de Marcar como Importante
+        if (message.important) {
+            newMarkBtn.textContent = '✅ Marcado como importante';
+            newMarkBtn.disabled = true;
+        } else {
+            newMarkBtn.textContent = '🌟 Marcar como importante';
+            newMarkBtn.disabled = false;
+            newMarkBtn.addEventListener('click', () => {
+                markMessageImportant(message.id);
+                modal.classList.remove('active');
+            });
+        }
+        
+        modal.classList.add('active');
+    }
+    
+    function setReplyContext(messageId, messageText) {
+        replyingToId = messageId;
+        replyingToText.textContent = `Respondiendo a: "${messageText.substring(0, 30)}..."`;
+        replyingToContainer.classList.add('active');
+        messageInput.focus();
+    }
+    
+    function clearReplyContext() {
+        replyingToId = null;
+        replyingToText.textContent = '';
+        replyingToContainer.classList.remove('active');
+    }
+    
+    function markMessageImportant(messageId) {
+        // 1. Marcar localmente
+        const messageIndex = currentMessages.findIndex(m => m.id === messageId);
+        if (messageIndex !== -1) {
+            currentMessages[messageIndex].important = true;
+            chats[currentChat] = currentMessages;
             saveData();
+            renderMessages(currentMessages); // Re-renderizar para mostrar la estrella
             
-            // 2. Renderizar y notificar que se leyó
+            // 2. Emitir al servidor
+            socket.emit('markImportant', {
+                chatId: currentChat,
+                messageId: messageId 
+            });
+        }
+    }
+    
+    // Asignación de Event Listeners
+    sendMessageBtn.addEventListener('click', sendMessage);
+    messageInput.addEventListener('input', handleInput);
+    messageInput.addEventListener('keypress', e => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendMessage();
+        }
+    });
+    cancelReplyBtn.addEventListener('click', clearReplyContext);
+    
+    document.getElementById('backToMain')?.addEventListener('click', () => {
+        // Limpiar el chat actual al volver al menú
+        sessionStorage.removeItem('currentChatDate'); 
+        window.location.href = 'menu.html';
+    });
+    
+    // Manejador de Modales
+    document.querySelectorAll('.close-modal-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const modalTarget = e.target.getAttribute('data-modal-target') || e.target.closest('.modal-backdrop').id;
+            if (modalTarget) {
+                document.getElementById(modalTarget).classList.remove('active');
+            }
+        });
+    });
+    
+
+    // -------------------\
+    // MANEJADORES DE SOCKET.IO (RECEPCIÓN)
+    // -------------------\
+    
+    // 1. Conexión y Registro
+    socket.on("connect", () => {
+        // Registrar el usuario y el mood (obtenido desde session storage)
+        const myMood = sessionStorage.getItem("myMood") || '😴';
+        socket.emit("registerUser", { user: currentUser, mood: myMood });
+        
+        // Solicitar estado de la pareja
+        socket.emit('requestPartnerStatus', { target: partnerName });
+        
+        // Al estar en el chat, marcamos los mensajes como leídos
+        socket.emit('readChat', { chatKey: currentChat, reader: currentUser });
+    });
+    
+    // 2. Recepción de un Nuevo Mensaje
+    socket.on("newMessage", (data) => {
+        if (data.sender === partnerName && data.chatId === currentChat) {
+            const message = { 
+                ...data.message, 
+                sender: data.sender, 
+                read: false,
+                important: false // Se inicializa como no importante
+            };
+            currentMessages.push(message);
+            chats[currentChat] = currentMessages;
+            saveData();
             renderMessages(currentMessages);
+            
+            // Auto-emitir lectura al recibir un mensaje si el chat está abierto
             socket.emit('readChat', { chatKey: currentChat, reader: currentUser });
         }
     });
 
-    // 2. Sincronización de estado de lectura (el mensaje de la pareja se marca como "leído")
+    // 3. Recepción de Mensajes Leídos
     socket.on("messagesRead", (data) => {
-        if (data.reader === getPartnerName() && data.chatKey === currentChat) {
+        if (data.reader === partnerName && data.chatKey === currentChat) {
             let changed = false;
-            
+            // Marcar como leídos todos los mensajes propios que no lo estén
             currentMessages = currentMessages.map(msg => {
-                // Solo marcamos como leído si yo soy el remitente (el mensaje 'me') y no estaba ya leído
                 if (msg.sender === currentUser && !msg.read) {
                     msg.read = true;
                     changed = true;
@@ -346,30 +358,29 @@
             if (changed) {
                 chats[currentChat] = currentMessages;
                 saveData();
-                renderMessages(currentMessages); 
+                renderMessages(currentMessages); // Re-renderizar solo si hubo cambios
             }
         }
     });
-
-    // 3. Recepción de Cambio de Ánimo
-    socket.on("moodChanged", (data) => { 
-        if (data.sender === getPartnerName()) {
-            sessionStorage.setItem("partnerMood", data.mood); 
-            updatePartnerStatusDisplay(data.mood, 'online'); // Forzar a online al recibir mood
-        }
-    });
-
+    
     // 4. Recepción de Cambio de Estado (Online/Offline/Paused)
     socket.on("statusChanged", (data) => { 
-        if (data.sender === getPartnerName()) {
+        if (data.sender === partnerName) {
             const currentPartnerMood = sessionStorage.getItem("partnerMood") || "?";
             updatePartnerStatusDisplay(currentPartnerMood, data.status);
         }
     });
     
-    // 5. Recepción de Mensaje Marcado como Importante
+    // 5. Recepción de Cambio de Estado de Ánimo
+    socket.on("moodChanged", (data) => {
+        if (data.sender === partnerName) {
+            updatePartnerStatusDisplay(data.mood, partnerStatus); 
+        }
+    });
+    
+    // 6. Recepción de Mensaje Marcado como Importante
     socket.on("messageMarked", (data) => {
-        if (data.sender === getPartnerName() && data.chatId === currentChat) {
+        if (data.sender === partnerName && data.chatId === currentChat) {
             const messageIndex = currentMessages.findIndex(m => m.id === data.messageId);
             if (messageIndex !== -1) {
                 currentMessages[messageIndex].important = true;
@@ -377,6 +388,13 @@
                 saveData();
                 renderMessages(currentMessages);
             }
+        }
+    });
+    
+    // 7. Recepción de estado inicial de la pareja
+    socket.on('partnerStatus', (data) => {
+        if (data.user === partnerName) {
+            updatePartnerStatusDisplay(data.mood, data.status);
         }
     });
 
@@ -394,6 +412,59 @@
     
     // Inicializar el estado de la pareja
     partnerMood = sessionStorage.getItem("partnerMood") || "?";
-    updatePartnerStatusDisplay(partnerMood, 'offline'); 
+    updatePartnerStatusDisplay(partnerMood, 'offline');
     
-})(); // Fin del IIFE
+    // Inicializar el botón de mi estado de ánimo en el header del chat
+    const myMood = sessionStorage.getItem("myMood") || "😴";
+    const myMoodBtn = document.getElementById('openMoodModalChat');
+    if (myMoodBtn) {
+        myMoodBtn.textContent = myMood;
+        myMoodBtn.className = 'my-mood-btn ' + (MOODS[myMood] ? MOODS[myMood].class : '');
+    }
+    
+    // Simulación de 'longpress'
+    (function () {
+        let pressTimer;
+        const messagesContainer = document.getElementById('messageContainer');
+        const LONG_PRESS_THRESHOLD = 500; // 500ms
+
+        messagesContainer.addEventListener('touchstart', (e) => {
+            const messageElement = e.target.closest('.chat-message');
+            if (messageElement) {
+                pressTimer = setTimeout(() => {
+                    e.preventDefault(); // Prevenir el comportamiento por defecto (scroll)
+                    messageElement.dispatchEvent(new Event('longpress', { bubbles: true }));
+                }, LONG_PRESS_THRESHOLD);
+            }
+        }, true); // Usar captura
+
+        messagesContainer.addEventListener('touchend', () => {
+            clearTimeout(pressTimer);
+        }, true);
+
+        messagesContainer.addEventListener('touchmove', () => {
+            clearTimeout(pressTimer);
+        }, true);
+        
+        // Agregar compatibilidad para mousedown/mouseup en desktop
+        messagesContainer.addEventListener('mousedown', (e) => {
+            const messageElement = e.target.closest('.chat-message');
+            if (messageElement) {
+                pressTimer = setTimeout(() => {
+                    e.preventDefault(); 
+                    messageElement.dispatchEvent(new Event('longpress', { bubbles: true }));
+                }, LONG_PRESS_THRESHOLD);
+            }
+        }, true); 
+
+        messagesContainer.addEventListener('mouseup', () => {
+            clearTimeout(pressTimer);
+        }, true);
+
+        messagesContainer.addEventListener('mouseleave', () => {
+            clearTimeout(pressTimer);
+        }, true);
+    })();
+
+
+})(); // Fin de la función anónima.

@@ -28,225 +28,220 @@
     --shadow: 0 0 10px rgba(0,0,0,0.5); /* Sombra suave */
     
     /* Colores para el círculo emocional */
-    --mood-enamorado: #fc5a95;
-    --mood-happy: #ffcc00;
-    --mood-cansado: #5a7e8f;
-    --mood-enojado: #fc5a5a;
-    --mood-triste: #5a7efc;
-    --mood-estresado: #7e5a8f;
-    --mood-porhablar: #5afcb6;
+    --mood-enamorado: #dd2a7b; /* Rosa/Púrpura */
+    --mood-happy: #ffcc00;     /* Amarillo */
+    --mood-cansado: #4a4a4a;   /* Gris Oscuro */
+    --mood-enojado: #ff4d4d;   /* Rojo */
+    --mood-triste: #5a5aff;    /* Azul Triste */
+    --mood-estresado: #ff9900; /* Naranja */
+    --mood-ansioso: #00cc99;   /* Verde-Menta */
+    --mood-neutral: #9a9aa8;   /* Gris Neutro */
 }
 
 html, body {
-    height: 100vh;
-    width: 100%;
     margin: 0;
+    padding: 0;
+    height: 100vh; 
+    width: 100%;
+    overflow-x: hidden;
     background-color: var(--bg);
     color: var(--text-primary);
-    overflow: hidden; 
 }
 
 .app-container {
     display: flex;
     flex-direction: column;
-    height: 100vh;
+    height: 100%;
     max-width: 500px; 
-    margin: 0 auto;
+    margin: 0 auto; 
     box-shadow: var(--shadow);
+    background-color: var(--bg);
 }
 
 /* --------------------------- */
-/* ENCABEZADO Y ESTADO */
+/* HEADER Y BOTÓN DE ESTADO */
 /* --------------------------- */
 
 .app-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 15px 20px;
+    padding: 15px;
     background-color: var(--panel);
     border-bottom: 1px solid var(--accent-dark);
-    flex-shrink: 0; 
+    flex-shrink: 0;
 }
 
 .brand .logo-text {
-    font-size: 1.2rem;
+    font-size: 1.1rem;
     font-weight: 700;
-    color: var(--primary); 
+    color: var(--primary);
 }
 
 .my-mood-btn {
     width: 40px;
     height: 40px;
     border-radius: 50%;
-    background: var(--bubble-them);
-    border: none;
     font-size: 1.2rem;
+    border: 3px solid transparent;
+    background-color: var(--bubble-them);
     cursor: pointer;
-    transition: background 0.2s;
-}
-.my-mood-btn:hover {
-    background: var(--accent-dark);
+    transition: all 0.2s;
 }
 
+/* Aplicar el color de ánimo al borde del botón */
+.my-mood-btn.mood-enamorado { border-color: var(--mood-enamorado); }
+.my-mood-btn.mood-happy { border-color: var(--mood-happy); }
+.my-mood-btn.mood-cansado { border-color: var(--mood-cansado); }
+.my-mood-btn.mood-enojado { border-color: var(--mood-enojado); }
+.my-mood-btn.mood-triste { border-color: var(--mood-triste); }
+.my-mood-btn.mood-estresado { border-color: var(--mood-estresado); }
+.my-mood-btn.mood-ansioso { border-color: var(--mood-ansioso); }
+.my-mood-btn.mood-neutral { border-color: var(--mood-neutral); }
+
+
 /* --------------------------- */
-/* SECCIÓN DE ESTADO Y MENSAJE EMOCIONAL */
+/* SECCIÓN DE ESTADO DE PAREJA */
 /* --------------------------- */
 
 .partner-status-header {
     display: flex;
-    flex-direction: column;
     align-items: center;
-    padding: 25px 20px 15px;
-    background-color: var(--bg);
+    justify-content: center;
+    padding: 20px 15px;
+    background-color: var(--panel);
+    border-bottom: 1px solid var(--accent-dark);
 }
 
 .partner-mood-display {
-    width: 60px;
-    height: 60px;
+    width: 50px;
+    height: 50px;
     border-radius: 50%;
     display: flex;
     justify-content: center;
     align-items: center;
     font-size: 1.8rem;
-    margin-bottom: 10px;
-    box-shadow: 0 0 10px rgba(0,0,0,0.5); 
-    border: 3px solid transparent; 
-    transition: all 0.3s;
+    margin-right: 15px;
+    background-color: var(--bubble-them); 
+    border: 3px solid var(--mood-neutral); /* Color por defecto */
+    transition: border-color 0.3s;
 }
-/* Estilos dinámicos */
+
+/* Aplicar el color de ánimo al borde del círculo de la pareja */
 .partner-mood-display.mood-enamorado { border-color: var(--mood-enamorado); }
 .partner-mood-display.mood-happy { border-color: var(--mood-happy); }
 .partner-mood-display.mood-cansado { border-color: var(--mood-cansado); }
 .partner-mood-display.mood-enojado { border-color: var(--mood-enojado); }
 .partner-mood-display.mood-triste { border-color: var(--mood-triste); }
 .partner-mood-display.mood-estresado { border-color: var(--mood-estresado); }
-.partner-mood-display.status-paused { border-color: #6a00ff; }
-.partner-mood-display.status-offline { border-color: var(--muted); opacity: 0.7; }
+.partner-mood-display.mood-ansioso { border-color: var(--mood-ansioso); }
+.partner-mood-display.mood-neutral { border-color: var(--mood-neutral); }
 
 
 .partner-status-text {
-    color: var(--muted);
-    font-size: 0.9rem;
+    font-size: 1rem;
     font-weight: 600;
-    text-align: center;
-    min-height: 18px; 
+    color: var(--muted);
+    transition: color 0.3s;
+}
+
+.partner-status-text.online {
+    color: var(--primary); /* Azul para online */
+}
+
+.partner-status-text.offline {
+    color: var(--muted); /* Gris para offline/pausa */
 }
 
 .emotional-message-box {
-    margin: 0 20px 20px;
-    padding: 12px 15px;
-    background-color: var(--bubble-them);
-    border-radius: 8px;
-    font-size: 0.85rem;
-    color: var(--muted);
     text-align: center;
+    padding: 15px;
     font-style: italic;
-    border: 1px solid var(--accent-dark);
+    font-size: 0.9rem;
+    color: var(--muted);
+    background-color: var(--bg);
+    border-bottom: 1px solid var(--accent-dark);
 }
 
+
 /* --------------------------- */
-/* LISTA DE CHATS (TEMÁTICOS) */
+/* LISTA DE CHATS (MAIN) */
 /* --------------------------- */
 
 .chat-list-section {
-    flex-grow: 1; 
-    background-color: var(--bg);
-    overflow-y: auto;
-    padding: 0 0 10px;
-    border-top: 1px solid var(--accent-dark); 
+    padding: 0 15px;
+    flex-grow: 1;
+    overflow-y: auto; 
 }
 
 .chat-list-header {
-    font-size: 0.95rem;
+    font-size: 1.1rem;
     font-weight: 700;
     color: var(--text-primary);
-    padding: 15px 20px 10px;
-    text-transform: uppercase;
+    padding: 15px 0 10px 0;
+    position: sticky;
+    top: 0;
+    background-color: var(--bg);
+    z-index: 5;
 }
 
 .chat-list {
     display: flex;
     flex-direction: column;
+    gap: 10px;
+    padding-bottom: 20px;
 }
 
 .chat-item {
     display: flex;
     align-items: center;
-    padding: 12px 20px;
+    padding: 12px 10px;
+    background-color: var(--bubble-them);
+    border-radius: 10px;
     cursor: pointer;
     transition: background-color 0.2s;
-    border-bottom: 1px solid var(--accent-dark); 
-}
-
-.chat-item:last-child {
-    border-bottom: none;
+    position: relative;
 }
 
 .chat-item:hover {
-    background-color: var(--panel);
+    background-color: var(--accent-dark);
 }
 
-.chat-avatar {
-    width: 48px;
-    height: 48px;
-    border-radius: 12px; 
-    background-color: var(--primary);
-    color: var(--text-primary);
+.chat-icon {
+    font-size: 1.8rem;
+    width: 45px;
+    height: 45px;
+    min-width: 45px;
+    border-radius: 8px;
+    background-color: var(--bg);
     display: flex;
     justify-content: center;
     align-items: center;
-    font-size: 1.1rem;
-    font-weight: 700;
-    flex-shrink: 0;
+    margin-right: 15px;
 }
 
-.meta {
+.chat-info {
     flex-grow: 1;
-    margin-left: 15px;
-    overflow: hidden;
-}
-
-.chat-name-line {
+    min-width: 0;
     display: flex;
-    justify-content: space-between;
-    align-items: center;
+    flex-direction: column;
+    text-align: left;
 }
 
-.chat-name {
-    font-weight: 600;
+.chat-title {
     font-size: 1rem;
-    color: var(--text-primary);
-}
-
-.chat-meta-info {
-    font-size: 0.75rem;
-    color: var(--muted);
-    flex-shrink: 0;
-    margin-left: 10px;
-}
-
-.chat-last {
-    font-size: 0.9rem;
-    color: var(--muted);
-    white-space: nowrap;
+    font-weight: 600;
     overflow: hidden;
     text-overflow: ellipsis;
-    margin-top: 2px;
+    white-space: nowrap;
 }
 
-.sender-prefix {
-    font-weight: 500;
+.last-message {
+    font-size: 0.85rem;
     color: var(--muted);
-}
-
-.message-text {
-    font-weight: 400;
-}
-
-.status-info {
-    margin-left: 15px;
-    flex-shrink: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .unread-count {
@@ -255,22 +250,40 @@ html, body {
     font-size: 0.75rem;
     font-weight: 700;
     border-radius: 12px;
-    padding: 2px 7px;
+    padding: 3px 8px;
     min-width: 24px;
     text-align: center;
-    display: inline-block;
-}
-
-.no-chats {
-    text-align: center;
-    padding: 40px 20px;
-    color: var(--muted);
-    font-style: italic;
+    margin-left: 10px;
 }
 
 /* --------------------------- */
-/* ESTILOS DE MODALES (MOODS) */
+/* BOTONES Y MODALES */
 /* --------------------------- */
+
+.btn {
+    padding: 8px 15px;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: opacity 0.2s;
+    font-size: 1rem;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+}
+.btn.primary {
+    background-color: var(--primary);
+    color: #fff;
+}
+.btn.secondary {
+    background-color: var(--bubble-them);
+    color: var(--text-primary);
+}
+.btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
 
 .modal-backdrop {
     position: fixed;
@@ -278,7 +291,7 @@ html, body {
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.85); 
+    background-color: rgba(0, 0, 0, 0.85);
     display: none;
     justify-content: center;
     align-items: center;
@@ -289,15 +302,14 @@ html, body {
 }
 .modal-content {
     background-color: var(--panel);
-    padding: 25px;
-    border-radius: 16px;
+    padding: 20px;
+    border-radius: 12px;
     width: 90%;
-    max-width: 450px;
+    max-width: 400px;
     position: relative;
     box-shadow: var(--shadow);
     text-align: center;
 }
-
 .modal-content h3 {
     margin-bottom: 5px;
     color: var(--primary);
@@ -348,4 +360,5 @@ html, body {
 .mood-btn.mood-enojado:hover { border-color: var(--mood-enojado); }
 .mood-btn.mood-triste:hover { border-color: var(--mood-triste); }
 .mood-btn.mood-estresado:hover { border-color: var(--mood-estresado); }
-.mood-btn.mood-porhablar:hover { border-color: var(--mood-porhablar); }
+.mood-btn.mood-ansioso:hover { border-color: var(--mood-ansioso); }
+.mood-btn.mood-neutral:hover { border-color: var(--mood-neutral); }
