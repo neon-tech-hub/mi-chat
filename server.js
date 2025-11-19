@@ -21,7 +21,7 @@ const getPartnerName = (userName) => (userName === "Leo" ? "Estefi" : "Leo");
 app.use(express.static("public")); 
 
 // ------------------------------------------------------------------
-// ✅ 2. Rutas HTML: Apuntan a los archivos dentro de la carpeta 'public'. (Fix de 'Not Found')
+// ✅ 2. Rutas HTML: Apuntan a los archivos dentro de la carpeta 'public'.
 // ------------------------------------------------------------------
 
 // RUTA RAÍZ (http://localhost:3000/ -> public/login.html)
@@ -34,183 +34,167 @@ app.get("/menu.html", (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'menu.html')); 
 });
 
-// RUTA DEL CHAT (Solicitada como /chat.html -> public/chat.html)
+// RUTA DE LA CONVERSACIÓN (Solicitada como /chat.html -> public/chat.html)
 app.get("/chat.html", (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'chat.html')); 
 });
 
 
 // =======================================================
-// LÓGICA DE SOCKET.IO
+// LÓGICA DE SOCKET.IO (Sincronización de Estados y Chat)
 // =======================================================
-
-io.on('connection', (socket) => {
-    console.log('Un usuario conectado. Socket ID:', socket.id);
+io.on('connection', socket => {
+    console.log("Usuario conectado. Socket ID:", socket.id);
 
     // ----------------------------------------------------
-    // 1. MANEJO DE LOGIN (Establecer la identidad)
+    // 1. REGISTRO DEL USUARIO AL CONECTARSE
     // ----------------------------------------------------
-    socket.on("login", (userName, mood) => {
-        
-        // Limpiar socketId anterior si existe (reconexión)
-        for (const user in userStates) {
-            if (userStates[user] && userStates[user].socketId === socket.id) {
-                delete userStates[user].socketId; 
-            }
-        }
-
-        // Establecer identidad del socket
+    socket.on('userConnected', data => {
+        const userName = data.user;
+        const userMood = data.mood || '?'; 
         socket.userName = userName;
 
-        // Actualizar o crear estado del usuario
-        if (!userStates[userName]) {
-            userStates[userName] = { mood: '😴', status: 'offline', socketId: null };
-        }
-        userStates[userName].mood = mood; // El mood inicial lo manda el cliente
-        userStates[userName].status = 'online';
-        userStates[userName].socketId = socket.id;
-
+        // Guardar estado completo
+        userStates[userName] = {
+            socketId: socket.id,
+            mood: userMood,
+            status: 'online'
+        };
+        
         const partnerName = getPartnerName(userName);
         const partnerState = userStates[partnerName];
 
-        // 1.4 Emitir el estado completo de la pareja al usuario que acaba de ingresar
+        // Notificar a la pareja que el usuario está ONLINE
+        if (partnerState && partnerState.socketId) {
+            io.to(partnerState.socketId).emit('statusChanged', {
+                sender: userName, 
+                status: 'online' 
+            });
+        }
+        console.log(`Usuario conectado: ${userName}. Estado: ${userStates[userName].status}`);
+    });
+
+    // ----------------------------------------------------
+    // 2. MANEJO DEL CAMBIO DE ÁNIMO (REENVÍO A LA PAREJA)
+    // ----------------------------------------------------
+    socket.on('moodChanged', data => {
+        const sender = data.user; 
+        const newMood = data.mood;
+        
+        // 1. Actualizar el estado en el servidor
+        if (userStates[sender]) {
+            userStates[sender].mood = newMood;
+            userStates[sender].status = 'online'; // Por si acaso
+        }
+
+        // 2. Informar a la pareja sobre el nuevo ánimo
+        const partnerName = getPartnerName(sender);
+        const partnerState = userStates[partnerName];
+
+        if (partnerState && partnerState.socketId) {
+            io.to(partnerState.socketId).emit('moodChanged', {
+                sender: sender,
+                mood: newMood
+            });
+            // También enviamos el status, por si la pareja estaba en chat.html
+             io.to(partnerState.socketId).emit('statusChanged', {
+                sender: sender,
+                status: 'online' 
+            });
+        }
+        console.log(`Mood cambiado: ${sender} a ${newMood}.`);
+    });
+
+    // ----------------------------------------------------
+    // 3. SOLICITUD DE ESTADO DE LA PAREJA 
+    // ----------------------------------------------------
+    socket.on('requestPartnerStatus', data => {
+        const targetUser = data.targetUser; 
+        const partnerState = userStates[targetUser];
+
         if (partnerState && partnerState.socketId) {
             socket.emit('partnerStatus', {
-                user: partnerName,
-                mood: partnerState.mood,
-                status: partnerState.status
-            });
-
-            // 1.5 Notificar a la pareja que el usuario ha ingresado (Actualización en tiempo real)
-            io.to(partnerState.socketId).emit("statusChanged", {
-                sender: userName,
-                mood: mood,
-                status: 'online'
-            });
-        }
-    });
-
-    // ----------------------------------------------------
-    // 2. MANEJO DE CAMBIO DE MOOD
-    // ----------------------------------------------------
-    socket.on("moodChanged", (newMood) => {
-        const userName = socket.userName;
-
-        if (userName && userStates[userName]) {
-            userStates[userName].mood = newMood;
-            
-            const partnerName = getPartnerName(userName);
-            const partnerState = userStates[partnerName];
-
-            // Notificar a la pareja
-            if (partnerState && partnerState.socketId) {
-                io.to(partnerState.socketId).emit("statusChanged", {
-                    sender: userName,
-                    mood: newMood,
-                    status: userStates[userName].status // No cambiamos el status (sigue online/paused)
-                });
-            }
-        }
-    });
-
-    // ----------------------------------------------------
-    // 3. SOLICITAR ESTADO DE PAREJA (Para sincronización manual)
-    // ----------------------------------------------------
-    socket.on('requestPartnerStatus', (targetUser) => {
-        
-        if (userStates[targetUser] && userStates[targetUser].socketId) {
-            socket.emit('partnerStatus', {
                 user: targetUser,
-                mood: userStates[targetUser].mood,
-                status: userStates[targetUser].status 
+                mood: partnerState.mood,
+                status: partnerState.status 
             });
         } else {
-            // Si la pareja no está conectada
             socket.emit('partnerStatus', {
                 user: targetUser,
-                mood: userStates[targetUser] ? userStates[targetUser].mood : '?', 
+                mood: '?', 
                 status: 'offline'
             });
         }
     });
     
     // ----------------------------------------------------
-    // 4. MANEJO DE PAUSA DE CHAT
+    // 4. ENVÍO DE MENSAJES
     // ----------------------------------------------------
-    socket.on("chatPaused", (duration) => {
-        const userName = socket.userName;
-        if (userName && userStates[userName]) {
-            userStates[userName].status = 'paused';
+    socket.on("messageSent", (data) => {
+        const partnerName = getPartnerName(data.sender);
+        const partnerState = userStates[partnerName];
+
+        if (partnerState && partnerState.socketId) {
+             io.to(partnerState.socketId).emit("newMessage", {
+                sender: data.sender,
+                chatKey: data.chatKey,
+                message: data.message
+            });
+        }
+    });
+    
+    // ----------------------------------------------------
+    // 5. MARCAR MENSAJES COMO LEÍDOS
+    // ----------------------------------------------------
+    socket.on("readChat", (data) => {
+        const partnerName = getPartnerName(data.reader);
+        const partnerState = userStates[partnerName];
+
+        if (partnerState && partnerState.socketId) {
+            io.to(partnerState.socketId).emit("messagesRead", {
+                reader: data.reader,
+                chatKey: data.chatKey
+            });
+        }
+    });
+
+    // ----------------------------------------------------
+    // 6. MANEJO DE PAUSA (OPCIONAL)
+    // ----------------------------------------------------
+    socket.on('pauseChat', data => {
+        const sender = data.user;
+        const duration = data.duration;
+        
+        if (userStates[sender]) {
+            userStates[sender].status = 'paused';
             
-            const partnerName = getPartnerName(userName);
+            const partnerName = getPartnerName(sender);
             const partnerState = userStates[partnerName];
 
             if (partnerState && partnerState.socketId) {
-                io.to(partnerState.socketId).emit("statusChanged", {
-                    sender: userName,
-                    status: 'paused'
-                });
-                io.to(partnerState.socketId).emit("chatPaused", {
-                    sender: userName,
+                io.to(partnerState.socketId).emit('chatPaused', {
+                    sender: sender,
                     duration: duration
                 });
             }
         }
-    });
-
-    // ----------------------------------------------------
-    // 5. MANEJO DE MENSAJE ENVIADO
-    // ----------------------------------------------------
-    // Asume que 'message' es un objeto completo (text, timestamp, isImportant, replyTo)
-    socket.on("messageSent", (message) => {
-        const userName = socket.userName;
-        if (userName) {
-            const partnerName = getPartnerName(userName);
-            const partnerState = userStates[partnerName];
-
-            // Reenviar a la pareja
-            if (partnerState && partnerState.socketId) {
-                io.to(partnerState.socketId).emit("newMessage", {
-                    sender: userName,
-                    message: message 
-                });
-            }
-        }
+        // Lógica para restablecer el estado después de 'duration' (omitiendo por simplicidad)
     });
     
     // ----------------------------------------------------
-    // 6. MANEJO DE MENSAJES LEÍDOS
+    // 7. MARCAR MENSAJE COMO IMPORTANTE
     // ----------------------------------------------------
-    socket.on("messagesRead", () => {
-        const userName = socket.userName;
-        if (userName) {
-            const partnerName = getPartnerName(userName);
-            const partnerState = userStates[partnerName];
+     socket.on("markImportant", (data) => {
+        const { sender, messageId } = data;
+        const partnerName = getPartnerName(sender);
+        const partnerState = userStates[partnerName];
 
-            // Notificar a la pareja
-            if (partnerState && partnerState.socketId) {
-                io.to(partnerState.socketId).emit("partnerMessagesRead", {
-                    reader: userName
-                });
-            }
-        }
-    });
-    
-    // ----------------------------------------------------
-    // 7. MANEJO DE MARCAR IMPORTANTE
-    // ----------------------------------------------------
-    socket.on("markImportant", (messageId) => {
-        const userName = socket.userName;
-        if (userName) {
-            const partnerName = getPartnerName(userName);
-            const partnerState = userStates[partnerName];
-
-            if (partnerState && partnerState.socketId) {
-                io.to(partnerState.socketId).emit("messageMarkedImportant", {
-                    marker: userName,
-                    messageId: messageId
-                });
-            }
+        if (partnerState && partnerState.socketId) {
+            io.to(partnerState.socketId).emit("messageMarked", {
+                sender: sender,
+                chatId: data.chatId, // Se asume que el chatId viene en los datos
+                messageId: messageId
+            });
         }
     });
 
@@ -236,6 +220,7 @@ io.on('connection', (socket) => {
             // Actualizar el estado a 'offline' y eliminar socketId
             userStates[userName].status = 'offline';
             delete userStates[userName].socketId; 
+            console.log(`Usuario desconectado: ${userName}.`);
         }
     });
 });

@@ -67,6 +67,7 @@
         
         if (!partnerMoodEmoji || !statusHeader || !partnerMoodDisplay || !myMoodButton) return;
         
+        // Actualiza el estado global de la pareja
         partnerStatus = status;
 
         let text = "";
@@ -118,12 +119,10 @@
 
         keysToShow.forEach(chatKey => {
             const chatDay = chats[chatKey];
-            // Si por alguna razón el chat temático no existe en 'chats', lo inicializamos para renderizarlo vacío
             if (!chatDay) {
                 chats[chatKey] = [];
             } 
             
-            // Re-obtener la referencia después de la posible inicialización
             const currentChatMessages = chats[chatKey];
 
             const isTopic = true; 
@@ -205,7 +204,6 @@
 
     // Función que renderiza los emojis
     const renderMoods = () => {
-        // ✅ CORRECCIÓN: Usar el ID 'moodOptions' del HTML
         const moodList = document.getElementById("moodOptions"); 
         if (!moodList) return;
         
@@ -275,10 +273,12 @@
         socket.emit('requestPartnerStatus', { targetUser: partnerName });
     });
 
+    // 🔴 CORRECCIÓN CLAVE: Forzamos el estado a 'online' cuando recibimos un moodChanged
     socket.on("moodChanged", (data) => { 
         if (data.sender === getPartnerName()) {
             sessionStorage.setItem("partnerMood", data.mood); 
-            updatePartnerStatusDisplay(data.mood, partnerStatus); 
+            // ✅ CORREGIDO: Usar 'online' para asegurar que el estado cambie
+            updatePartnerStatusDisplay(data.mood, 'online'); 
         }
     });
 
@@ -300,10 +300,9 @@
     socket.on("newMessage", (data) => {
         if (data.sender !== getPartnerName()) return; 
         
-        // Obtiene la clave, o la fecha de hoy si no viene (la que no queremos guardar)
-        const chatKey = data.chatKey || formatDateKey(); 
+        // 🔴 CORRECCIÓN: Usar data.chatKey, no formatDateKey, para mensajes temáticos
+        const chatKey = data.chatKey; 
         
-        // Si el mensaje NO pertenece a un chat temático, lo ignoramos y salimos.
         if (!TOPIC_CHATS.includes(chatKey)) {
              console.log(`Mensaje del chat diario ignorado: ${chatKey}`);
              return; 
@@ -335,7 +334,7 @@
             chats[key] = [];
         }
     });
-    // 2. Guardar los datos. La función saveData ahora filtra las claves de fecha automáticamente.
+    // 2. Guardar los datos. 
     saveData(); 
     
     // 3. Renderizar la lista de chats y el modal de estados de ánimo
