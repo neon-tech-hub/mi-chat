@@ -32,12 +32,9 @@
         
         <div class="chat-header">
             <button id="backToMain" class="back-btn" aria-label="Volver al menú">←</button>
-            <div id="partnerMoodDisplayChat" class="partner-mood-display">
-                <span id="partnerMoodEmojiChat">?</span> 
-            </div>
             <div class="partner-info">
                 <div id="partnerName" class="partner-name">Nombre del Chat</div>
-                <div id="partnerStatus" class="partner-status">Desconectado</div>
+                <div id="partnerStatus" class="partner-status">Estado de la pareja</div>
             </div>
             <button id="openMoodModalChat" class="my-mood-btn" aria-label="Cambiar estado emocional">😴</button> 
         </div>
@@ -69,8 +66,19 @@
             <button class="btn secondary close-modal-btn" data-modal-target="messageActionsModal">Cerrar</button>
         </div>
     </div>
-    
+
+    <div id="moodsContainer" class="modal-backdrop" aria-hidden="true">
+        <div class="modal-content mood-modal">
+            <button class="close-modal-btn" data-modal-target="moodsContainer" aria-label="Cerrar modal">X</button>
+            <h3>¿Cómo te sentís hoy?</h3>
+            <p>Selecciona tu estado de ánimo para compartirlo con tu pareja</p>
+            
+            <div id="moodOptions" class="mood-list">
+                </div>
+        </div>
     </div>
+
+</div>
 
 <script src="chat.js"></script>
 </body>
